@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Award, Camera, ChevronRight, Clock, Facebook, GraduationCap, Instagram, Mail, MapPin, Menu, MessageCircle, Moon, Phone, Star, Sun, Target, Users, X, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EnquiryForm from "@/components/enquiry-form";
+import PromoTicker from "@/components/promo-ticker";
 import { contact, programs, socials, whatsappLink, type Program } from "@/lib/site";
 
 const links = [["Home", "home"], ["About Us", "about"], ["Courses", "courses"], ["Gallery", "gallery"], ["Contact", "contact"]] as const;
@@ -90,6 +91,7 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
   return <>
     <a className="skip-link" href="#main">Skip to content</a>
     <header className="site-header">
+      <PromoTicker />
       <div className="nav-container">
         <Brand priority />
         <nav aria-label="Main navigation" className="desktop-nav">
@@ -170,7 +172,7 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
       <div><h2>Our Courses</h2><ul>{programs.map(program => <li key={program.title}><button onClick={() => openProgram(program)}>{program.title}</button></li>)}</ul></div>
       <div><h2>Contact Us</h2><ul className="contact-list">
         <li><MapPin size={17} /><span>{contact.address}</span></li>
-        <li><Phone size={17} /><a href={`tel:${contact.phone}`}>{contact.phoneDisplay}</a></li>
+        <li><Phone size={17} /><span>{contact.phones.map((phone, i) => <span key={phone.tel}>{i > 0 && " / "}<a href={`tel:${phone.tel}`}>{phone.display}</a></span>)}</span></li>
         <li><MessageCircle size={17} /><a href={whatsappLink("Hello EduPulse Academy, I would like to know more about your programs.")} target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a></li>
         <li><Mail size={17} /><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
         <li><Clock size={17} /><span>Visit us or call during academy hours</span></li>
@@ -188,7 +190,7 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
         <p>{modal.kind === "program" ? modal.program.summary : infoModals[modal.title]}</p>
         <div className="dialog-actions">
           <Button asChild><a href={whatsappLink(`Hello EduPulse Academy, I would like to know more about: ${modalTitle}`)} target="_blank" rel="noopener noreferrer">Enquire on WhatsApp <ArrowRight /></a></Button>
-          <Button asChild variant="outline"><a href={`tel:${contact.phone}`}><Phone /> Call {contact.phoneDisplay}</a></Button>
+          {contact.phones.map(phone => <Button key={phone.tel} asChild variant="outline"><a href={`tel:${phone.tel}`}><Phone /> Call {phone.display}</a></Button>)}
         </div>
         <a className="dialog-email" href={`mailto:${contact.email}?subject=${encodeURIComponent(modalTitle + " enquiry")}`}>Or email {contact.email}</a>
       </div>}

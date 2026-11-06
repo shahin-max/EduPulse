@@ -24,7 +24,6 @@
 .gallery-card:hover .gallery-image > img, .gallery-card:hover .gallery-image > video { transform: scale(1.035); }
 .gallery-badges { position: absolute; top: 16px; left: 16px; display: flex; gap: 6px; }
 .gallery-category { padding: 6px 11px; border-radius: 20px; background: #ffffffed; color: #214c30; font-weight: 600; font-size: 11px; }
-.gallery-sample { background: #183c2bcc; color: #e8f2e3; }
 .gallery-expand { position: absolute; bottom: 16px; right: 16px; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #ffffff66; background: #183c2b99; color: #fff; border-radius: 50%; backdrop-filter: blur(4px); }
 .gallery-play { inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: 58px; height: 58px; background: #183c2bcc; }
 .gallery-play svg { margin-left: 3px; fill: currentColor; }

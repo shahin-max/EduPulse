@@ -5,7 +5,7 @@ import "./gallery.css";
 
 export const metadata: Metadata = {
   title: "Gallery",
-  description: "Explore a sample gallery of learning, campus life, and student experiences at EduPulse Academy.",
+  description: "Photos and videos of games days, outings, celebrations and achievements at EduPulse Academy, Aligarh.",
 };
 
 export default function GalleryPage() {

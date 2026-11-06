@@ -1,0 +1,166 @@
+/* Ported from the phomplete pamphlet site; every rule is scoped to .pamphlet-page. */
+.pamphlet-page { color-scheme: light; --forest: #173f2a; --green: #479a4c; --ink: #173f2a; --muted: #637869; --line: #dce6dd; --tint: #f1f6f0; }
+.pamphlet-page * { box-sizing: border-box; }
+.pamphlet-page { margin: 0; background: #eaf0e9; color: var(--ink); font-family: Arial, Helvetica, sans-serif; }
+.pamphlet-page a { color: inherit; text-decoration: none; }
+.pamphlet-page a:focus-visible { outline: 3px solid var(--green); outline-offset: 5px; }
+.pamphlet-page p, .pamphlet-page h1, .pamphlet-page h2, .pamphlet-page h3 { margin: 0; }
+.pamphlet-page .page-shell { min-height: 100svh; display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px 24px; }
+.pamphlet-page .brochure { width: 100%; max-width: 1240px; background: white; border: 1px solid #d7e2d6; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 70px #173f2a12; }
+.pamphlet-page .brand-header { padding: 10px 36px; display: flex; align-items: center; gap: 32px; min-height: 116px; }
+.pamphlet-page .brand-logo { flex: 0 0 165px; height: 110px; position: relative; overflow: hidden; }
+.pamphlet-page .brand-logo img { position: absolute; width: 230px; height: auto; max-width: none; top: -92px; left: -32px; }
+.pamphlet-page .brand-message { border-left: 1px solid var(--line); padding-left: 30px; }
+.pamphlet-page .brand-message p { font-family: Georgia, serif; font-size: 25px; font-style: italic; }
+.pamphlet-page .brand-message > span { display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: 9px; font-weight: 700; letter-spacing: 1.7px; color: var(--muted); }
+.pamphlet-page .brand-message i { width: 3px; height: 3px; background: var(--green); border-radius: 50%; }
+.pamphlet-page .header-contact { margin-left: auto; display: flex; align-items: center; gap: 24px; border: 1px solid var(--line); padding: 12px 16px; border-radius: 7px; font-size: 12px; font-weight: 700; }
+.pamphlet-page .header-contact:hover { background: var(--tint); }
+.pamphlet-page .header-contact span { font-size: 18px; color: var(--green); }
+.pamphlet-page .brochure-panels { display: grid; grid-template-columns: 1fr 1fr; }
+.pamphlet-page .admissions-panel { padding: 27px 36px 24px; background: var(--forest); color: white; position: relative; }
+.pamphlet-page .preparation-panel { padding: 27px 36px 24px; background: #fff; }
+.pamphlet-page .panel-topline { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 22px; }
+.pamphlet-page .admissions-badge { display: flex; align-items: center; gap: 7px; font-size: 9px; letter-spacing: 1.5px; font-weight: 700; }
+.pamphlet-page .admissions-badge i { width: 6px; height: 6px; background: #87c68a; border-radius: 50%; box-shadow: 0 0 0 4px #479a4c30; }
+.pamphlet-page .panel-number { font-size: 8px; letter-spacing: 1.1px; opacity: .65; }
+.pamphlet-page h1 { font-size: clamp(30px, 3.2vw, 43px); font-weight: 900; line-height: 1; letter-spacing: -1.4px; }
+.pamphlet-page h1 > span { display: block; margin-top: 11px; color: #b9dbbb; font-family: Georgia, serif; font-weight: 400; font-size: 34px; line-height: 1.15; letter-spacing: -.8px; }
+.pamphlet-page .class-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.pamphlet-page .class-row > span { border: 1px solid #ffffff3d; border-radius: 4px; font-size: 10px; font-weight: 700; padding: 7px 11px; letter-spacing: .6px; }
+.pamphlet-page .class-row p { font-size: 10px; margin-left: 6px; color: #c6d7c9; }
+.pamphlet-page .class-row strong { color: white; }
+.pamphlet-page .forms-notice { padding: 13px 17px; border-left: 3px solid #87c68a; background: #ffffff0d; border-radius: 0 7px 7px 0; }
+.pamphlet-page .forms-notice > span { font-size: 9px; letter-spacing: 1.5px; color: #b9dbbb; font-weight: 700; }
+.pamphlet-page .forms-notice strong { display: flex; align-items: center; justify-content: space-between; font-size: 23px; margin-top: 5px; }
+.pamphlet-page .forms-notice strong span { font-weight: 400; color: #87c68a; }
+.pamphlet-page .date-list { margin-top: 12px; }
+.pamphlet-page .date-list > div { display: flex; align-items: center; gap: 13px; padding: 11px 0; }
+.pamphlet-page .date-list > div + div { border-top: 1px solid #ffffff20; }
+.pamphlet-page .date-symbol { font-size: 10px; color: #b9dbbb; border: 1px solid #ffffff30; width: 29px; height: 29px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+.pamphlet-page .date-list p { font-size: 11px; color: #b9cdbf; margin-bottom: 4px; }
+.pamphlet-page .date-list strong { font-size: 16px; }
+.pamphlet-page .admission-footnote { margin-top: 14px; font-size: 10px; color: #b9cdbf; }
+.pamphlet-page .section-label { font-size: 9px; font-weight: 800; letter-spacing: 1.5px; color: var(--green); }
+.pamphlet-page .preparation-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.pamphlet-page .enrol-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; margin-bottom: 7px; color: var(--muted); }
+.pamphlet-page h2 { font-size: 39px; line-height: 1.05; font-weight: 900; letter-spacing: -1.3px; }
+.pamphlet-page h2 span { display: block; color: var(--green); font-size: 24px; letter-spacing: 2px; margin-top: 7px; }
+.pamphlet-page .preparation-mark { width: 76px; height: 76px; object-fit: contain; }
+.pamphlet-page .guidance { font-family: Georgia, serif; font-style: italic; font-size: 16px; margin: 17px 0 20px; color: var(--muted); }
+.pamphlet-page .subjects { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; padding: 0; margin: 0; list-style: none; }
+.pamphlet-page .subjects li { display: flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 600; }
+.pamphlet-page .subjects li span { color: var(--green); background: var(--tint); border-radius: 50%; width: 21px; height: 21px; display: grid; place-items: center; flex-shrink: 0; }
+.pamphlet-page .contact-card { margin-top: 24px; border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: var(--tint); }
+.pamphlet-page .contact-eyebrow { font-size: 8px; font-weight: 700; letter-spacing: 1.6px; color: var(--muted); }
+.pamphlet-page h3 { font-size: 19px; letter-spacing: -.4px; margin-top: 7px; }
+.pamphlet-page .phone-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.pamphlet-page .phone-numbers a { background: var(--forest); color: white; border-radius: 6px; padding: 12px 10px; display: flex; justify-content: space-between; align-items: center; gap: 6px; font-weight: 700; font-size: 17px; letter-spacing: -.3px; }
+.pamphlet-page .phone-numbers a:hover { background: #2c683a; }
+.pamphlet-page .phone-numbers span { color: #b9dbbb; }
+.pamphlet-page .location { margin-top: 13px; font-size: 11px; color: var(--muted); }
+.pamphlet-page .location > span { font-size: 17px; vertical-align: -1px; margin-right: 4px; color: var(--green); }
+.pamphlet-page .brochure-footer { padding: 17px 36px; display: flex; align-items: center; justify-content: space-between; gap: 15px; border-top: 1px solid var(--line); }
+.pamphlet-page .brochure-footer > span { font-size: 9px; letter-spacing: 1.6px; color: var(--muted); }
+.pamphlet-page .brochure-footer strong { color: var(--forest); }
+.pamphlet-page .brochure-footer a { font-size: 11px; overflow-wrap: anywhere; }
+.pamphlet-page .portal-label { font-size: 10px; color: var(--muted); margin-right: 8px; }
+.pamphlet-page .brochure-footer a:hover { text-decoration: underline; }
+@media (min-width: 901px) and (max-height: 820px) {
+  .pamphlet-page .page-shell { padding: 12px 24px; }
+  .pamphlet-page .brand-header { min-height: 96px; padding-top: 0; padding-bottom: 0; }
+  .pamphlet-page .brand-logo { height: 101px; }
+  .pamphlet-page .brand-logo img { width: 210px; top: -84px; left: -24px; }
+  .pamphlet-page .admissions-panel, .pamphlet-page .preparation-panel { padding-top: 20px; padding-bottom: 18px; }
+  .pamphlet-page .panel-topline { margin-bottom: 16px; }
+  .pamphlet-page h1 > span { font-size: 30px; }
+  .pamphlet-page .class-row { margin: 16px 0; }
+  .pamphlet-page .contact-card { margin-top: 20px; }
+  .pamphlet-page .brochure-footer { padding-top: 13px; padding-bottom: 13px; }
+}
+@media (max-width: 1100px) and (min-width: 901px) {
+  .pamphlet-page .brand-header, .pamphlet-page .admissions-panel, .pamphlet-page .preparation-panel, .pamphlet-page .brochure-footer { padding-left: 24px; padding-right: 24px; }
+  .pamphlet-page .panel-number { display: none; }
+  .pamphlet-page .phone-numbers a { font-size: 14px; }
+  .pamphlet-page .class-row p { width: 100%; margin: 3px 0 0; }
+}
+@media (max-width: 900px) {
+  .pamphlet-page .page-shell { padding: 16px; }
+  .pamphlet-page .brochure { max-width: 620px; border-radius: 16px; }
+  .pamphlet-page .brand-header { padding: 12px 22px; gap: 15px; }
+  .pamphlet-page .brand-message { padding-left: 20px; }
+  .pamphlet-page .brand-message p { font-size: 20px; }
+  .pamphlet-page .brand-message > span { font-size: 8px; line-height: 1.8; letter-spacing: 1px; display: block; }
+  .pamphlet-page .brand-message i { display: none; }
+  .pamphlet-page .header-contact { display: none; }
+  .pamphlet-page .brochure-panels { grid-template-columns: 1fr; }
+  .pamphlet-page .admissions-panel, .pamphlet-page .preparation-panel { padding: 26px; }
+  .pamphlet-page h1 { font-size: 40px; }
+  .pamphlet-page .brochure-footer { align-items: flex-start; flex-direction: column; padding: 18px 26px; gap: 10px; }
+}
+@media (max-width: 440px) {
+  .pamphlet-page .page-shell { padding: 8px; }
+  .pamphlet-page .brand-header { padding: 6px 15px; gap: 9px; }
+  .pamphlet-page .brand-logo { flex-basis: 130px; height: 94px; }
+  .pamphlet-page .brand-logo img { width: 190px; top: -77px; left: -29px; }
+  .pamphlet-page .brand-message { padding-left: 13px; }
+  .pamphlet-page .brand-message p { font-size: 17px; line-height: 1.3; }
+  .pamphlet-page .admissions-panel, .pamphlet-page .preparation-panel { padding: 23px 20px; }
+  .pamphlet-page .panel-number { font-size: 6px; }
+  .pamphlet-page h1 { font-size: 34px; }
+  .pamphlet-page h1 > span { font-size: 29px; }
+  .pamphlet-page .class-row p { width: 100%; margin: 3px 0 0; }
+  .pamphlet-page h2 { font-size: 34px; }
+  .pamphlet-page h2 span { font-size: 20px; }
+  .pamphlet-page .preparation-mark { width: 62px; height: 62px; }
+  .pamphlet-page .subjects { gap: 10px 6px; }
+  .pamphlet-page .subjects li { font-size: 11px; }
+  .pamphlet-page .contact-card { padding: 14px; }
+  .pamphlet-page h3 { font-size: 17px; }
+  .pamphlet-page .phone-numbers a { font-size: 14px; padding: 11px 8px; }
+  .pamphlet-page .date-list strong { font-size: 14px; }
+}
+@media print {
+  @page { size: A4 landscape; margin: 8mm; }
+  .pamphlet-page { background: white; print-color-adjust: exact; }
+  .pamphlet-page .page-shell { display: block; padding: 0; min-height: auto; }
+  .pamphlet-page .brochure { max-width: none; box-shadow: none; }
+  .pamphlet-page .brochure-panels { grid-template-columns: 1fr 1fr; }
+  .pamphlet-page .header-contact { display: none; }
+}
+
+/* Controls stay outside the exported artwork. */
+.pamphlet-page .whatsapp-contact { position: relative; margin-left: auto; flex-shrink: 0; }
+.pamphlet-page .header-contact { cursor: pointer; list-style: none; }
+.pamphlet-page .header-contact::-webkit-details-marker { display: none; }
+.pamphlet-page .header-contact:focus-visible, .pamphlet-page button:focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
+.pamphlet-page .whatsapp-menu { position: absolute; z-index: 5; top: calc(100% + 8px); right: 0; width: 235px; padding: 14px; background: white; border: 1px solid var(--line); box-shadow: 0 10px 30px #173f2a20; border-radius: 10px; }
+.pamphlet-page .whatsapp-menu p { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.pamphlet-page .whatsapp-menu a { display: flex; justify-content: space-between; padding: 11px; border-radius: 5px; font-size: 15px; font-weight: 700; }
+.pamphlet-page .whatsapp-menu a:hover { background: var(--tint); }
+.pamphlet-page .download-toolbar { width: 100%; max-width: 1240px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pamphlet-page .download-label { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); }
+.pamphlet-page .download-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
+.pamphlet-page .download-actions button { border: 1px solid #c8d8c9; border-radius: 6px; padding: 9px 13px; background: white; color: var(--forest); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.pamphlet-page .download-actions button span { margin-left: 14px; }
+.pamphlet-page .download-actions button:hover { background: var(--tint); }
+.pamphlet-page .download-actions button:disabled { opacity: .6; cursor: wait; }
+.pamphlet-page .download-status { font-size: 11px; color: var(--forest); }
+@media (max-width: 900px) {
+  .pamphlet-page .brand-header { flex-wrap: wrap; }
+  .pamphlet-page .whatsapp-contact { margin-left: 0; width: 100%; }
+  .pamphlet-page .header-contact { display: flex; justify-content: center; padding: 8px 13px; }
+  .pamphlet-page .whatsapp-menu { width: 100%; }
+  .pamphlet-page .download-toolbar { max-width: 620px; flex-wrap: wrap; }
+  .pamphlet-page .download-actions { justify-content: flex-start; }
+  .pamphlet-page .download-status:empty { display: none; }
+}
+@media print { .pamphlet-page .download-toolbar, .pamphlet-page .whatsapp-contact { display: none; } }
+
+@media (min-width: 901px) and (max-height: 820px) { .pamphlet-page .brochure { line-height: 1.35; } .pamphlet-page .date-list > div { padding-top: 9px; padding-bottom: 9px; } }
+
+/* Added for the EduPulse site: link back to the main website. */
+.pamphlet-page .pamphlet-back { width: 100%; max-width: 1240px; font-size: 12px; font-weight: 700; color: var(--forest); }
+.pamphlet-page .pamphlet-back:hover { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 900px) { .pamphlet-page .pamphlet-back { max-width: 620px; } }
+@media print { .pamphlet-page .pamphlet-back { display: none; } }

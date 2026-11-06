@@ -1,9 +1,12 @@
 import { Award, BookOpen, GraduationCap, Microscope, Plane, Shield, Stethoscope, type LucideIcon } from "lucide-react";
 
 export const contact = {
-  phoneDisplay: "+91 74528 81120",
-  phone: "+917452881120",
-  whatsapp: "917452881120",
+  // Same numbers as the Sainik School pamphlet (/pamphlet). The first one is also used for WhatsApp.
+  phones: [
+    { display: "+91 70156 28794", tel: "+917015628794" },
+    { display: "+91 96272 32324", tel: "+919627232324" },
+  ],
+  whatsapp: "917015628794",
   email: "edupulsea@gmail.com",
   address: "3/105 Marris Road, Infront of Baby land School, Aligarh - 202001",
 };

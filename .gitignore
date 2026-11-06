@@ -9,3 +9,6 @@ next-env.d.ts
 !.env.example
 npm-debug.log*
 .DS_Store
+
+# Original iPhone photos/videos (web versions live in public/gallery)
+/media-originals
