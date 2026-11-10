@@ -8,7 +8,7 @@ export const contact = {
   ],
   whatsapp: "917015628794",
   email: "edupulsea@gmail.com",
-  address: "3/105 Marris Road, Infront of Baby land School, Aligarh - 202001",
+  address: "Lal Diggi, Civil Lines, Grand Bazar, Aligarh",
 };
 
 export const mapsQuery = encodeURIComponent(contact.address);
