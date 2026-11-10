@@ -1,5 +1,4 @@
 ﻿import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,9 +25,11 @@ export const viewport: Viewport = {
 const themeScript = `(function(){var d=document.documentElement,m=matchMedia('(prefers-color-scheme: dark)').matches;try{var t=localStorage.getItem('edupulse-theme');d.classList.toggle('dark',t==='dark'||(!t&&m));}catch(e){d.classList.toggle('dark',m);}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // A plain inline <script> in <head> (rendered only on the server) sets the theme before first paint,
+  // with no flash and without React's "script tag inside a component" warning that next/script triggers here.
   return <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
+    <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
     <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-      <Script id="theme-init" strategy="beforeInteractive">{themeScript}</Script>
       {children}
     </body>
   </html>;

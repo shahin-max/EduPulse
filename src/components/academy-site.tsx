@@ -6,11 +6,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Award, Camera, ChevronRight, Clock, Facebook, GraduationCap, Instagram, Mail, MapPin, Menu, MessageCircle, Moon, Phone, Star, Sun, Target, Users, X, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import EnquiryForm from "@/components/enquiry-form";
 import PromoTicker from "@/components/promo-ticker";
-import { contact, programs, socials, whatsappLink, type Program } from "@/lib/site";
+import HeroSlider from "@/components/hero-slider";
+import { contact, courseHref, programs, socials, whatsappLink } from "@/lib/site";
 
-const links = [["Home", "home"], ["About Us", "about"], ["Courses", "courses"], ["Gallery", "gallery"], ["Contact", "contact"]] as const;
+const links = [["Home", "home"], ["About Us", "about"], ["Courses", "courses"], ["Faculty", "faculty"], ["Gallery", "gallery"], ["Contact", "contact"]] as const;
 const features = [
   { title: "Expert Faculty", detail: "Learn from highly qualified and experienced teachers.", icon: Users },
   { title: "Smart Learning", detail: "Build understanding with technology-assisted learning.", icon: Award },
@@ -22,10 +22,10 @@ const infoModals = {
   "Scholarship Test": "Scholarship test dates and registration details will be announced soon. Message our team to be notified first.",
   "Join EduPulse": "Online registration is coming soon. Speak with our team today for admissions, batch timings and program details.",
 };
-type Modal = { kind: "program"; program: Program } | { kind: "info"; title: keyof typeof infoModals } | null;
+type Modal = { kind: "info"; title: keyof typeof infoModals } | null;
 
 function navHref(id: string) {
-  return id === "about" ? "/aboutus" : id === "gallery" ? "/gallery" : `/#${id}`;
+  return id === "about" ? "/aboutus" : id === "gallery" ? "/gallery" : id === "courses" ? "/courses" : id === "contact" ? "/contact" : id === "faculty" ? "/faculty" : `/#${id}`;
 }
 
 function Brand({ priority = false }: { priority?: boolean }) {
@@ -43,7 +43,7 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
   const [modal, setModal] = useState<Modal>(null);
   const dialog = useRef<HTMLDialogElement>(null);
 
-  const isCurrent = (id: string) => pathname === "/aboutus" ? id === "about" : pathname === "/gallery" ? id === "gallery" : pathname === "/" && active === id;
+  const isCurrent = (id: string) => pathname === "/aboutus" ? id === "about" : pathname === "/gallery" ? id === "gallery" : pathname === "/courses" || pathname.startsWith("/courses/") ? id === "courses" : pathname === "/contact" ? id === "contact" : pathname === "/faculty" ? id === "faculty" : pathname === "/" && active === id;
 
   useEffect(() => {
     const sync = () => setDark(document.documentElement.classList.contains("dark"));
@@ -82,11 +82,9 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
     setMobile(false);
     if (!dialog.current?.open) dialog.current?.showModal();
   }
-  const openProgram = (program: Program) => open({ kind: "program", program });
   const openInfo = (title: keyof typeof infoModals) => open({ kind: "info", title });
 
-  const modalTitle = modal?.kind === "program" ? modal.program.title : modal?.title ?? "";
-  const ModalIcon = modal?.kind === "program" ? modal.program.icon : GraduationCap;
+  const modalTitle = modal?.title ?? "";
 
   return <>
     <a className="skip-link" href="#main">Skip to content</a>
@@ -113,28 +111,7 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
 
     <main id="main">{children ?? <>
       <section id="home" className="hero" aria-labelledby="hero-title">
-        <div className="hero-stage"><div className="page-container hero-inner">
-          <div className="hero-copy">
-            <div className="hero-eyebrow"><span aria-hidden="true" /> A NEW CHAPTER IN EDUCATION</div>
-            <h1 id="hero-title">Great futures<br />begin with<br /><em>the right guidance.</em></h1>
-            <p>Build strong foundations. Prepare with purpose. Discover learning that brings you closer to the future you imagine.</p>
-            <div className="hero-actions">
-              <Button asChild size="lg" className="hero-primary"><a href="#courses">Explore programs <ArrowRight size={17} /></a></Button>
-              <a href="#enquire" className="hero-secondary">Talk to our team <ArrowRight size={16} /></a>
-            </div>
-            <div className="hero-note"><span className="hero-note-icon"><MapPin size={20} /></span><div><strong>Proudly based in Aligarh</strong><span>Foundation classes &middot; Entrance preparation &middot; Spoken English</span></div></div>
-          </div>
-          <div className="hero-scene">
-            <Image src="/academy-campus-student.png" alt="Illustrative academy campus with a confident student holding books" fill sizes="(max-width: 1000px) 100vw, 70vw" priority />
-          </div>
-          <aside className="hero-programs" aria-labelledby="hero-programs-title">
-            <p className="hero-programs-kicker">FIND YOUR DIRECTION</p>
-            <h2 id="hero-programs-title">Our programs</h2>
-            <div className="hero-programs-rule" />
-            <ul>{programs.map(program => <li key={program.title}><button onClick={() => openProgram(program)}><program.icon size={16} strokeWidth={1.7} /><span>{program.title}</span><ChevronRight size={13} /></button></li>)}</ul>
-            <a href="#courses" className="hero-programs-link">Explore all programs <ArrowRight size={15} /></a>
-          </aside>
-        </div></div>
+        <HeroSlider />
         <div className="hero-benefits"><div className="page-container feature-grid">{features.map(({ title, detail, icon: Icon }) => <div className="feature-card" key={title}><Icon size={23} strokeWidth={1.5} /><div><h3>{title}</h3><p>{detail}</p></div></div>)}</div></div>
       </section>
 
@@ -142,7 +119,7 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
         <p className="section-kicker">FIND YOUR NEXT CHAPTER</p>
         <h2 id="courses-title">Explore top programs.<br /><span>Designed for your success.</span></h2>
         <p className="section-intro">From strong foundations to ambitious futures, find the right path for you.</p>
-        <div className="program-grid">{programs.map(program => <button className="program-card" key={program.title} onClick={() => openProgram(program)} aria-haspopup="dialog"><span className="program-icon"><program.icon size={23} /></span><span><strong>{program.title}</strong><small>{program.detail}</small></span><ChevronRight className="program-arrow" size={18} /></button>)}</div>
+        <div className="program-grid">{programs.map(program => <Link className="program-card" key={program.slug} href={courseHref(program.slug)}><span className="program-icon"><program.icon size={23} /></span><span><strong>{program.title}</strong><small>{program.detail}</small></span><ChevronRight className="program-arrow" size={18} /></Link>)}</div>
       </section>
 
       <div className="page-container upcoming-grid">
@@ -152,10 +129,17 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
           <p>Explore campus life, classroom discoveries, achievements, and student experiences.</p>
           <Link className="text-link" href="/gallery">Explore the gallery <ArrowRight size={17} /></Link>
         </section>
-        <section id="enquire" className="upcoming-card" aria-labelledby="enquire-title">
-          <MessageCircle size={25} /><p className="section-kicker">TALK TO OUR TEAM</p><h2 id="enquire-title">Request a callback.</h2>
+        <section id="talk" className="upcoming-card home-contact-card" aria-labelledby="talk-title">
+          <MessageCircle size={25} /><p className="section-kicker">TALK TO OUR TEAM</p><h2 id="talk-title">Request a callback.</h2>
           <p>Share a few details and our counsellors will help you choose the right program and batch.</p>
-          <EnquiryForm />
+          <div className="home-contact-list">
+            {contact.phones.map(phone => <a key={phone.tel} href={`tel:${phone.tel}`}><Phone size={18} /><span>{phone.display}<small>Call the academy</small></span><ChevronRight size={16} /></a>)}
+            <a href={whatsappLink("Hello EduPulse Academy, I would like to know more about your programs.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} /><span>Chat on WhatsApp<small>Quick replies from our team</small></span><ChevronRight size={16} /></a>
+            <a href={`mailto:${contact.email}`}><Mail size={18} /><span>{contact.email}<small>Email us anytime</small></span><ChevronRight size={16} /></a>
+          </div>
+          <div className="home-contact-actions">
+            <Button asChild size="lg"><Link href="/contact">Open the enquiry form <ArrowRight size={16} /></Link></Button>
+          </div>
         </section>
       </div>
     </>}</main>
@@ -168,8 +152,8 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
           <a href={socials.youtube} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on YouTube (opens in a new tab)" title="YouTube"><Youtube size={19} aria-hidden="true" /></a>
         </nav>
       </div>
-      <div><h2>Quick Links</h2><ul>{links.map(([label, id]) => <li key={id}><Link href={id === "contact" ? "/#enquire" : navHref(id)}>{label}</Link></li>)}</ul></div>
-      <div><h2>Our Courses</h2><ul>{programs.map(program => <li key={program.title}><button onClick={() => openProgram(program)}>{program.title}</button></li>)}</ul></div>
+      <div><h2>Quick Links</h2><ul>{links.map(([label, id]) => <li key={id}><Link href={navHref(id)}>{label}</Link></li>)}</ul></div>
+      <div><h2>Our Courses</h2><ul>{programs.map(program => <li key={program.slug}><Link href={courseHref(program.slug)}>{program.title}</Link></li>)}</ul></div>
       <div><h2>Contact Us</h2><ul className="contact-list">
         <li><MapPin size={17} /><span>{contact.address}</span></li>
         <li><Phone size={17} /><span>{contact.phones.map((phone, i) => <span key={phone.tel}>{i > 0 && " / "}<a href={`tel:${phone.tel}`}>{phone.display}</a></span>)}</span></li>
@@ -184,10 +168,10 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
     <dialog ref={dialog} aria-labelledby="dialog-title" className="info-dialog" onClose={() => setModal(null)} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }}>
       {modal && <div className="dialog-content">
         <Button variant="ghost" size="icon" className="dialog-close" aria-label="Close dialog" onClick={() => dialog.current?.close()}><X /></Button>
-        <span className="program-icon"><ModalIcon size={27} /></span>
-        <p className="section-kicker">{modal.kind === "program" ? modal.program.detail.toUpperCase() : "EDUPULSE ACADEMY"}</p>
+        <span className="program-icon"><GraduationCap size={27} /></span>
+        <p className="section-kicker">EDUPULSE ACADEMY</p>
         <h2 id="dialog-title">{modalTitle}</h2>
-        <p>{modal.kind === "program" ? modal.program.summary : infoModals[modal.title]}</p>
+        <p>{infoModals[modal.title]}</p>
         <div className="dialog-actions">
           <Button asChild><a href={whatsappLink(`Hello EduPulse Academy, I would like to know more about: ${modalTitle}`)} target="_blank" rel="noopener noreferrer">Enquire on WhatsApp <ArrowRight /></a></Button>
           {contact.phones.map(phone => <Button key={phone.tel} asChild variant="outline"><a href={`tel:${phone.tel}`}><Phone /> Call {phone.display}</a></Button>)}

@@ -14,7 +14,7 @@ export default function NotFound() {
       <p>The page you are looking for doesn&apos;t exist or may have moved. Let&apos;s get you back on track.</p>
       <div className="not-found-actions">
         <Button asChild size="lg"><Link href="/"><Home /> Back to home</Link></Button>
-        <Button asChild size="lg" variant="outline"><Link href="/#courses">Explore programs <ArrowRight /></Link></Button>
+        <Button asChild size="lg" variant="outline"><Link href="/courses">Explore programs <ArrowRight /></Link></Button>
       </div>
     </section>
   </AcademySite>;

@@ -1,0 +1,58 @@
+/* Contact page (src/components/contact-page.tsx). Builds on the shared courses styles in ../courses/course.css. */
+.contact-hero { padding-bottom: 70px; }
+.contact-hero-inner { padding-block: 50px 40px; }
+.contact-hero-copy { max-width: 760px; }
+.contact-title { font-size: clamp(42px, 4.6vw, 66px); }
+.contact-title em { font-size: 1em; letter-spacing: -1.6px; margin-top: 4px; }
+.contact-hero .course-intro { max-width: 620px; }
+
+.contact-quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.contact-quick-card { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; padding: 24px 22px; border-radius: 20px; background: var(--hero-glass); border: 1px solid var(--border); backdrop-filter: blur(14px); box-shadow: 0 20px 40px -30px #173c2a55; transform-style: preserve-3d; transition: border-color .3s, box-shadow .3s; }
+.contact-quick-card:hover { border-color: color-mix(in srgb, var(--leaf) 60%, transparent); box-shadow: 0 26px 50px -26px #173c2a55; }
+.contact-quick-card:hover .course-feature-icon { transform: rotate(-8deg) scale(1.08); background: var(--primary); color: var(--primary-foreground); }
+.contact-quick-card .course-feature-icon { margin-bottom: 12px; }
+.contact-quick-card h2 { position: relative; font-size: 13px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted-foreground); }
+.contact-quick-card a { position: relative; max-width: 100%; font-size: 15.5px; font-weight: 650; line-height: 1.5; color: var(--foreground); overflow-wrap: anywhere; transition: color .2s; }
+.contact-quick-card a:hover { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; }
+
+.contact-main { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 26px; align-items: start; padding-block: 80px 90px; }
+.contact-form-card { position: relative; overflow: hidden; isolation: isolate; padding: 40px; border-radius: 28px; background: var(--card); border: 1px solid var(--border); box-shadow: 0 30px 70px -40px #173c2a55; }
+.contact-form-glow { position: absolute; z-index: -1; top: -120px; right: -120px; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--leaf) 22%, transparent), transparent 70%); animation: hero-blob 14s ease-in-out infinite alternate; }
+.contact-form-card h2 { font-size: clamp(26px, 2.6vw, 34px); font-weight: 650; letter-spacing: -1px; }
+.contact-form-intro { margin-top: 10px; font-size: 15px; line-height: 1.75; color: var(--muted-foreground); }
+.contact-form-card .enquiry-form { margin-top: 26px; }
+
+.contact-visit { overflow: hidden; border-radius: 28px; background: var(--card); border: 1px solid var(--border); box-shadow: 0 30px 70px -40px #173c2a55; }
+.contact-map { height: 280px; background: var(--muted); border-bottom: 1px solid var(--border); }
+.contact-map iframe { display: block; width: 100%; height: 100%; border: 0; }
+.dark .contact-map iframe { filter: invert(.9) hue-rotate(180deg) brightness(.95); }
+.contact-visit-body { padding: 28px 30px 30px; }
+.contact-visit-body h2 { font-size: 22px; font-weight: 650; letter-spacing: -.5px; }
+.contact-visit-list { display: grid; gap: 12px; margin-top: 16px; }
+.contact-visit-list li { display: flex; gap: 11px; font-size: 14.5px; line-height: 1.6; color: var(--muted-foreground); }
+.contact-visit-list svg { flex-shrink: 0; margin-top: 3px; color: var(--primary); }
+.contact-directions { margin-top: 20px; gap: 8px; border-radius: 12px; }
+.contact-socials { display: flex; align-items: center; gap: 8px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.contact-socials > span { margin-right: auto; font-size: 13px; font-weight: 600; color: var(--muted-foreground); }
+.contact-socials a { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; color: var(--primary); background: var(--accent); transition: background .25s, color .25s, transform .25s; }
+.contact-socials a:hover { background: var(--primary); color: var(--primary-foreground); transform: translateY(-3px); }
+
+.contact-steps-band .courses-steps-list { margin-top: 10px; }
+.contact-cta { padding-block: 70px 40px; }
+
+@media (max-width: 1000px) {
+  .contact-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .contact-main { grid-template-columns: 1fr; padding-block: 60px 70px; }
+}
+@media (max-width: 640px) {
+  .contact-title { font-size: 38px; }
+  .contact-quick { grid-template-columns: 1fr; gap: 10px; }
+  .contact-quick-card { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 14px; row-gap: 2px; padding: 14px 16px; border-radius: 16px; }
+  .contact-quick-card .course-feature-icon { grid-row: 1 / span 3; margin: 0; }
+  .contact-quick-card h2 { font-size: 11px; }
+  .contact-quick-card a { font-size: 14.5px; }
+  .contact-form-card { padding: 26px 20px; border-radius: 22px; }
+  .contact-visit { border-radius: 22px; }
+  .contact-visit-body { padding: 24px 20px; }
+  .contact-map { height: 230px; }
+}

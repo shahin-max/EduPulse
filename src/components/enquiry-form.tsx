@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { BrandSelect } from "@/components/ui/select";
 import { contact, programs, whatsappLink } from "@/lib/site";
 
-export default function EnquiryForm() {
+const programOptions = [...programs.map(p => p.title), "Not sure yet - need guidance"];
+
+/** `defaultProgram` is a program slug (e.g. from /contact?program=neet) to pre-select. */
+export default function EnquiryForm({ defaultProgram }: { defaultProgram?: string | null }) {
+  const preselected = programs.find(p => p.slug === defaultProgram)?.title;
   const [sent, setSent] = useState(false);
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -29,7 +33,7 @@ export default function EnquiryForm() {
       <label>Your name<input name="name" required autoComplete="name" maxLength={60} placeholder="Full name" /></label>
       <label>Phone number<input name="phone" required type="tel" inputMode="tel" autoComplete="tel" pattern="[+0-9 ]{10,15}" title="Enter a valid 10-digit phone number" placeholder="10-digit mobile" /></label>
     </div>
-    <div className="enquiry-field"><span id="program-label" className="enquiry-label">Program of interest</span><BrandSelect name="program" aria-labelledby="program-label" options={[...programs.map(p => p.title), "Not sure yet - need guidance"]} /></div>
+    <div className="enquiry-field"><span id="program-label" className="enquiry-label">Program of interest</span><BrandSelect key={preselected ?? "default"} name="program" aria-labelledby="program-label" options={programOptions} defaultValue={preselected} /></div>
     <label><span className="label-text">Message <span>(optional)</span></span><textarea name="message" rows={3} maxLength={400} placeholder="Class, preferred timing, or any question" /></label>
     <Button type="submit" size="lg" className="enquiry-submit">Send enquiry on WhatsApp <Send /></Button>
     {sent ? <p className="enquiry-status" role="status"><CheckCircle2 size={16} aria-hidden="true" /> WhatsApp opened with your details. Tap send there and our team will get back to you.</p>
