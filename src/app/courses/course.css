@@ -258,3 +258,18 @@ a.courses-table-row:hover .courses-table-go { transform: translateX(4px); }
   .courses-grid { grid-template-columns: 1fr; }
   .courses-card-wrap:last-child:nth-child(odd) { width: auto; justify-self: stretch; }
 }
+
+/* Upcoming batches on a course page (from the LMS; shown only when a batch is open) */
+.course-batch-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 34px; }
+.course-batch-list li { display: flex; flex-direction: column; gap: 6px; padding: 22px; border: 1px solid var(--border); border-radius: 20px; background: var(--card); box-shadow: 0 20px 40px -32px #173c2a55; }
+.course-batch-list strong { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--primary); }
+.course-batch-list h3 { font-size: 19px; font-weight: 650; letter-spacing: -.3px; }
+.course-batch-list p { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13.5px; color: var(--muted-foreground); }
+.course-batch-list p span { display: inline-flex; align-items: center; gap: 6px; }
+.course-batch-list .text-link { margin-top: auto; padding-top: 10px; gap: 8px; }
+
+/* Catalogue courses without a program page (courses index) */
+.courses-more-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-top: 30px; }
+.courses-more-list a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); font-weight: 650; transition: border-color .2s, color .2s; }
+.courses-more-list a:hover { border-color: var(--leaf); color: var(--primary); }
+.courses-more-list small { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 400; color: var(--muted-foreground); }

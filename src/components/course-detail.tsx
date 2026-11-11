@@ -5,9 +5,11 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion, useScroll, useSpring, useTransform } from "motion/react";
-import { ArrowRight, Check, ChevronDown, MapPin, MessageCircle, Phone, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, ChevronDown, MapPin, MessageCircle, Phone, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EASE, Reveal, TiltCard, Words, rise, stagger } from "@/components/motion-kit";
+import { formatDate } from "@/components/admissions-page";
+import type { ApiBatch } from "@/lib/api";
 import { courseDetails } from "@/lib/courses";
 import { contact, courseHref, programs, whatsappLink } from "@/lib/site";
 
@@ -33,7 +35,8 @@ function Faq({ q, a, open, onToggle, id }: { q: string; a: string; open: boolean
   );
 }
 
-export default function CourseDetail({ slug }: { slug: string }) {
+/** `batches` are the open batches (from the LMS) of the catalogue courses this program covers. */
+export default function CourseDetail({ slug, batches = [] }: { slug: string; batches?: ApiBatch[] }) {
   const course = courseDetails[slug];
   const program = programs.find(p => p.slug === slug)!;
   const others = programs.filter(p => p.slug !== slug);
@@ -177,6 +180,25 @@ export default function CourseDetail({ slug }: { slug: string }) {
           </Reveal>
         </section>
 
+        {batches.length > 0 && <section className="course-section page-container course-batches" aria-labelledby="batches-title">
+          <Reveal className="course-section-head">
+            <motion.p variants={rise} className="section-kicker">TAKING ADMISSIONS</motion.p>
+            <motion.h2 variants={rise} id="batches-title">Upcoming <span>batches.</span></motion.h2>
+          </Reveal>
+          <Reveal as="ul" className="course-batch-list">
+            {batches.map(batch => <motion.li key={batch.id} variants={rise}>
+              <strong>{batch.courses.title}</strong>
+              <h3>{batch.name}</h3>
+              <p>
+                {formatDate(batch.start_date) && <span><CalendarDays size={15} aria-hidden="true" /> Starts {formatDate(batch.start_date)}</span>}
+                {batch.branches && <span><MapPin size={15} aria-hidden="true" /> {batch.branches.name}</span>}
+                {batch.seatsAvailable !== null && <span><Users size={15} aria-hidden="true" /> {batch.seatsAvailable > 0 ? `${batch.seatsAvailable} seats left` : "Waiting list"}</span>}
+              </p>
+              <Link className="text-link" href={`/admissions?course=${batch.courses.slug}`}>Apply for this batch <ArrowRight size={15} /></Link>
+            </motion.li>)}
+          </Reveal>
+        </section>}
+
         <section className="page-container course-cta-wrap" aria-labelledby="cta-title">
           <motion.div className="course-cta" initial={{ opacity: 0, y: 40, scale: 0.97 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.8, ease: EASE }}>
             <span className="course-cta-glow" aria-hidden="true" />
@@ -186,8 +208,8 @@ export default function CourseDetail({ slug }: { slug: string }) {
               <p>Talk to our team about batches, timings and the right starting point for you.</p>
             </div>
             <div className="course-cta-actions">
-              <Button asChild size="lg" className="course-cta-primary"><a href={enquire} target="_blank" rel="noopener noreferrer"><MessageCircle size={17} /> Enquire on WhatsApp</a></Button>
-              <Button asChild size="lg" variant="outline" className="course-cta-secondary"><Link href={`/contact?program=${slug}`}>Send an enquiry <ArrowRight size={16} /></Link></Button>
+              <Button asChild size="lg" className="course-cta-primary"><Link href={`/admissions?program=${slug}`}>Apply for admission <ArrowRight size={16} /></Link></Button>
+              <Button asChild size="lg" variant="outline" className="course-cta-secondary"><a href={enquire} target="_blank" rel="noopener noreferrer"><MessageCircle size={17} /> Enquire on WhatsApp</a></Button>
             </div>
           </motion.div>
         </section>

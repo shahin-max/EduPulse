@@ -68,6 +68,7 @@ export function LoginForm() {
     <form className="enquiry-form auth-form" onSubmit={submit}>
       <label>Email or mobile<input name="login" required autoComplete="username" minLength={3} maxLength={254} placeholder="you@example.com or 98765 43210" /></label>
       <label>Password<PasswordInput name="password" required autoComplete="current-password" maxLength={72} placeholder="Your password" /></label>
+      <p className="auth-forgot"><Link href="/forgot-password">Forgot password?</Link></p>
       {error && <ErrorMessage message={error} />}
       <Button type="submit" size="lg" className="enquiry-submit" disabled={busy}>{busy ? <><Loader2 className="animate-spin" /> Logging in...</> : <>Log in <ArrowRight /></>}</Button>
       <p className="enquiry-hint">New to EduPulse? <Link href="/register">Create a student account</Link></p>
@@ -191,5 +192,67 @@ export function SetPasswordForm() {
       {error && <ErrorMessage message={error} />}
       <Button type="submit" size="lg" className="enquiry-submit" disabled={busy}>{busy ? <><Loader2 className="animate-spin" /> Saving...</> : <>Save password <ArrowRight /></>}</Button>
     </form>
+  </AuthCard>;
+}
+
+/** Asks the API to email a reset link. The answer is the same whether or not the account exists. */
+export function ForgotPasswordForm() {
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const login = String(new FormData(event.currentTarget).get("login")).trim();
+    setBusy(true);
+    setError("");
+    try {
+      await authApi.forgotPassword(login);
+      setSent(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not send the reset link. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (sent) return <AuthCard title="Check your email." intro="If an account exists for these details, we have emailed a link to reset the password. The link works for 1 hour.">
+    <p className="auth-note">Registered with a mobile number only? Reset links cannot be sent by SMS yet. Please call or WhatsApp the academy and the team will send you a link.</p>
+    <Button asChild size="lg" className="auth-logout"><Link href="/login">Back to login</Link></Button>
+  </AuthCard>;
+
+  return <AuthCard title="Forgot your password?" intro="Enter the email address or mobile number of your account and we will send you a link to choose a new password.">
+    <form className="enquiry-form auth-form" onSubmit={submit}>
+      <label>Email or mobile<input name="login" required autoComplete="username" minLength={3} maxLength={254} placeholder="you@example.com or 98765 43210" /></label>
+      {error && <ErrorMessage message={error} />}
+      <Button type="submit" size="lg" className="enquiry-submit" disabled={busy}>{busy ? <><Loader2 className="animate-spin" /> Sending...</> : <>Send reset link <ArrowRight /></>}</Button>
+      <p className="enquiry-hint">Remembered it? <Link href="/login">Log in</Link></p>
+    </form>
+  </AuthCard>;
+}
+
+/** Opened from the verification email: /verify-email?token=... Confirms once on load. */
+export function VerifyEmail() {
+  const token = useSearchParams().get("token") ?? "";
+  const valid = /^[0-9a-f]{64}$/i.test(token);
+  const [state, setState] = useState<{ status: "working" | "done" | "failed"; message?: string }>({ status: "working" });
+
+  useEffect(() => {
+    if (!valid) return;
+    let cancelled = false;
+    authApi.confirmVerification(token)
+      .then(() => { if (!cancelled) setState({ status: "done" }); })
+      .catch((e: unknown) => { if (!cancelled) setState({ status: "failed", message: e instanceof Error ? e.message : undefined }); });
+    return () => { cancelled = true; };
+  }, [token, valid]);
+
+  if (!valid || state.status === "failed") return <AuthCard title="Link not valid." intro={state.message ?? "This verification link is incomplete or has expired. Log in and request a new one from your account."}>
+    <Button asChild size="lg" className="auth-logout"><Link href="/login">Go to login</Link></Button>
+  </AuthCard>;
+
+  if (state.status === "working") return <section className="auth-page page-container"><p className="auth-loading"><Loader2 className="animate-spin" /> Verifying your email...</p></section>;
+
+  return <AuthCard title="Email verified." intro="Thank you. Your email address is confirmed, and password reset links can be sent to it.">
+    <Button asChild size="lg" className="auth-logout"><Link href="/login">Continue <ArrowRight /></Link></Button>
   </AuthCard>;
 }

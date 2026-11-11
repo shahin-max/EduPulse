@@ -9,12 +9,14 @@ type BrandSelectProps = {
   name: string;
   options: Option[];
   defaultValue?: Option;
+  /** Called with the chosen option, for fields that depend on this one. */
+  onValueChange?: (value: Option) => void;
   "aria-labelledby"?: string;
 };
 
 /** Brand-styled dropdown (replaces the native <select>, whose open list uses the OS highlight colour). */
-export function BrandSelect({ name, options, defaultValue, ...aria }: BrandSelectProps) {
-  return <SelectPrimitive.Root name={name} defaultValue={defaultValue ?? options[0]}>
+export function BrandSelect({ name, options, defaultValue, onValueChange, ...aria }: BrandSelectProps) {
+  return <SelectPrimitive.Root name={name} defaultValue={defaultValue ?? options[0]} onValueChange={onValueChange}>
     <SelectPrimitive.Trigger className="brand-select-trigger" {...aria}>
       <SelectPrimitive.Value />
       <SelectPrimitive.Icon className="brand-select-icon"><ChevronDown size={16} /></SelectPrimitive.Icon>

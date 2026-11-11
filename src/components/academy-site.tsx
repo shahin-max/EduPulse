@@ -11,7 +11,7 @@ import PromoTicker from "@/components/promo-ticker";
 import HeroSlider from "@/components/hero-slider";
 import { contact, courseHref, programs, socials, whatsappLink } from "@/lib/site";
 
-const links = [["Home", "home"], ["About Us", "about"], ["Courses", "courses"], ["Faculty", "faculty"], ["Gallery", "gallery"], ["Contact", "contact"]] as const;
+const links = [["Home", "home"], ["About Us", "about"], ["Courses", "courses"], ["Admissions", "admissions"], ["Faculty", "faculty"], ["Gallery", "gallery"], ["Contact", "contact"]] as const;
 const features = [
   { title: "Expert Faculty", detail: "Learn from highly qualified and experienced teachers.", icon: Users },
   { title: "Smart Learning", detail: "Build understanding with technology-assisted learning.", icon: Award },
@@ -24,7 +24,7 @@ const infoModals = {
 type Modal = { kind: "info"; title: keyof typeof infoModals } | null;
 
 function navHref(id: string) {
-  return id === "about" ? "/aboutus" : id === "gallery" ? "/gallery" : id === "courses" ? "/courses" : id === "contact" ? "/contact" : id === "faculty" ? "/faculty" : `/#${id}`;
+  return id === "about" ? "/aboutus" : id === "gallery" ? "/gallery" : id === "courses" ? "/courses" : id === "contact" ? "/contact" : id === "faculty" ? "/faculty" : id === "admissions" ? "/admissions" : `/#${id}`;
 }
 
 function Brand({ priority = false }: { priority?: boolean }) {
@@ -43,7 +43,7 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
   const [modal, setModal] = useState<Modal>(null);
   const dialog = useRef<HTMLDialogElement>(null);
 
-  const isCurrent = (id: string) => pathname === "/aboutus" ? id === "about" : pathname === "/gallery" ? id === "gallery" : pathname === "/courses" || pathname.startsWith("/courses/") ? id === "courses" : pathname === "/contact" ? id === "contact" : pathname === "/faculty" ? id === "faculty" : pathname === "/" && active === id;
+  const isCurrent = (id: string) => pathname === "/aboutus" ? id === "about" : pathname === "/gallery" ? id === "gallery" : pathname === "/courses" || pathname.startsWith("/courses/") ? id === "courses" : pathname === "/contact" ? id === "contact" : pathname === "/faculty" ? id === "faculty" : pathname === "/admissions" ? id === "admissions" : pathname === "/" && active === id;
 
   useEffect(() => {
     const sync = () => setDark(document.documentElement.classList.contains("dark"));
@@ -142,7 +142,8 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
             <a href={`mailto:${contact.email}`}><Mail size={18} /><span>{contact.email}<small>Email us anytime</small></span><ChevronRight size={16} /></a>
           </div>
           <div className="home-contact-actions">
-            <Button asChild size="lg"><Link href="/contact">Open the enquiry form <ArrowRight size={16} /></Link></Button>
+            <Button asChild size="lg"><Link href="/admissions">Apply for admission <ArrowRight size={16} /></Link></Button>
+            <Button asChild size="lg" variant="outline"><Link href="/contact">Open the enquiry form</Link></Button>
           </div>
         </section>
       </div>

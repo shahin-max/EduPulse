@@ -22,7 +22,7 @@ const quick = [
 
 const nextSteps = [
   { title: "Share your details", text: "Fill in the form with your name, number and the program you're interested in.", icon: Send },
-  { title: "WhatsApp opens", text: "Your enquiry is ready to send on WhatsApp. Just tap send.", icon: MessagesSquare },
+  { title: "We receive it instantly", text: "Your enquiry reaches our admissions team straight away, with a reference number for you.", icon: MessagesSquare },
   { title: "We get back to you", text: "Our team replies with batch details and helps you choose the right starting point.", icon: UserCheck },
 ];
 

@@ -5,9 +5,10 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion, useScroll, useSpring, useTransform } from "motion/react";
-import { ArrowRight, Compass, MessageCircle, MessagesSquare, Rocket, Search, X } from "lucide-react";
+import { ArrowRight, ChevronRight, Compass, MessageCircle, MessagesSquare, Rocket, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Counter, EASE, Reveal, Words, rise, stagger } from "@/components/motion-kit";
+import type { ApiCourse } from "@/lib/api";
 import { courseCategories, courseDetails, type CourseCategory } from "@/lib/courses";
 import { courseHref, programs, whatsappLink } from "@/lib/site";
 
@@ -23,7 +24,8 @@ const steps = [
   { title: "Start learning", text: "Join a batch and follow a clear plan with regular practice, tests and feedback.", icon: Rocket },
 ];
 
-export default function CoursesIndex() {
+/** `moreCourses`: LMS catalogue courses that no program page covers (e.g. NDA / CDS, IMU-CET). */
+export default function CoursesIndex({ moreCourses = [] }: { moreCourses?: ApiCourse[] }) {
   const [category, setCategory] = useState<CourseCategory | "all">("all");
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -159,6 +161,19 @@ export default function CoursesIndex() {
           </AnimatePresence>
         </section>
 
+        {moreCourses.length > 0 && <section id="more-programs" className="page-container course-section" aria-labelledby="more-title">
+          <Reveal className="course-section-head">
+            <motion.p variants={rise} className="section-kicker">ALSO OFFERED</motion.p>
+            <motion.h2 variants={rise} id="more-title">More programs <span>at EduPulse.</span></motion.h2>
+            <motion.p variants={rise} className="course-section-intro">Ask our team for the syllabus, batch timings and fees of these programs.</motion.p>
+          </Reveal>
+          <Reveal as="ul" className="courses-more-list">
+            {moreCourses.map(course => <motion.li key={course.id} variants={rise}>
+              <Link href={`/admissions?course=${course.slug}`}><span>{course.title}<small>{course.description ?? "Apply or ask about batches"}</small></span><ChevronRight size={18} aria-hidden="true" /></Link>
+            </motion.li>)}
+          </Reveal>
+        </section>}
+
         <section id="choose" className="course-band" aria-labelledby="choose-title">
           <div className="page-container">
             <Reveal className="course-section-head">
@@ -212,7 +227,7 @@ export default function CoursesIndex() {
             </div>
             <div className="course-cta-actions">
               <Button asChild size="lg" className="course-cta-primary"><a href={whatsappLink("Hello EduPulse Academy, I need help choosing the right program.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={17} /> Ask on WhatsApp</a></Button>
-              <Button asChild size="lg" variant="outline" className="course-cta-secondary"><Link href="/contact">Send an enquiry <ArrowRight size={16} /></Link></Button>
+              <Button asChild size="lg" variant="outline" className="course-cta-secondary"><Link href="/admissions">Apply for admission <ArrowRight size={16} /></Link></Button>
             </div>
           </motion.div>
         </section>

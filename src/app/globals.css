@@ -245,6 +245,16 @@ h2 > span { color: var(--primary); }
 .enquiry-form input:user-invalid { border-color: var(--destructive); }
 .enquiry-field { display: grid; gap: 7px; }
 .enquiry-label { font-size: 13px; font-weight: 600; }
+.enquiry-error { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; font-size: 13px; line-height: 1.6; color: var(--destructive); background: color-mix(in srgb, var(--destructive) 10%, transparent); }
+.enquiry-error svg { flex: none; margin-top: 3px; }
+.enquiry-error a { font-weight: 600; text-decoration: underline; }
+.enquiry-hint a { color: var(--primary); font-weight: 600; }
+.enquiry-done { justify-items: start; padding: 22px; border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.enquiry-done h3 { font-size: 19px; font-weight: 700; }
+.enquiry-done p { font-size: 14px; line-height: 1.6; color: var(--muted-foreground); }
+.enquiry-done strong { color: var(--foreground); }
+.enquiry-done-icon { color: var(--primary); }
+.enquiry-done-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* Brand dropdown (src/components/brand-select.tsx) */
 .brand-select-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; border: 1px solid var(--input); border-radius: 8px; background: var(--background); color: var(--foreground); padding: 11px 13px; font: inherit; font-size: 14px; text-align: left; transition: border-color .2s, box-shadow .2s; }

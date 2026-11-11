@@ -88,6 +88,57 @@ export const authApi = {
   me: (token: string) => request<User>("/auth/me", { token }),
   logout: (token: string) => request<void>("/auth/logout", { method: "POST", token }),
   resetPassword: (token: string, newPassword: string) => request<void>("/auth/password/reset", { method: "POST", body: JSON.stringify({ token, newPassword }) }),
+  /** Always answers with the same message, whether or not the account exists. */
+  forgotPassword: (login: string) => request<{ message: string }>("/auth/password/forgot", { method: "POST", body: JSON.stringify({ login }) }),
+  confirmVerification: (token: string) => request<unknown>("/auth/verify/confirm", { method: "POST", body: JSON.stringify({ token }) }),
+};
+
+// ---------------------------------------------------------------- public website data
+
+/** A published course (GET /courses). */
+export type ApiCourse = { id: number; code: string; slug: string; title: string; description: string | null; sort_order: number };
+
+/** A PLANNED or ACTIVE batch of a published course, as visitors see it (GET /batches). */
+export type ApiBatch = {
+  id: number;
+  code: string;
+  name: string;
+  start_date: string | null;
+  end_date: string | null;
+  status: string;
+  seatsAvailable: number | null;
+  courses: { id: number; slug: string; title: string };
+  branches: { id: number; code: string; name: string } | null;
+  faculty: { userId: number; fullName: string; subject: { id: number; name: string } }[];
+};
+
+export type ApiContent = { content_key: string; title: string | null; body: string | null; sort_order: number };
+
+export type Paginated<T> = { data: T[]; meta: { page: number; limit: number; total: number; totalPages: number } };
+
+export type EnquiryInput = { studentName: string; mobile: string; email?: string; interestedCourseId?: number; message?: string; source?: string };
+
+export const publicApi = {
+  enquire: (input: EnquiryInput) => request<{ id: number; status: string }>("/admission-enquiries", { method: "POST", body: JSON.stringify(input) }),
+};
+
+/**
+ * Server-side reads for public pages, cached and refreshed every 5 minutes (ISR) so pages stay static
+ * and fast. When the API is unreachable they resolve to `fallback`, and the page still renders.
+ */
+async function cachedGet<T>(path: string, fallback: T): Promise<T> {
+  try {
+    const response = await fetch(`${API_URL}${path}`, { next: { revalidate: 300 }, signal: AbortSignal.timeout(5000) });
+    return response.ok ? (await response.json()) as T : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export const publicData = {
+  courses: () => cachedGet<ApiCourse[]>("/courses", []),
+  openBatches: () => cachedGet<Paginated<ApiBatch> | null>("/batches?limit=100", null).then(r => r?.data ?? []),
+  content: (prefix: string) => cachedGet<ApiContent[]>(`/website-content?prefix=${encodeURIComponent(prefix)}`, []),
 };
 
 /** Where a user lands after logging in: admins go to the admin portal, everyone else to their dashboard. */

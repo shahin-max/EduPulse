@@ -1,0 +1,15 @@
+/* Admissions page (src/components/admissions-page.tsx). Builds on ../courses/course.css and ../contact/contact.css. */
+.admissions-batches { position: sticky; top: 110px; }
+.admissions-batch-list { display: grid; gap: 10px; margin-top: 18px; }
+.admissions-batch-list li { display: grid; gap: 3px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--background); }
+.admissions-batch-list strong { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--primary); }
+.admissions-batch-list > li > span { font-size: 15.5px; font-weight: 650; }
+.admissions-batch-list small { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 4px; font-size: 12.5px; color: var(--muted-foreground); }
+.admissions-batch-list small span { display: inline-flex; align-items: center; gap: 5px; }
+.admissions-empty { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: 14.5px; line-height: 1.7; color: var(--muted-foreground); }
+.admissions-empty svg { flex: none; margin-top: 4px; color: var(--primary); }
+.admissions-help { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); font-size: 14px; }
+.admissions-help p { width: 100%; font-weight: 600; }
+.admissions-help a { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--primary); }
+.admissions-help a:hover { text-decoration: underline; }
+@media (max-width: 1000px) { .admissions-batches { position: static; } }
