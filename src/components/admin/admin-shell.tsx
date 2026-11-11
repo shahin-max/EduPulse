@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { BookOpen, CalendarDays, ChevronsUpDown, ClipboardList, ExternalLink, FileText, IndianRupee, Inbox, LayoutDashboard, Layers, Loader2, LogOut, Megaphone, Moon, ShieldAlert, Sun, Users, type LucideIcon } from "lucide-react";
+import { BookOpen, Building2, CalendarDays, ChevronsUpDown, ClipboardList, ExternalLink, FileText, Globe, History, IndianRupee, Inbox, LayoutDashboard, Layers, Loader2, LogOut, Megaphone, Moon, ShieldAlert, Sun, Users, type LucideIcon } from "lucide-react";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,25 +20,30 @@ import { useAuth } from "@/lib/auth";
 import { setDarkMode, useDarkMode } from "@/lib/theme";
 import { UserAvatar } from "./ui";
 
-type NavItem = { label: string; href: string; icon: LucideIcon; phase?: number };
+type NavItem = { label: string; href: string; icon: LucideIcon; soon?: string };
 
-/** Items with a `phase` are planned and shown as "Soon" until that phase is built. */
+/** Items with `soon` are planned and shown as "Soon" until they are built (the value names the phase). */
 const nav: { group: string; items: NavItem[] }[] = [
   { group: "General", items: [
     { label: "Overview", href: "/admin", icon: LayoutDashboard },
     { label: "Users", href: "/admin/users", icon: Users },
+    { label: "Enquiries", href: "/admin/enquiries", icon: Inbox },
   ] },
   { group: "Academics", items: [
-    { label: "Courses & subjects", href: "/admin/courses", icon: BookOpen, phase: 2 },
-    { label: "Batches", href: "/admin/batches", icon: Layers, phase: 3 },
-    { label: "Classes & attendance", href: "/admin/classes", icon: CalendarDays, phase: 4 },
-    { label: "Study materials", href: "/admin/materials", icon: FileText, phase: 5 },
-    { label: "Exams", href: "/admin/exams", icon: ClipboardList, phase: 6 },
+    { label: "Courses & subjects", href: "/admin/courses", icon: BookOpen },
+    { label: "Batches", href: "/admin/batches", icon: Layers },
+    { label: "Classes & attendance", href: "/admin/classes", icon: CalendarDays, soon: "1C" },
+    { label: "Study materials", href: "/admin/materials", icon: FileText, soon: "1C" },
+    { label: "Exams", href: "/admin/exams", icon: ClipboardList, soon: "1C" },
   ] },
   { group: "Operations", items: [
-    { label: "Fees", href: "/admin/fees", icon: IndianRupee, phase: 7 },
-    { label: "Announcements", href: "/admin/announcements", icon: Megaphone, phase: 8 },
-    { label: "Enquiries", href: "/admin/enquiries", icon: Inbox, phase: 8 },
+    { label: "Fees", href: "/admin/fees", icon: IndianRupee },
+    { label: "Announcements", href: "/admin/announcements", icon: Megaphone },
+  ] },
+  { group: "Settings", items: [
+    { label: "Branches", href: "/admin/branches", icon: Building2 },
+    { label: "Website content", href: "/admin/website", icon: Globe },
+    { label: "Audit log", href: "/admin/audit", icon: History },
   ] },
 ];
 
@@ -114,9 +119,9 @@ function AdminSidebar() {
       {nav.map(section => <SidebarGroup key={section.group}>
         <SidebarGroupLabel>{section.group}</SidebarGroupLabel>
         <SidebarMenu>
-          {section.items.map(({ label, href, icon: Icon, phase }) => <SidebarMenuItem key={href}>
-            {phase ? <>
-              <SidebarMenuButton disabled tooltip={`${label} (coming in phase ${phase})`} aria-disabled="true">
+          {section.items.map(({ label, href, icon: Icon, soon }) => <SidebarMenuItem key={href}>
+            {soon ? <>
+              <SidebarMenuButton disabled tooltip={`${label} (coming in phase ${soon})`} aria-disabled="true">
                 <Icon /><span>{label}</span>
               </SidebarMenuButton>
               <SidebarMenuBadge className="text-[10px] text-muted-foreground">Soon</SidebarMenuBadge>

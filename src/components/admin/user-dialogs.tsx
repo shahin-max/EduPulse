@@ -16,9 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/lib/auth";
 import type { RoleCode } from "@/lib/api";
 import { passwordLink, ROLES, USER_STATUSES, usersApi, type AdminUser, type UpdateUserInput, type UserStatus } from "@/lib/admin-api";
-import { ErrorAlert, titleCase } from "./ui";
-
-const errorText = (e: unknown, fallback: string) => e instanceof Error ? e.message : fallback;
+import { ErrorAlert, errorText, Field, titleCase } from "./ui";
 
 const STATUS_HELP: Record<UserStatus, string> = {
   ACTIVE: "Can log in normally.",
@@ -26,14 +24,6 @@ const STATUS_HELP: Record<UserStatus, string> = {
   SUSPENDED: "Temporarily blocked and signed out everywhere.",
   DISABLED: "Blocked and signed out everywhere.",
 };
-
-function Field({ id, label, hint, children }: { id: string; label: React.ReactNode; hint?: React.ReactNode; children: React.ReactNode }) {
-  return <div className="grid gap-2">
-    <Label htmlFor={id}>{label}</Label>
-    {children}
-    {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-  </div>;
-}
 
 function CopyField({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);

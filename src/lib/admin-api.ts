@@ -36,14 +36,16 @@ export type ListUsersQuery = { page?: number; limit?: number; role?: RoleCode; s
 export type CreateUserInput = { fullName: string; email?: string; mobile?: string; password?: string; roles: RoleCode[] };
 export type UpdateUserInput = { fullName?: string; email?: string; mobile?: string; status?: UserStatus };
 
-function query(params: Record<string, string | number | boolean | undefined>) {
+/** `?a=1&b=2` from the defined, non-empty params (shared by every admin API module). */
+export function query(params: Record<string, string | number | boolean | undefined | null>) {
   const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) if (value !== undefined && value !== "") search.set(key, String(value));
+  for (const [key, value] of Object.entries(params)) if (value !== undefined && value !== null && value !== "") search.set(key, String(value));
   const text = search.toString();
   return text ? `?${text}` : "";
 }
 
-const json = (method: string, body: unknown) => ({ method, body: JSON.stringify(body) });
+/** Request options with a JSON body, e.g. `request(path, { token, ...json("PATCH", body) })`. */
+export const json = (method: string, body: unknown) => ({ method, body: JSON.stringify(body) });
 
 export const usersApi = {
   list: (token: string, params: ListUsersQuery = {}) => request<Paginated<AdminUser>>(`/users${query(params)}`, { token }),

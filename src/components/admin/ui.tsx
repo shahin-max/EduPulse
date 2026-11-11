@@ -1,15 +1,84 @@
 "use client";
 
-import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { RoleCode } from "@/lib/api";
 import type { Paginated, UserStatus } from "@/lib/admin-api";
 
-export const titleCase = (value: string) => value[0] + value.slice(1).toLowerCase();
+/** "PARTIALLY_PAID" -> "Partially paid". */
+export const titleCase = (value: string) => value[0] + value.slice(1).toLowerCase().replace(/_/g, " ");
+
+/** The API's error message, or `fallback` for anything that is not an Error. */
+export const errorText = (e: unknown, fallback: string) => e instanceof Error ? e.message : fallback;
+
+/** Money and marks arrive as DECIMAL strings ("1500.00"); shown as ₹1,500 or ₹1,500.50. */
+export function formatMoney(value: string | number | null | undefined, currency = "INR") {
+  if (value === null || value === undefined || value === "") return "—";
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return String(value);
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency, minimumFractionDigits: amount % 1 ? 2 : 0, maximumFractionDigits: 2 }).format(amount);
+}
+
+/** A labelled form control: <Field id="title" label="Title"><Input id="title" /></Field>. */
+export function Field({ id, label, hint, children, className }: { id: string; label: React.ReactNode; hint?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return <div className={cn("grid gap-2", className)}>
+    <Label htmlFor={id}>{label}</Label>
+    {children}
+    {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+  </div>;
+}
+
+/** "(optional)" suffix for a Field label. */
+export const Optional = () => <span className="font-normal text-muted-foreground">(optional)</span>;
+
+export type Tone = "green" | "amber" | "orange" | "red" | "blue" | "violet" | "gray";
+
+const TONE_STYLE: Record<Tone, string> = {
+  green: "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  amber: "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  orange: "border-transparent bg-orange-500/15 text-orange-700 dark:text-orange-300",
+  red: "border-transparent bg-red-500/15 text-red-700 dark:text-red-300",
+  blue: "border-transparent bg-sky-500/15 text-sky-700 dark:text-sky-300",
+  violet: "border-transparent bg-violet-500/15 text-violet-700 dark:text-violet-300",
+  gray: "border-transparent bg-muted text-muted-foreground",
+};
+
+/**
+ * A status badge for any enum value, coloured by a per-screen map:
+ * <Pill value={batch.status} tones={{ ACTIVE: "green", PLANNED: "blue", CANCELLED: "red" }} />.
+ * Unmapped values are gray; the label is the value in title case unless `label` is given.
+ */
+export function Pill({ value, tones, label, className }: { value: string; tones: Partial<Record<string, Tone>>; label?: string; className?: string }) {
+  return <Badge variant="outline" className={cn(TONE_STYLE[tones[value] ?? "gray"], className)}>{label ?? titleCase(value)}</Badge>;
+}
+
+/** Centered message for an empty list, with an optional call to action. */
+export function EmptyState({ icon: Icon, title, description, action }: { icon: LucideIcon; title: string; description?: string; action?: React.ReactNode }) {
+  return <div className="flex flex-col items-center gap-3 px-4 py-14 text-center">
+    <span className="flex size-12 items-center justify-center rounded-full bg-muted"><Icon className="size-5 text-muted-foreground" /></span>
+    <div>
+      <p className="font-medium">{title}</p>
+      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+    </div>
+    {action}
+  </div>;
+}
+
+/** Skeleton rows shown while a list loads for the first time. */
+export function LoadingRows({ rows = 6 }: { rows?: number }) {
+  return <div className="grid gap-4 p-4">
+    {Array.from({ length: rows }, (_, i) => <div key={i} className="flex items-center gap-3">
+      <div className="grid flex-1 gap-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-3 w-1/2" /></div>
+      <Skeleton className="hidden h-8 w-24 sm:block" />
+    </div>)}
+  </div>;
+}
 
 export function formatDate(value: string | null | undefined, withTime = false) {
   if (!value) return "—";
