@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Award, Camera, ChevronRight, Clock, Facebook, GraduationCap, Instagram, Mail, MapPin, Menu, MessageCircle, Moon, Phone, Star, Sun, Target, Users, X, Youtube } from "lucide-react";
+import { ArrowRight, Award, Camera, ChevronRight, Clock, Facebook, GraduationCap, Instagram, Mail, MapPin, Menu, MessageCircle, Moon, Phone, Star, Sun, Target, UserRound, Users, X, Youtube } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import PromoTicker from "@/components/promo-ticker";
 import HeroSlider from "@/components/hero-slider";
@@ -18,9 +19,7 @@ const features = [
   { title: "Your Growth First", detail: "Guidance that keeps your learning moving forward.", icon: GraduationCap },
 ];
 const infoModals = {
-  "Student Login": "Our student portal is coming soon. Contact the academy for help with admission or course information.",
   "Scholarship Test": "Scholarship test dates and registration details will be announced soon. Message our team to be notified first.",
-  "Join EduPulse": "Online registration is coming soon. Speak with our team today for admissions, batch timings and program details.",
 };
 type Modal = { kind: "info"; title: keyof typeof infoModals } | null;
 
@@ -37,6 +36,7 @@ function Brand({ priority = false }: { priority?: boolean }) {
 
 export default function AcademySite({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
+  const { user, status, logout } = useAuth();
   const [dark, setDark] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [active, setActive] = useState("home");
@@ -98,14 +98,18 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
         <div className="nav-actions">
           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Light mode" : "Dark mode"} className="theme-button"><Sun className="dark-sun" /><Moon className="light-moon" /></Button>
           <Button className="scholarship-button" onClick={() => openInfo("Scholarship Test")}><Star className="fill-current" /> <span>Scholarship Test</span></Button>
-          <Button variant="ghost" className="desktop-auth login-button" onClick={() => openInfo("Student Login")}>Login</Button>
-          <Button className="desktop-auth signup-button" onClick={() => openInfo("Join EduPulse")}>Sign Up <ArrowRight /></Button>
+          {status === "authenticated" ? <Button asChild className="desktop-auth signup-button"><Link href="/dashboard"><UserRound /> {user?.full_name.split(" ")[0] ?? "My account"}</Link></Button> : <>
+            <Button asChild variant="ghost" className="desktop-auth login-button"><Link href="/login">Login</Link></Button>
+            <Button asChild className="desktop-auth signup-button"><Link href="/register">Sign Up <ArrowRight /></Link></Button>
+          </>}
           <Button variant="ghost" size="icon" className="mobile-toggle" aria-expanded={mobile} aria-controls="mobile-navigation" aria-label={mobile ? "Close navigation" : "Open navigation"} onClick={() => setMobile(!mobile)}>{mobile ? <X /> : <Menu />}</Button>
         </div>
       </div>
       {mobile && <nav id="mobile-navigation" aria-label="Mobile navigation" className="mobile-nav">
         {links.map(([label, id]) => <Link key={id} href={navHref(id)} aria-current={isCurrent(id) ? "page" : undefined} onClick={() => setMobile(false)}>{label}<ChevronRight size={16} /></Link>)}
-        <div className="mobile-auth"><Button variant="outline" onClick={() => openInfo("Student Login")}>Login</Button><Button onClick={() => openInfo("Join EduPulse")}>Sign Up</Button></div>
+        <div className="mobile-auth">{status === "authenticated"
+          ? <><Button asChild variant="outline"><Link href="/dashboard" onClick={() => setMobile(false)}>My account</Link></Button><Button onClick={() => { setMobile(false); void logout(); }}>Log out</Button></>
+          : <><Button asChild variant="outline"><Link href="/login" onClick={() => setMobile(false)}>Login</Link></Button><Button asChild><Link href="/register" onClick={() => setMobile(false)}>Sign Up</Link></Button></>}</div>
       </nav>}
     </header>
 

@@ -1,0 +1,29 @@
+/* Login, register and dashboard pages (src/components/auth-forms.tsx). Form fields reuse .enquiry-form from globals.css. */
+.auth-page { display: grid; place-items: center; padding-block: 70px 90px; }
+.auth-card { position: relative; overflow: hidden; isolation: isolate; width: 100%; max-width: 560px; padding: 40px; border-radius: 28px; background: var(--card); border: 1px solid var(--border); box-shadow: 0 30px 70px -40px #173c2a55; }
+.auth-card-glow { position: absolute; z-index: -1; top: -120px; right: -120px; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--leaf) 22%, transparent), transparent 70%); pointer-events: none; }
+.auth-card .program-icon { margin-bottom: 18px; }
+.auth-card h1 { margin-top: 6px; font-size: clamp(28px, 3vw, 38px); font-weight: 650; letter-spacing: -1px; }
+.auth-intro { margin-top: 10px; font-size: 15px; line-height: 1.75; color: var(--muted-foreground); }
+
+.auth-form .enquiry-hint a { color: var(--primary); font-weight: 600; }
+.auth-note { margin-top: -6px; font-size: 12.5px; color: var(--muted-foreground); }
+.auth-password { position: relative; display: block; }
+.enquiry-form .auth-password input { padding-right: 44px; }
+.auth-password button { position: absolute; top: 50%; right: 6px; translate: 0 -50%; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; color: var(--muted-foreground); }
+.auth-password button:hover { color: var(--foreground); background: var(--accent); }
+.auth-error { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; font-size: 13px; line-height: 1.6; color: var(--destructive); background: color-mix(in srgb, var(--destructive) 10%, transparent); }
+.auth-error svg { flex-shrink: 0; margin-top: 3px; }
+
+.auth-loading { display: flex; align-items: center; gap: 10px; color: var(--muted-foreground); }
+.auth-details { display: grid; gap: 12px; margin-top: 24px; }
+.auth-details li { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 14px; background: var(--accent); }
+.auth-details svg { flex-shrink: 0; margin-top: 2px; color: var(--primary); }
+.auth-details span { display: grid; gap: 2px; font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
+.auth-details small { font-size: 12px; font-weight: 400; color: var(--muted-foreground); }
+.auth-logout { width: 100%; margin-top: 24px; }
+
+@media (max-width: 640px) {
+  .auth-page { padding-block: 36px 60px; }
+  .auth-card { padding: 26px 20px; border-radius: 22px; }
+}

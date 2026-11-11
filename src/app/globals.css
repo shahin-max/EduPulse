@@ -128,6 +128,9 @@
   --card: #fff; --card-foreground: #173c2a;
   --popover: #fff; --popover-foreground: #173c2a;
   --header-bg: #fffffff2; --leaf: #3f8c3d;
+  --sidebar: #f7faf5; --sidebar-foreground: #173c2a; --sidebar-primary: #276b36; --sidebar-primary-foreground: #fff;
+  --sidebar-accent: #eaf3e6; --sidebar-accent-foreground: #1f5a2d; --sidebar-border: #e0e8dd; --sidebar-ring: #52a14b;
+  --destructive: #c53030;
 }
 .dark {
   color-scheme: dark;
@@ -140,6 +143,9 @@
   --card: #132219; --card-foreground: #e8efe7;
   --popover: #132219; --popover-foreground: #e8efe7;
   --header-bg: #0f1d15f2; --leaf: #91c77f;
+  --sidebar: #0f1d15; --sidebar-foreground: #e3eddf; --sidebar-primary: #8bc77a; --sidebar-primary-foreground: #102716;
+  --sidebar-accent: #1c3022; --sidebar-accent-foreground: #e3eddf; --sidebar-border: #293c2e; --sidebar-ring: #8bc77a;
+  --destructive: #f07167;
 }
 html { scroll-behavior: smooth; scroll-padding-top: 138px; }
 html:has(dialog[open]) { overflow: hidden; }
@@ -148,6 +154,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
 a, button { touch-action: manipulation; }
 a:focus-visible, button:focus-visible { outline: 3px solid var(--ring); outline-offset: 4px; }
+/* shadcn components (data-slot) draw their own focus ring. */
+[data-slot]:focus-visible { outline: none; }
 .page-container { width: min(1200px, calc(100% - 80px)); margin-inline: auto; }
 
 /* Header */
@@ -238,7 +246,7 @@ h2 > span { color: var(--primary); }
 .enquiry-field { display: grid; gap: 7px; }
 .enquiry-label { font-size: 13px; font-weight: 600; }
 
-/* Brand dropdown (src/components/ui/select.tsx) */
+/* Brand dropdown (src/components/brand-select.tsx) */
 .brand-select-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; border: 1px solid var(--input); border-radius: 8px; background: var(--background); color: var(--foreground); padding: 11px 13px; font: inherit; font-size: 14px; text-align: left; transition: border-color .2s, box-shadow .2s; }
 .brand-select-trigger:hover { border-color: var(--leaf); }
 .brand-select-trigger:focus-visible, .brand-select-trigger[data-state="open"] { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent); }

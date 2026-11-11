@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BrandSelect } from "@/components/ui/select";
+import { BrandSelect } from "@/components/brand-select";
 import { contact, programs, whatsappLink } from "@/lib/site";
 
 const programOptions = [...programs.map(p => p.title), "Not sure yet - need guidance"];
