@@ -92,7 +92,8 @@ function BranchForm({ branch, onSaved, onClose }: { branch?: Branch; onSaved: (b
       onSaved(saved);
       onClose();
     } catch (e) {
-      setError(e instanceof ApiError && e.status === 409 ? "Another branch already uses this code." : errorText(e, "Could not save the branch."));
+      // A prefix clash comes with its own message naming the other branch; a bare 409 is a duplicate code.
+      setError(e instanceof ApiError && e.status === 409 && !/prefix/i.test(e.message) ? "Another branch already uses this code." : errorText(e, "Could not save the branch."));
     } finally {
       setBusy(false);
     }

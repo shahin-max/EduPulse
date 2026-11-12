@@ -181,7 +181,7 @@ function PaymentsTable({ payments }: { payments: PaymentListItem[] }) {
         <TableHead>Method</TableHead>
         <TableHead className="hidden xl:table-cell print:table-cell">Taken by</TableHead>
         <TableHead className="text-right">Amount</TableHead>
-        <TableHead className="pr-4 print:hidden">Status</TableHead>
+        <TableHead className="pr-4">Status</TableHead>
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -204,7 +204,7 @@ function PaymentsTable({ payments }: { payments: PaymentListItem[] }) {
           {formatMoney(p.amount)}
           {p.payment_refunds.some(r => r.status === "CONFIRMED") && <p className="text-xs font-normal text-red-700 dark:text-red-300">refunded {formatMoney(p.payment_refunds.filter(r => r.status === "CONFIRMED").reduce((t, r) => t + Number(r.amount), 0))}</p>}
         </TableCell>
-        <TableCell className="pr-4 print:hidden"><Pill value={p.status} tones={PAYMENT_TONES} /></TableCell>
+        <TableCell className="pr-4"><Pill value={p.status} tones={PAYMENT_TONES} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;

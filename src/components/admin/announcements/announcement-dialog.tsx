@@ -82,7 +82,7 @@ function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: A
           publishAt: fromLocalInput(publishAt) ?? undefined,
           publish: mode === "publish" || undefined,
         }));
-        toast.success(mode === "publish" ? "Announcement published" : "Draft saved");
+        toast.success(mode === "draft" ? "Draft saved" : saved.publish_at && new Date(saved.publish_at) > new Date() ? "Announcement scheduled" : "Announcement published");
       } else {
         // Only send what changed.
         const patch: UpdateAnnouncementInput = {};
@@ -96,7 +96,7 @@ function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: A
         saved = Object.keys(patch).length ? await withToken(token => announcementsApi.update(token, announcement.id, patch)) : announcement;
         if (mode === "publish") {
           saved = await withToken(token => announcementsApi.publish(token, announcement.id));
-          toast.success("Announcement published");
+          toast.success(saved.publish_at && new Date(saved.publish_at) > new Date() ? "Announcement scheduled" : "Announcement published");
         } else toast.success("Changes saved");
       }
       onSaved(saved);

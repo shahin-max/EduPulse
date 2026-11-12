@@ -105,7 +105,7 @@ function AdmissionForm({ courses, batches, course: courseSlug, program: programS
   return <form className="enquiry-form" onSubmit={submit}>
     <div className="enquiry-row">
       <label>Student&apos;s name<input name="student" required autoComplete="name" minLength={2} maxLength={160} placeholder="Full name" /></label>
-      <label>Class / grade<input name="grade" required maxLength={40} placeholder="e.g. 5, 8 or 12 (PCB)" /></label>
+      <label>Class / grade<input name="grade" required maxLength={30} placeholder="e.g. 5, 8 or 12 (PCB)" /></label>
     </div>
     <div className="enquiry-row">
       <label>Parent / guardian name<input name="guardian" required minLength={2} maxLength={160} placeholder="Full name" /></label>
@@ -113,7 +113,7 @@ function AdmissionForm({ courses, batches, course: courseSlug, program: programS
     </div>
     <div className="enquiry-row">
       <label><span className="label-text">Email <span>(optional)</span></span><input name="email" type="email" autoComplete="email" maxLength={254} placeholder="you@example.com" /></label>
-      <label><span className="label-text">School <span>(optional)</span></span><input name="school" maxLength={160} placeholder="Current school" /></label>
+      <label><span className="label-text">School <span>(optional)</span></span><input name="school" minLength={2} maxLength={160} placeholder="Current school" /></label>
     </div>
     <div className="enquiry-field"><span id="course-label" className="enquiry-label">Course</span><BrandSelect name="course" aria-labelledby="course-label" options={[...options, NOT_SURE]} defaultValue={courseTitle} onValueChange={setCourseTitle} /></div>
     {courseBatches.length > 0 && <div className="enquiry-field"><span id="batch-label" className="enquiry-label">Preferred batch</span><BrandSelect key={course?.id} name="batch" aria-labelledby="batch-label" options={[ANY_BATCH, ...courseBatches.map(batchLabel)]} /></div>}

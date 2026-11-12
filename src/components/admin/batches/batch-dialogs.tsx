@@ -110,7 +110,8 @@ function BatchForm({ batch, onSaved, onClose }: { batch?: Batch; onSaved: (batch
       onSaved(saved);
       onClose();
     } catch (e) {
-      setError(errorText(e, "Could not save the batch."));
+      // A 409 here is the API's generic unique-constraint message; the batch code is the only unique field.
+      setError(e instanceof ApiError && e.status === 409 ? "Another batch already uses this code." : errorText(e, "Could not save the batch."));
     } finally {
       setBusy(false);
     }

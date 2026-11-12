@@ -57,6 +57,10 @@ function ConvertForm({ enquiry, onConverted, onClose }: { enquiry: Enquiry; onCo
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!email.trim() && !mobile.trim()) return setError("Enter an email address or a mobile number.");
+    // Prefilled values skip the browser's length checks, and older enquiries allowed longer text; check before creating the account.
+    if (profile.grade.trim().length > 30) return setError("Class / grade must be 30 characters or fewer.");
+    for (const [label, value] of [["School", profile.schoolName], ["Parent / guardian", profile.guardianName]])
+      if (value.trim().length === 1) return setError(`${label} must be at least 2 characters, or left empty.`);
     setBusy(true);
     setError("");
     try {

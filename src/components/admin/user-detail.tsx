@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, BadgeCheck, CalendarClock, Clock, KeyRound, Mail, Pencil, Phone, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import { usersApi } from "@/lib/admin-api";
 import { useAdminData } from "./use-admin-data";
-import { DeleteUserDialog, PasswordLinkDialog, UserFormDialog } from "./user-dialogs";
+import { DeleteUserDialog, PasswordLinkDialog, StudentProfileDialog, UserFormDialog } from "./user-dialogs";
 import { ErrorAlert, formatDate, RoleBadges, StatusBadge, UserAvatar } from "./ui";
 
 export default function UserDetail({ id }: { id: number }) {
@@ -21,6 +21,7 @@ export default function UserDetail({ id }: { id: number }) {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [linking, setLinking] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
 
   const back = <Button variant="ghost" size="sm" asChild className="-ml-2 w-fit text-muted-foreground"><Link href="/admin/users"><ArrowLeft /> All users</Link></Button>;
 
@@ -69,7 +70,10 @@ export default function UserDetail({ id }: { id: number }) {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Profile</CardTitle><CardDescription>Student and faculty information.</CardDescription></CardHeader>
+        <CardHeader>
+          <CardTitle>Profile</CardTitle><CardDescription>Student and faculty information.</CardDescription>
+          {user.student_profiles && !deleted && <CardAction><Button variant="outline" size="sm" onClick={() => setEditingProfile(true)}><Pencil /> Edit details</Button></CardAction>}
+        </CardHeader>
         <CardContent className="grid gap-6">
           {!user.student_profiles && !user.faculty_profiles && <p className="text-sm text-muted-foreground">No student or faculty profile. Admin-only accounts do not have one.</p>}
           {user.student_profiles && <ProfileGrid title="Student" rows={[
@@ -92,7 +96,8 @@ export default function UserDetail({ id }: { id: number }) {
       </Card>
     </div>
 
-    <UserFormDialog open={editing} onOpenChange={setEditing} user={user} onSaved={updated => setData({ ...user, ...updated })} />
+    <UserFormDialog open={editing} onOpenChange={setEditing} user={user} onSaved={updated => { setData({ ...user, ...updated }); reload(); }} />
+    {user.student_profiles && <StudentProfileDialog userId={user.id} profile={user.student_profiles} open={editingProfile} onOpenChange={setEditingProfile} onSaved={reload} />}
     <PasswordLinkDialog user={user} open={linking} onOpenChange={setLinking} />
     <DeleteUserDialog user={user} open={deleting} onOpenChange={setDeleting} onDeleted={() => router.push("/admin/users")} />
   </>;

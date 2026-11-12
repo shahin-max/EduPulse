@@ -264,7 +264,8 @@ function ReviewForm({ submission, maxMarks, onSaved, onClose }: { submission: Su
     try {
       const saved = await withToken(token => assignmentsApi.review(token, submission.id, {
         ...(value !== undefined ? { marksAwarded: value } : {}),
-        ...(feedback.trim() ? { feedback } : {}),
+        // An emptied box clears earlier feedback; otherwise leave it out.
+        ...(feedback.trim() ? { feedback } : submission.feedback ? { feedback: "" } : {}),
       }));
       toast.success("Review saved");
       onSaved(saved);

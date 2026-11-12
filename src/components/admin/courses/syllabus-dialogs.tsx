@@ -134,7 +134,7 @@ export function DetachSubjectDialog({ courseId, subject, chapterCount, open, onO
         <AlertDialogTitle>Remove {subject?.subjects.name} from this course?</AlertDialogTitle>
         <AlertDialogDescription>
           {chapterCount > 0
-            ? `It still has ${chapterCount} chapter${chapterCount === 1 ? "" : "s"}. Delete them first, or unpublish them to hide them from students.`
+            ? `It still has ${chapterCount} chapter${chapterCount === 1 ? "" : "s"}. Delete those chapters first; unpublishing them is not enough.`
             : "The subject itself is kept and stays available for other courses."}
         </AlertDialogDescription>
       </AlertDialogHeader>

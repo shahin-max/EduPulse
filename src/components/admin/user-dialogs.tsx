@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import type { RoleCode } from "@/lib/api";
-import { passwordLink, ROLES, USER_STATUSES, usersApi, type AdminUser, type UpdateUserInput, type UserStatus } from "@/lib/admin-api";
+import { passwordLink, ROLES, studentsApi, USER_STATUSES, usersApi, type AdminUser, type StudentProfile, type StudentProfileInput, type UpdateUserInput, type UserStatus } from "@/lib/admin-api";
 import { ErrorAlert, errorText, Field, titleCase } from "./ui";
 
 const STATUS_HELP: Record<UserStatus, string> = {
@@ -101,6 +101,11 @@ function UserForm({ user, onSaved, onClose }: { user?: AdminUser; onSaved: (user
         onSaved(created);
         toast.success(`${created.full_name} added`);
         setSetup({ id: created.id, name: created.full_name, link: created.setupToken && passwordLink(created.setupToken) });
+        return;
+      }
+      // The API cannot remove an email or mobile; say so instead of silently keeping it.
+      if ((user.email && !email.trim()) || (user.mobile && !mobile.trim())) {
+        setError(`${user.email && !email.trim() ? "The email" : "The mobile number"} cannot be removed; enter a new one instead.`);
         return;
       }
       // Only send what changed: changing email or mobile clears its verification.
@@ -239,4 +244,84 @@ export function PasswordLinkDialog({ user, open, onOpenChange }: { user: AdminUs
       </DialogFooter>
     </DialogContent>
   </Dialog>;
+}
+
+const PROFILE_FIELDS: { key: keyof StudentProfileInput; column: keyof StudentProfile; label: string; type?: string; maxLength?: number; minLength?: number; pattern?: string; title?: string }[] = [
+  { key: "admissionNumber", column: "admission_number", label: "Admission no.", maxLength: 40 },
+  { key: "grade", column: "grade", label: "Class / grade", maxLength: 30 },
+  { key: "schoolName", column: "school_name", label: "School", minLength: 2, maxLength: 160 },
+  { key: "dateOfBirth", column: "date_of_birth", label: "Date of birth", type: "date" },
+  { key: "guardianName", column: "guardian_name", label: "Guardian", minLength: 2, maxLength: 160 },
+  { key: "guardianMobile", column: "guardian_mobile", label: "Guardian mobile", type: "tel", pattern: "\+?[0-9 \-]{10,20}", title: "10-15 digit phone number" },
+  { key: "joinedOn", column: "joined_on", label: "Joined on", type: "date" },
+  { key: "address", column: "address", label: "Address", maxLength: 2000 },
+];
+
+/** Edit a student's profile (class, school, guardian...). The API cannot clear a field, so only changed, non-empty values are sent. */
+export function StudentProfileDialog({ userId, profile, open, onOpenChange, onSaved }: {
+  userId: number;
+  profile: StudentProfile;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSaved: () => void;
+}) {
+  return <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="max-h-[calc(100svh-2rem)] overflow-y-auto sm:max-w-lg">
+      {open && <StudentProfileForm userId={userId} profile={profile} onSaved={onSaved} onClose={() => onOpenChange(false)} />}
+    </DialogContent>
+  </Dialog>;
+}
+
+function StudentProfileForm({ userId, profile, onSaved, onClose }: { userId: number; profile: StudentProfile; onSaved: () => void; onClose: () => void }) {
+  const { withToken } = useAuth();
+  const initial = (column: keyof StudentProfile, type?: string) => {
+    const value = profile[column] ?? "";
+    return type === "date" ? value.slice(0, 10) : value;
+  };
+  const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(PROFILE_FIELDS.map(f => [f.key, initial(f.column, f.type)])));
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const patch: StudentProfileInput = {};
+    for (const f of PROFILE_FIELDS) {
+      const value = values[f.key].trim();
+      if (value === initial(f.column, f.type)) continue;
+      if (!value) return setError(`${f.label} cannot be removed once saved; enter a new value instead.`);
+      patch[f.key] = f.key === "guardianMobile" ? value.replace(/[\s-]/g, "") : value;
+    }
+    if (!Object.keys(patch).length) return onClose();
+    setBusy(true);
+    setError("");
+    try {
+      await withToken(token => studentsApi.updateProfile(token, userId, patch));
+      toast.success("Student details saved");
+      onSaved();
+      onClose();
+    } catch (e) {
+      setError(errorText(e, "Could not save the student details."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <form onSubmit={submit} className="grid gap-5">
+    <DialogHeader>
+      <DialogTitle>Student details</DialogTitle>
+      <DialogDescription>Class, school, guardian and admission details.</DialogDescription>
+    </DialogHeader>
+    <div className="grid gap-4 sm:grid-cols-2">
+      {PROFILE_FIELDS.map(f => <Field key={f.key} id={`sp-${f.key}`} label={f.label} className={f.key === "address" ? "sm:col-span-2" : undefined}>
+        <Input id={`sp-${f.key}`} type={f.type ?? "text"} maxLength={f.maxLength} minLength={f.minLength} pattern={f.pattern} title={f.title}
+          max={f.key === "dateOfBirth" ? new Date().toISOString().slice(0, 10) : undefined}
+          value={values[f.key]} onChange={e => setValues(v => ({ ...v, [f.key]: e.target.value }))} autoComplete="off" />
+      </Field>)}
+    </div>
+    {error && <ErrorAlert title="Could not save" message={error} />}
+    <DialogFooter>
+      <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+      <Button type="submit" disabled={busy}>{busy && <Loader2 className="animate-spin" />}Save details</Button>
+    </DialogFooter>
+  </form>;
 }
