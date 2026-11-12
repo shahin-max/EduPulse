@@ -147,6 +147,7 @@ export function Dashboard() {
       <li><ShieldCheck size={17} /><span>{user.roles.map(role => role[0] + role.slice(1).toLowerCase()).join(", ")}<small>Account type</small></span></li>
     </ul>
     {user.roles.includes("ADMIN") && <Button asChild size="lg" className="auth-logout"><Link href="/admin"><LayoutDashboard /> Open admin portal</Link></Button>}
+    {user.roles.includes("FACULTY") && <Button asChild size="lg" className="auth-logout"><Link href="/teach"><LayoutDashboard /> Open faculty portal</Link></Button>}
     <Button variant="outline" size="lg" className="auth-logout" onClick={async () => { await logout(); router.replace("/login"); }}><LogOut /> Log out</Button>
   </AuthCard>;
 }
