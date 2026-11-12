@@ -139,7 +139,7 @@ function MaterialForm({ chapter, material, nextOrder, onSaved, onClose }: {
       <div className="grid grid-cols-2 gap-2" role="radiogroup">
         {([["file", "Upload a file", Upload], ["link", "External link", Link2]] as const).map(([value, label, Icon]) =>
           <Button key={value} type="button" role="radio" aria-checked={source === value} variant="outline"
-            className={cn(source === value && "border-primary bg-primary/5 text-primary")} onClick={() => setSource(value)}>
+            className={cn(source === value && "border-primary bg-primary/5 text-primary")} onClick={() => { setSource(value); setError(""); }}>
             <Icon /> {label}
           </Button>)}
       </div>
@@ -148,7 +148,7 @@ function MaterialForm({ chapter, material, nextOrder, onSaved, onClose }: {
     {source === "file"
       ? <Field id="m-file" label="File"><FileUploadField id="m-file" value={file} onChange={setFile} onBusyChange={setUploading} /></Field>
       : <Field id="m-url" label="Link" hint={kind === "VIDEO_LINK" ? "An unlisted YouTube, Vimeo or Google Drive link. Make sure students can open it without signing in to your account." : undefined}>
-          <Input id="m-url" type="url" inputMode="url" value={url} onChange={e => setUrl(e.target.value)} maxLength={2048} placeholder="https://youtu.be/…" />
+          <Input id="m-url" type="text" inputMode="url" value={url} onChange={e => { setUrl(e.target.value); setError(""); }} maxLength={2048} placeholder="https://youtu.be/…" />
         </Field>}
 
     <div className="grid gap-3">

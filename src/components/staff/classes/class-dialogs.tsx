@@ -221,7 +221,7 @@ function ClassForm({ session, defaultBatchId, onSaved, onClose }: { session?: Cl
         <Input id="class-start" type="datetime-local" required value={startsAt} onChange={e => changeStart(e.target.value)} />
       </Field>
       <Field id="class-end" label="Ends">
-        <Input id="class-end" type="datetime-local" required min={startsAt || undefined} value={endsAt} onChange={e => setEndsAt(e.target.value)} />
+        <Input id="class-end" type="datetime-local" required value={endsAt} onChange={e => setEndsAt(e.target.value)} />
       </Field>
     </div>
 

@@ -157,7 +157,7 @@ function AssignmentForm({ assignment, batches, defaultBatchId, onSaved, onClose 
         <Input id="a-due" type="datetime-local" value={dueAt} onChange={e => setDueAt(e.target.value)} />
       </Field>
       <Field id="a-marks" label={<>Max marks <Optional /></>} hint="Leave empty for ungraded work.">
-        <Input id="a-marks" type="number" inputMode="decimal" min={0} max={999999.99} step={0.01} value={maxMarks} onChange={e => setMaxMarks(e.target.value)} />
+        <Input id="a-marks" type="number" inputMode="decimal" step={0.01} value={maxMarks} onChange={e => setMaxMarks(e.target.value)} />
       </Field>
     </div>
 
@@ -284,7 +284,7 @@ function ReviewForm({ submission, maxMarks, onSaved, onClose }: { submission: Su
     </DialogHeader>
     {error && <ErrorAlert title="Could not save" message={error} />}
     <Field id="r-marks" label={max === null ? <>Marks <Optional /></> : `Marks (out of ${max})`}>
-      <Input id="r-marks" type="number" inputMode="decimal" min={0} max={max ?? 999999.99} step={0.01} value={marks} onChange={e => setMarks(e.target.value)} />
+      <Input id="r-marks" type="number" inputMode="decimal" step={0.01} value={marks} onChange={e => setMarks(e.target.value)} />
     </Field>
     <Field id="r-feedback" label={<>Feedback <Optional /></>}>
       <Textarea id="r-feedback" value={feedback} onChange={e => setFeedback(e.target.value)} maxLength={20000} rows={4} placeholder="Good work on Q3; revise vector addition." />
