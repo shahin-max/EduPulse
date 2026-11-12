@@ -57,6 +57,16 @@ export const usersApi = {
   passwordToken: (token: string, id: number) => request<{ token: string; expiresInMinutes: number }>(`/users/${id}/password-token`, { token, method: "POST" }),
 };
 
+/** Fields an admin can set on a student's profile (PATCH /students/:userId). Send only what changes. */
+export type StudentProfileInput = {
+  grade?: string; schoolName?: string; guardianName?: string; guardianMobile?: string;
+  address?: string; dateOfBirth?: string; admissionNumber?: string; joinedOn?: string;
+};
+
+export const studentsApi = {
+  updateProfile: (token: string, userId: number, input: StudentProfileInput) => request<StudentProfile>(`/students/${userId}`, { token, ...json("PATCH", input) }),
+};
+
 export const healthApi = {
   check: () => request<{ status: string; database: string; uptimeSeconds: number }>("/health"),
 };

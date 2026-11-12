@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Eye, FilePlus2, ReceiptText } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Eye, FilePlus2, ReceiptText, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { feeLookupsApi, fromPaise, INVOICE_STATUSES, invoicesApi, toPaise, type Invoice, type InvoiceStatus } from "@/lib/admin-fees-api";
+import { feeLookupsApi, INVOICE_STATUSES, invoicesApi, toPaise, type Invoice, type InvoiceStatus, type InvoiceSummary } from "@/lib/admin-fees-api";
 import { useAdminData } from "../use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, formatMoney, LoadingRows, Pager, Pill, titleCase } from "../ui";
 import { INVOICE_TONES, isOverdue } from "./shared";
@@ -22,17 +23,40 @@ export default function InvoicesList({ onCreate }: { onCreate: () => void }) {
   const [batchId, setBatchId] = useState<number | undefined>();
   const [studentUserId, setStudentUserId] = useState<number | undefined>();
   const [overdue, setOverdue] = useState(false);
+  const [branchId, setBranchId] = useState<number | undefined>();
+  const [searchText, setSearchText] = useState("");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
+  // Search after a short pause in typing.
+  useEffect(() => {
+    const timer = setTimeout(() => { setSearch(searchText.trim()); setPage(1); }, 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
   const batches = useAdminData(token => feeLookupsApi.batches(token), "batches");
+  const branches = useAdminData(token => feeLookupsApi.branches(token), "branches");
   const roster = useAdminData(token => batchId ? feeLookupsApi.roster(token, batchId) : Promise.resolve([]), `roster:${batchId ?? ""}`);
 
-  const query = { status, batchId, studentUserId, overdue: overdue || undefined, page, limit: 20 };
+  const query = { status, batchId, studentUserId, branchId, search: search || undefined, overdue: overdue || undefined, page, limit: 20 };
   const { data, error, loading, reload } = useAdminData(token => invoicesApi.list(token, query), JSON.stringify(query));
-  const filtered = !!(status || batchId || studentUserId || overdue);
+  const filtered = !!(status || batchId || studentUserId || overdue || branchId || search);
 
   return <Card className="gap-0 py-0">
+    <div className="border-b p-4 pb-0">
+      <div className="relative">
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input type="search" placeholder="Search by invoice number, student name, mobile or admission no." value={searchText} onChange={e => setSearchText(e.target.value)} className="pl-9" aria-label="Search invoices" />
+      </div>
+    </div>
     <div className="grid grid-cols-2 gap-3 border-b p-4 sm:flex sm:flex-wrap sm:items-center">
+      {(branches.data?.length ?? 0) > 1 && <Select value={branchId ? String(branchId) : ALL} onValueChange={v => { setBranchId(v === ALL ? undefined : Number(v)); setPage(1); }}>
+        <SelectTrigger className="w-full sm:w-44 [&>span]:truncate" aria-label="Filter by branch"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>All branches</SelectItem>
+          {branches.data?.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}
+        </SelectContent>
+      </Select>}
       <Select value={status ?? ALL} onValueChange={v => { setStatus(v === ALL ? undefined : v as InvoiceStatus); setPage(1); }}>
         <SelectTrigger className="w-full sm:w-40" aria-label="Filter by status"><SelectValue /></SelectTrigger>
         <SelectContent>
@@ -62,7 +86,7 @@ export default function InvoicesList({ onCreate }: { onCreate: () => void }) {
       </div>
     </div>
 
-    {data && data.data.length > 0 && <Totals invoices={data.data} pages={data.meta.totalPages} />}
+    {data && data.summary.invoices > 0 && <Totals summary={data.summary} />}
 
     <CardContent className="p-0">
       {error && <div className="p-4"><ErrorAlert message={error} onRetry={reload} /></div>}
@@ -81,14 +105,12 @@ export default function InvoicesList({ onCreate }: { onCreate: () => void }) {
   </Card>;
 }
 
-/** Totals of the invoices on this page (the API has no summary endpoint). Drafts and void invoices are left out. */
-function Totals({ invoices, pages }: { invoices: Invoice[]; pages: number }) {
-  const live = invoices.filter(i => i.status !== "DRAFT" && i.status !== "VOID");
-  const sum = (pick: (i: Invoice) => string | null) => fromPaise(live.reduce((t, i) => t + toPaise(pick(i)), 0));
+/** Totals from the API over every invoice matching the filters (all pages); drafts and void invoices excluded. */
+function Totals({ summary }: { summary: InvoiceSummary }) {
   const items = [
-    { label: "Billed", value: sum(i => i.amount_due) },
-    { label: "Collected", value: sum(i => i.amount_paid) },
-    { label: "Balance due", value: sum(i => i.balance_due), strong: true },
+    { label: "Billed", value: summary.billed },
+    { label: "Collected", value: summary.collected },
+    { label: "Balance due", value: summary.outstanding, strong: true },
   ];
   return <div className="border-b px-4 py-3">
     <dl className="grid grid-cols-3 gap-3">
@@ -97,7 +119,7 @@ function Totals({ invoices, pages }: { invoices: Invoice[]; pages: number }) {
         <dd className={cn("truncate text-sm font-semibold tabular-nums sm:text-base", item.strong && toPaise(item.value) > 0 && "text-amber-700 dark:text-amber-300")}>{formatMoney(item.value)}</dd>
       </div>)}
     </dl>
-    <p className="mt-1 text-xs text-muted-foreground">Issued invoices {pages > 1 ? "on this page" : "shown"}; drafts and void invoices excluded.</p>
+    <p className="mt-1 text-xs text-muted-foreground">Across all {summary.invoices} issued invoice{summary.invoices === 1 ? "" : "s"} matching these filters; drafts and void invoices excluded.</p>
   </div>;
 }
 

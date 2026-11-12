@@ -123,7 +123,9 @@ function BranchForm({ branch, onSaved, onClose }: { branch?: Branch; onSaved: (b
         <Input id="branch-receipt" required pattern={PREFIX_PATTERN} title="1-10 letters or digits" maxLength={10} value={form.receiptPrefix} onChange={set("receiptPrefix")} placeholder="ALGR" className="uppercase" autoComplete="off" />
       </Field>
       <p className={prefixChanged ? "col-span-2 -mt-3 text-xs text-amber-700 dark:text-amber-300" : "col-span-2 -mt-3 text-xs text-muted-foreground"}>
-        {prefixChanged ? "New prefixes apply to invoices and receipts issued from now on; existing numbers do not change." : "Printed at the start of this branch's invoice and receipt numbers. 1-10 letters or digits."}
+        {prefixChanged
+          ? "New prefixes apply to invoices and receipts issued from now on; existing numbers do not change."
+          : "Numbers look like ALG/26-27/0001: prefix, financial year, then a series that restarts each April. Each branch needs its own prefixes; keep them to 5 characters or fewer to fit GST's 16-character invoice number limit."}
       </p>
     </div>
 

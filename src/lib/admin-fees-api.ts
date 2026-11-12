@@ -151,7 +151,50 @@ export type ListFeePlansQuery = { courseId?: number; batchId?: number; activeOnl
 export type CreateFeePlanInput = { courseId: number; branchId?: number; batchId?: number; title: string; amount: string; currency?: string; isActive?: boolean };
 export type UpdateFeePlanInput = { batchId?: number | null; title?: string; amount?: string; isActive?: boolean };
 
-export type ListInvoicesQuery = { page?: number; limit?: number; status?: InvoiceStatus; batchId?: number; studentUserId?: number; enrollmentId?: number; overdue?: boolean };
+export type ListInvoicesQuery = {
+  page?: number; limit?: number; status?: InvoiceStatus; batchId?: number; studentUserId?: number; enrollmentId?: number; overdue?: boolean;
+  branchId?: number;
+  /** Invoice number, or the student's name, mobile or admission number. */
+  search?: string;
+};
+
+/** Totals over every invoice matching the filter (drafts and void invoices excluded). */
+export type InvoiceSummary = { invoices: number; billed: string; collected: string; outstanding: string };
+export type InvoiceList = Paginated<Invoice> & { summary: InvoiceSummary };
+
+/** A row of the payments register (GET /payments). */
+export type PaymentListItem = Payment & {
+  users: { id: number; full_name: string } | null;
+  fee_invoices: {
+    id: number;
+    invoice_number: string;
+    enrollments: {
+      student_user_id: number;
+      student_profiles: { admission_number: string | null; users: { full_name: string; mobile: string | null } };
+      batches: { id: number; code: string; name: string; branches: { id: number; code: string; name: string } };
+    };
+  };
+};
+
+export type ListPaymentsQuery = {
+  page?: number; limit?: number;
+  /** ISO date-time, inclusive. */
+  from?: string;
+  /** ISO date-time, exclusive. */
+  to?: string;
+  branchId?: number; method?: PaymentMethod; status?: PaymentStatus; search?: string;
+};
+
+/** Totals over the whole filter: confirmed payments by method, refunds handed back in the period, net. */
+export type PaymentsSummary = {
+  payments: number;
+  collected: string;
+  byMethod: { method: PaymentMethod; payments: number; amount: string }[];
+  refunds: number;
+  refunded: string;
+  net: string;
+};
+export type PaymentList = Paginated<PaymentListItem> & { summary: PaymentsSummary };
 export type CreateInvoiceInput = {
   enrollmentId: number;
   feePlanId?: number;
@@ -191,7 +234,7 @@ export const feePlansApi = {
 };
 
 export const invoicesApi = {
-  list: (token: string, params: ListInvoicesQuery = {}) => request<Paginated<Invoice>>(`/fee-invoices${query(params)}`, { token }),
+  list: (token: string, params: ListInvoicesQuery = {}) => request<InvoiceList>(`/fee-invoices${query(params)}`, { token }),
   get: (token: string, id: number) => request<Invoice>(`/fee-invoices/${id}`, { token }),
   create: (token: string, input: CreateInvoiceInput) => request<Invoice>("/fee-invoices", { token, ...json("POST", input) }),
   update: (token: string, id: number, input: UpdateInvoiceInput) => request<Invoice>(`/fee-invoices/${id}`, { token, ...json("PATCH", input) }),
@@ -201,6 +244,7 @@ export const invoicesApi = {
 };
 
 export const paymentsApi = {
+  list: (token: string, params: ListPaymentsQuery = {}) => request<PaymentList>(`/payments${query(params)}`, { token }),
   get: (token: string, id: number) => request<Payment>(`/payments/${id}`, { token }),
   setStatus: (token: string, id: number, input: UpdatePaymentStatusInput) => request<Payment>(`/payments/${id}/status`, { token, ...json("PATCH", input) }),
   refund: (token: string, id: number, input: CreateRefundInput) => request<Refund>(`/payments/${id}/refunds`, { token, ...json("POST", input) }),
