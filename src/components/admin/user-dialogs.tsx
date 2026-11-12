@@ -25,14 +25,19 @@ const STATUS_HELP: Record<UserStatus, string> = {
   DISABLED: "Blocked and signed out everywhere.",
 };
 
-function CopyField({ value, label }: { value: string; label: string }) {
+/** Read-only field with a Copy button, for setup and reset links. */
+export function CopyField({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
   return <div className="flex gap-2">
     <Input readOnly value={value} aria-label={label} onFocus={e => e.target.select()} className="font-mono text-xs" />
     <Button type="button" variant="outline" className="shrink-0" onClick={async () => {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      toast.success("Link copied");
+      try {
+        await navigator.clipboard.writeText(value);
+        setCopied(true);
+        toast.success("Link copied");
+      } catch {
+        toast.error("Could not copy; select the link and copy it manually.");
+      }
     }}>{copied ? <Check /> : <Copy />}<span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span></Button>
   </div>;
 }

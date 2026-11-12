@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useSiteContent } from "@/lib/site-content";
 
 // Shown until an admin publishes `site.ticker` in the website content.
-const defaultItems = [
+export const defaultTickerItems = [
   "SAINIK SCHOOL ADMISSION 2027",
   "AISSEE 2027 forms out – 3 November 2026",
   "Class VI & Class IX · Session 2027–28",
@@ -24,7 +24,7 @@ function Track({ items, hidden }: { items: string[]; hidden?: boolean }) {
 
 export default function PromoTicker() {
   const { ticker } = useSiteContent();
-  const items = ticker?.items ?? defaultItems;
+  const items = ticker?.items ?? defaultTickerItems;
   return <Link href="/pamphlet" className="promo-ticker" aria-label={`${items[0]} – open the pamphlet`}>
     <span className="promo-badge">{ticker?.badge ?? "AD · ADMISSIONS OPEN"}</span>
     <span className="promo-viewport"><span className="promo-marquee"><Track items={items} /><Track items={items} hidden /></span></span>

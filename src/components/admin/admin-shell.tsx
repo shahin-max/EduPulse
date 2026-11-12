@@ -79,7 +79,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <AdminSidebar />
       <SidebarInset className="min-w-0">
         <AdminTopbar />
-        <main id="main" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main id="main" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8 print:max-w-none print:p-0">{children}</main>
       </SidebarInset>
     </SidebarProvider>
     <Toaster richColors position="top-right" />
@@ -96,7 +96,7 @@ function AdminSidebar() {
   const { isMobile, setOpenMobile } = useSidebar();
   const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
 
-  return <Sidebar collapsible="icon">
+  return <Sidebar collapsible="icon" className="print:hidden">
     <SidebarHeader>
       <SidebarMenu>
         <SidebarMenuItem>
@@ -181,7 +181,7 @@ function AdminTopbar() {
   const current = [...allItems].sort((a, b) => b.href.length - a.href.length).find(item => pathname === item.href || pathname.startsWith(`${item.href}/`));
   const isDetail = current && pathname !== current.href;
 
-  return <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur sm:px-6">
+  return <header className="sticky top-0 z-10 flex h-14 print:hidden shrink-0 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur sm:px-6">
     <SidebarTrigger className="-ml-1" />
     <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
     <Breadcrumb className="min-w-0 flex-1">
