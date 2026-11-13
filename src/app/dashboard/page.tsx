@@ -1,14 +1,6 @@
-import type { Metadata } from "next";
-import AcademySite from "@/components/academy-site";
-import { Dashboard } from "@/components/auth-forms";
-import "../auth.css";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "My Account",
-  description: "Your EduPulse Academy student account.",
-  robots: { index: false },
-};
-
+/** The old account page; students now have the student portal. */
 export default function Page() {
-  return <AcademySite><Dashboard /></AcademySite>;
+  redirect("/student");
 }

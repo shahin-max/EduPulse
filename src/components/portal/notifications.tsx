@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Bell, CheckCheck, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowRight, Bell, CheckCheck, ChevronDown, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -98,7 +99,7 @@ export function NotificationsBell() {
             <p>No notifications yet. Announcements for you will show up here.</p>
           </div>}
           {items && items.length > 0 && <ul className="divide-y">
-            {items.map(n => <NotificationItem key={n.id} notification={n} onOpen={() => void markRead(n)} />)}
+            {items.map(n => <NotificationItem key={n.id} notification={n} onOpen={() => void markRead(n)} onNavigate={() => setOpen(false)} />)}
           </ul>}
           {items && items.length < total && <div className="p-4"><Button variant="outline" className="w-full" onClick={() => void more()} disabled={loadingMore}>
             {loadingMore && <Loader2 className="animate-spin" />}Show older
@@ -112,7 +113,10 @@ export function NotificationsBell() {
 /** Announcement notifications carry a shortened body; the full text is fetched when opened. */
 const ANNOUNCEMENT_LINK = /^\/announcements\/(\d+)$/;
 
-function NotificationItem({ notification: n, onOpen }: { notification: Notification; onOpen: () => void }) {
+/** Links into a portal (e.g. /student/assignments/12) get an "Open" button; announcement links expand in place. */
+const PORTAL_LINK = /^\/(student|teach|admin)(\/|#|$)/;
+
+function NotificationItem({ notification: n, onOpen, onNavigate }: { notification: Notification; onOpen: () => void; onNavigate: () => void }) {
   const { withToken } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [fullText, setFullText] = useState<string | null>(null);
@@ -141,5 +145,8 @@ function NotificationItem({ notification: n, onOpen }: { notification: Notificat
       <span className={cn("text-sm break-words whitespace-pre-wrap text-muted-foreground", !expanded && "line-clamp-2")}>{expanded ? fullText ?? n.message : n.message}</span>
       <span className="text-xs text-muted-foreground">{formatDate(n.created_at, true)}</span>
     </button>
+    {n.link_url && PORTAL_LINK.test(n.link_url) && <div className="px-4 pb-3">
+      <Button asChild size="sm" variant="outline"><Link href={n.link_url} onClick={() => { onOpen(); onNavigate(); }}>Open <ArrowRight /></Link></Button>
+    </div>}
   </li>;
 }

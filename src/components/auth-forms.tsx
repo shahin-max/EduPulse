@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, GraduationCap, LayoutDashboard, Loader2, LogOut, Mail, Phone, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, GraduationCap, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { authApi, homeFor, type RegisterInput } from "@/lib/api";
@@ -130,25 +130,6 @@ export function RegisterForm() {
       <Button type="submit" size="lg" className="enquiry-submit" disabled={busy}>{busy ? <><Loader2 className="animate-spin" /> Creating account...</> : <>Create account <ArrowRight /></>}</Button>
       <p className="enquiry-hint">Already registered? <Link href="/login">Log in</Link></p>
     </form>
-  </AuthCard>;
-}
-
-export function Dashboard() {
-  const { user, status, logout } = useAuth();
-  const router = useRouter();
-  useEffect(() => { if (status === "anonymous") router.replace("/login"); }, [status, router]);
-
-  if (!user) return <section className="auth-page page-container"><p className="auth-loading"><Loader2 className="animate-spin" /> Loading your account...</p></section>;
-
-  return <AuthCard title={`Hello, ${user.full_name.split(" ")[0]}.`} intro="You are signed in. Your batches, classes and results will appear here as the portal grows.">
-    <ul className="auth-details">
-      {user.email && <li><Mail size={17} /><span>{user.email}<small>{user.email_verified_at ? "Verified" : "Not verified yet"}</small></span></li>}
-      {user.mobile && <li><Phone size={17} /><span>{user.mobile}<small>{user.mobile_verified_at ? "Verified" : "Not verified yet"}</small></span></li>}
-      <li><ShieldCheck size={17} /><span>{user.roles.map(role => role[0] + role.slice(1).toLowerCase()).join(", ")}<small>Account type</small></span></li>
-    </ul>
-    {user.roles.includes("ADMIN") && <Button asChild size="lg" className="auth-logout"><Link href="/admin"><LayoutDashboard /> Open admin portal</Link></Button>}
-    {user.roles.includes("FACULTY") && <Button asChild size="lg" className="auth-logout"><Link href="/teach"><LayoutDashboard /> Open faculty portal</Link></Button>}
-    <Button variant="outline" size="lg" className="auth-logout" onClick={async () => { await logout(); router.replace("/login"); }}><LogOut /> Log out</Button>
   </AuthCard>;
 }
 

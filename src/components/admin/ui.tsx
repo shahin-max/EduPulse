@@ -87,7 +87,8 @@ export function formatDate(value: string | null | undefined, withTime = false) {
     : { day: "numeric", month: "short", year: "numeric" });
 }
 
-export const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join("");
+/** "Asha Khan" -> "AK". Punctuation is skipped, so "[Test] Ravi" -> "TR". */
+export const initials = (name: string) => name.split(/\s+/).map(part => part.replace(/[^\p{L}\p{N}]/gu, "")).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join("") || "?";
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: React.ReactNode }) {
   return <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

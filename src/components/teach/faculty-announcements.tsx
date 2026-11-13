@@ -30,7 +30,8 @@ export default function FacultyAnnouncements() {
   </>;
 }
 
-function NoticeBoard() {
+/** Announcements addressed to the signed-in person (GET /announcements/feed), newest first. */
+export function NoticeBoard({ description = "Announcements for faculty, for everyone, and for the batches you teach." }: { description?: string }) {
   const [page, setPage] = useState(1);
   const { data, error, loading, reload } = useAdminData(
     token => request<Paginated<Announcement>>(`/announcements/feed${query({ page, limit: 10 })}`, { token }),
@@ -40,7 +41,7 @@ function NoticeBoard() {
   return <>
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">Notice board</h1>
-      <p className="text-sm text-muted-foreground">Announcements for faculty, for everyone, and for the batches you teach.</p>
+      <p className="text-sm text-muted-foreground">{description}</p>
     </div>
     <Card className="gap-0 py-0">
       <CardContent className="p-0">

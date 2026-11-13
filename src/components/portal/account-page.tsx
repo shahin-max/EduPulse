@@ -3,19 +3,21 @@
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Eye, EyeOff, KeyRound, Loader2, Mail, Pencil, Phone } from "lucide-react";
+import { BadgeCheck, Eye, EyeOff, KeyRound, Loader2, Mail, Pencil, Phone, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { ApiError } from "@/lib/api";
+import { ApiError, request } from "@/lib/api";
+import { json } from "@/lib/admin-api";
 import { useAuth } from "@/lib/auth";
 import { accountApi, photoApi, PASSWORD_HINT, PASSWORD_RULE, type FacultySelfInput, type MyFacultyProfile } from "@/lib/account-api";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { ErrorAlert, errorText, Field, formatDate, Optional, RoleBadges } from "@/components/admin/ui";
 import { PhotoField } from "./photo-field";
+import { StudentProfileCard } from "@/components/student/student-profile-card";
 import { usePortal } from "./portal-shell";
 
 /** "My account" in both portals: sign-in details, the teaching profile (faculty) and password change. */
@@ -34,7 +36,7 @@ export default function AccountPage() {
           <h1 className="truncate text-2xl font-semibold tracking-tight">{user.full_name}</h1>
           <RoleBadges roles={user.roles} />
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            {user.email && <span className="inline-flex min-w-0 items-center gap-1.5 break-all"><Mail className="size-4 shrink-0" />{user.email}</span>}
+            {user.email && <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 break-all"><Mail className="size-4 shrink-0" />{user.email}<EmailVerification verified={!!user.email_verified_at} /></span>}
             {user.mobile && <span className="inline-flex items-center gap-1.5 tabular-nums"><Phone className="size-4 shrink-0" />{user.mobile}</span>}
           </div>
         </div>
@@ -45,6 +47,7 @@ export default function AccountPage() {
 
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {isFaculty && <TeachingProfile />}
+      {user.roles.includes("STUDENT") && base === "/student" && <StudentProfileCard />}
       <PasswordCard />
     </div>
   </>;
@@ -221,4 +224,34 @@ function PasswordCard() {
       </form>
     </CardContent>
   </Card>;
+}
+
+/**
+ * "Verified", or a button that emails a verification link (POST /auth/verify/request). A verified email
+ * is how people get back in when they forget their password. Mobile verification needs an SMS provider,
+ * which is not connected yet, so it is not offered.
+ */
+function EmailVerification({ verified }: { verified: boolean }) {
+  const { withToken } = useAuth();
+  const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
+  if (verified) return <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400"><BadgeCheck className="size-3.5" />Verified</span>;
+  if (state === "sent") return <span className="text-xs text-muted-foreground">Link sent. Check your inbox (and spam folder).</span>;
+
+  async function send() {
+    setState("sending");
+    try {
+      await withToken(token => request("/auth/verify/request", { token, ...json("POST", { channel: "EMAIL" }) }));
+      setState("sent");
+    } catch (e) {
+      setState("idle");
+      toast.error(errorText(e, "Could not send the verification link."));
+    }
+  }
+
+  return <span className="inline-flex items-center gap-1.5">
+    <span className="text-xs text-amber-700 dark:text-amber-400">Not verified</span>
+    <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" disabled={state === "sending"} onClick={() => void send()}>
+      {state === "sending" ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}Send verification link
+    </Button>
+  </span>;
 }

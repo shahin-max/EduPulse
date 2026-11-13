@@ -159,6 +159,7 @@ function UserMenu({ config }: { config: PortalConfig }) {
   const switches = [
     { roles: ["ADMIN"], base: "/admin", label: "Admin portal" },
     { roles: ["FACULTY", "ADMIN"], base: "/teach", label: "Faculty portal" },
+    { roles: ["STUDENT"], base: "/student", label: "Student portal" },
   ].filter(s => s.base !== config.base && s.roles.some(r => user.roles.includes(r as RoleCode)));
   return <DropdownMenu>
     <DropdownMenuTrigger asChild>
@@ -206,7 +207,7 @@ function PortalTopbar({ config }: { config: PortalConfig }) {
           <BreadcrumbItem>{isDetail ? <BreadcrumbLink asChild><Link href={current.href}>{current.label}</Link></BreadcrumbLink> : <BreadcrumbPage>{current.label}</BreadcrumbPage>}</BreadcrumbItem>
         </>}
         {isDetail && <><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbPage>Details</BreadcrumbPage></BreadcrumbItem></>}
-        {atHome && <><BreadcrumbSeparator className="hidden sm:inline-flex" /><BreadcrumbItem><BreadcrumbPage>Overview</BreadcrumbPage></BreadcrumbItem></>}
+        {atHome && <><BreadcrumbSeparator className="hidden sm:inline-flex" /><BreadcrumbItem><BreadcrumbPage>{items.find(item => item.href === config.base)?.label ?? "Overview"}</BreadcrumbPage></BreadcrumbItem></>}
       </BreadcrumbList>
     </Breadcrumb>
     <NotificationsBell />

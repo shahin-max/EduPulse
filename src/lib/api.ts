@@ -159,4 +159,4 @@ export const publicData = {
 
 /** Where a user lands after logging in: admins to the admin portal, faculty to the faculty portal, students to their dashboard. */
 export const homeFor = (user: Pick<User, "roles"> | null) =>
-  user?.roles.includes("ADMIN") ? "/admin" : user?.roles.includes("FACULTY") ? "/teach" : "/dashboard";
+  user?.roles.includes("ADMIN") ? "/admin" : user?.roles.includes("FACULTY") ? "/teach" : "/student";
