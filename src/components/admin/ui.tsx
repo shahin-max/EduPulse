@@ -2,7 +2,7 @@
 
 import { AlertCircle, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -123,8 +123,9 @@ export function RoleBadges({ roles, className }: { roles: RoleCode[]; className?
   </div>;
 }
 
-export function UserAvatar({ name, className }: { name: string; className?: string }) {
+export function UserAvatar({ name, src, className }: { name: string; src?: string | null; className?: string }) {
   return <Avatar className={cn("size-9", className)}>
+    {src && <AvatarImage src={src} alt="" className="object-cover" />}
     <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">{initials(name)}</AvatarFallback>
   </Avatar>;
 }

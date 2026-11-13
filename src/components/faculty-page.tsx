@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { EASE, Reveal, TiltCard, Words, rise, stagger } from "@/components/motion-kit";
 import { courseHref, programs } from "@/lib/site";
 import { departmentId, faculty, leaders, type FacultyMember } from "@/lib/team";
+import type { ApiFaculty } from "@/lib/api";
 
 const HeroScene3D = dynamic(() => import("@/components/hero-scene-3d"), { ssr: false });
 
@@ -55,7 +56,35 @@ function FacultyCard({ member }: { member: FacultyMember }) {
   );
 }
 
-export default function FacultyPage() {
+/** A teacher's own profile from the LMS: photo, qualification, introduction and the subjects they teach. */
+function TeacherCard({ teacher }: { teacher: ApiFaculty }) {
+  const subjects = [...new Set(teacher.batch_faculty.map(b => b.subjects.name))];
+  const name = teacher.users.full_name;
+  return (
+    <article className="faculty-card">
+      <div className="faculty-card-top">
+        <span className="faculty-card-pattern" aria-hidden="true"><GraduationCap size={120} strokeWidth={1} /></span>
+        {teacher.specialization && <span className="faculty-dept"><GraduationCap size={14} />{teacher.specialization}</span>}
+        <div className="faculty-avatar">
+          {teacher.users.photo_url
+            ? <Image src={teacher.users.photo_url} alt={`Portrait of ${name}`} fill sizes="104px" />
+            : <span aria-hidden="true"><UserRound size={42} strokeWidth={1.4} /></span>}
+        </div>
+      </div>
+      <div className="faculty-card-body">
+        <h3>{name}</h3>
+        {teacher.qualification && <p className="faculty-meta">{teacher.qualification}</p>}
+        {teacher.biography && <p className="faculty-bio">{teacher.biography}</p>}
+        {subjects.length > 0 && <div className="faculty-block">
+          <span className="faculty-block-label">Teaches</span>
+          <ul className="faculty-chips">{subjects.map(s => <li key={s}>{s}</li>)}</ul>
+        </div>}
+      </div>
+    </article>
+  );
+}
+
+export default function FacultyPage({ teachers = [] }: { teachers?: ApiFaculty[] }) {
   const [filter, setFilter] = useState<string>("all");
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 30 });
@@ -156,6 +185,21 @@ export default function FacultyPage() {
             </AnimatePresence>
           </motion.ul>
         </section>
+
+        {teachers.length > 0 && <section className="page-container faculty-browse" aria-labelledby="teachers-title">
+          <Reveal className="course-section-head">
+            <motion.p variants={rise} className="section-kicker">OUR TEACHERS</motion.p>
+            <motion.h2 variants={rise} id="teachers-title">Meet the people <span>who teach you.</span></motion.h2>
+          </Reveal>
+          <ul className="faculty-grid">
+            {teachers.map((teacher, i) => (
+              <motion.li key={teacher.user_id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.55, ease: EASE, delay: Math.min(i, 5) * 0.06 }} whileHover={{ y: -8 }}>
+                <TeacherCard teacher={teacher} />
+              </motion.li>
+            ))}
+          </ul>
+        </section>}
 
         <section className="course-band" aria-labelledby="approach-title">
           <div className="page-container">

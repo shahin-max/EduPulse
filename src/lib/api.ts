@@ -17,6 +17,8 @@ export type User = {
   email_verified_at: string | null;
   mobile_verified_at: string | null;
   last_login_at: string | null;
+  /** Public Cloudinary URL of the profile photo. */
+  photo_url?: string | null;
   created_at: string;
   roles: RoleCode[];
 };
@@ -68,7 +70,8 @@ export async function request<T>(path: string, init: RequestInit & { token?: str
     response = await fetch(`${API_URL}${path}`, {
       ...rest,
       headers: {
-        ...(rest.body ? { "Content-Type": "application/json" } : {}),
+        // JSON bodies are strings; FormData (file uploads) needs the browser's own multipart header.
+        ...(typeof rest.body === "string" ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
@@ -112,6 +115,16 @@ export type ApiBatch = {
   faculty: { userId: number; fullName: string; subject: { id: number; name: string } }[];
 };
 
+/** A faculty member's public profile (GET /faculty). batch_faculty lists a subject once per batch. */
+export type ApiFaculty = {
+  user_id: number;
+  qualification: string | null;
+  specialization: string | null;
+  biography: string | null;
+  users: { full_name: string; photo_url: string | null };
+  batch_faculty: { subjects: { name: string } }[];
+};
+
 export type ApiContent = { content_key: string; title: string | null; body: string | null; sort_order: number };
 
 export type Paginated<T> = { data: T[]; meta: { page: number; limit: number; total: number; totalPages: number } };
@@ -138,6 +151,9 @@ async function cachedGet<T>(path: string, fallback: T): Promise<T> {
 export const publicData = {
   courses: () => cachedGet<ApiCourse[]>("/courses", []),
   openBatches: () => cachedGet<Paginated<ApiBatch> | null>("/batches?limit=100", null).then(r => r?.data ?? []),
+  /** Active faculty who have filled in their profile (qualification, specialization, introduction or photo). */
+  faculty: () => cachedGet<ApiFaculty[]>("/faculty", []).then(list =>
+    list.filter(f => f.qualification || f.specialization || f.biography || f.users.photo_url)),
   content: (prefix: string) => cachedGet<ApiContent[]>(`/website-content?prefix=${encodeURIComponent(prefix)}`, []),
 };
 

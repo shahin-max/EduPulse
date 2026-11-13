@@ -10,10 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import {
-  announcementsApi, AUDIENCES, listBatches,
+  announcementsApi, AUDIENCES,
   type Announcement, type AnnouncementAudience, type UpdateAnnouncementInput,
 } from "@/lib/admin-ops-api";
-import { useAdminData } from "../use-admin-data";
+import { batchLabel, useIsAdmin, useStaffBatches } from "@/components/staff/use-staff";
 import { ErrorAlert, errorText, Field, formatDate, Optional } from "../ui";
 import { AUDIENCE_HELP, audienceLabel, StatusPill } from "./announcement-bits";
 
@@ -57,14 +57,18 @@ function ArchivedView({ announcement: a, onClose }: { announcement: Announcement
 
 function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: Announcement; onSaved: (a: Announcement) => void; onClose: () => void }) {
   const { withToken } = useAuth();
+  // Admins post to anyone; faculty only to batches they teach (the API enforces this too).
+  const admin = useIsAdmin();
   const [title, setTitle] = useState(announcement?.title ?? "");
   const [body, setBody] = useState(announcement?.body ?? "");
-  const [audience, setAudience] = useState<AnnouncementAudience>(announcement?.audience ?? "ALL");
+  const [audience, setAudience] = useState<AnnouncementAudience>(announcement?.audience ?? (admin ? "ALL" : "BATCH"));
   const [batchId, setBatchId] = useState(announcement?.batch_id ? String(announcement.batch_id) : "");
   const [publishAt, setPublishAt] = useState(toLocalInput(announcement?.publish_at ?? null));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<"draft" | "publish" | "save" | null>(null);
-  const batches = useAdminData(listBatches, "batches");
+  const batches = useStaffBatches();
+  // Faculty pick from their running batches; admins from every batch, as before.
+  const batchOptions = admin ? batches.batches : batches.open;
   const published = announcement?.status === "PUBLISHED";
 
   async function submit(mode: "draft" | "publish" | "save") {
@@ -108,14 +112,17 @@ function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: A
     }
   }
 
-  const batchMissing = announcement?.batches && !batches.data?.data.some(b => b.id === announcement.batches!.id);
+  const batchMissing = announcement?.batches && !batchOptions.some(b => b.id === announcement.batches!.id);
+  const batchHint = batches.error ? `Could not load batches: ${batches.error}`
+    : !admin && batches.data && !batchOptions.length ? "You are not assigned to a running batch, so there is no one to post to yet."
+    : !admin ? AUDIENCE_HELP.BATCH : undefined;
 
   return <form onSubmit={e => { e.preventDefault(); void submit(announcement ? "save" : "draft"); }} className="grid gap-5">
     <DialogHeader>
       <DialogTitle>{announcement ? "Edit announcement" : "New announcement"}</DialogTitle>
       <DialogDescription>{announcement
         ? published ? "This announcement is live; changes show immediately." : "Edit the draft, then publish it when ready."
-        : "Save as a draft, or publish now to notify the audience."}</DialogDescription>
+        : admin ? "Save as a draft, or publish now to notify the audience." : "Post to one of your batches. Save as a draft, or publish now to notify its students."}</DialogDescription>
     </DialogHeader>
     <Field id="an-title" label="Title">
       <Input id="an-title" required minLength={2} maxLength={200} value={title} onChange={e => setTitle(e.target.value)} placeholder="Holiday on Friday" />
@@ -124,18 +131,18 @@ function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: A
       <Textarea id="an-body" required maxLength={20000} rows={7} value={body} onChange={e => setBody(e.target.value)} className="max-h-[50svh]" />
     </Field>
     <div className="grid gap-5 sm:grid-cols-2">
-      <Field id="an-audience" label="Audience" hint={AUDIENCE_HELP[audience]}>
+      {admin && <Field id="an-audience" label="Audience" hint={AUDIENCE_HELP[audience]}>
         <Select value={audience} onValueChange={v => setAudience(v as AnnouncementAudience)}>
           <SelectTrigger id="an-audience" className="w-full"><SelectValue /></SelectTrigger>
           <SelectContent>{AUDIENCES.map(a => <SelectItem key={a} value={a}>{audienceLabel({ audience: a, batches: null })}</SelectItem>)}</SelectContent>
         </Select>
-      </Field>
-      {audience === "BATCH" && <Field id="an-batch" label="Batch" hint={batches.error ? `Could not load batches: ${batches.error}` : undefined}>
+      </Field>}
+      {audience === "BATCH" && <Field id="an-batch" label="Batch" hint={batchHint}>
         <Select value={batchId} onValueChange={setBatchId} disabled={!batches.data}>
           <SelectTrigger id="an-batch" className="w-full"><SelectValue placeholder={batches.loading ? "Loading…" : "Choose a batch"} /></SelectTrigger>
           <SelectContent>
             {batchMissing && <SelectItem value={String(announcement!.batches!.id)}>{announcement!.batches!.name} ({announcement!.batches!.code})</SelectItem>}
-            {batches.data?.data.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name} ({b.code})</SelectItem>)}
+            {batchOptions.map(b => <SelectItem key={b.id} value={String(b.id)}>{batchLabel(b)}</SelectItem>)}
           </SelectContent>
         </Select>
       </Field>}

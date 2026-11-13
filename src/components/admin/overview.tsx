@@ -135,7 +135,7 @@ export default function AdminOverview() {
             : <ul className="-mx-2 grid">
               {data.recent.map(u => <li key={u.id}>
                 <Link href={`/admin/users/${u.id}`} className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-muted">
-                  <UserAvatar name={u.full_name} />
+                  <UserAvatar name={u.full_name} src={u.photo_url} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{u.full_name}</p>
                     <p className="truncate text-xs text-muted-foreground">{u.email ?? u.mobile} · {formatDate(u.created_at)}</p>

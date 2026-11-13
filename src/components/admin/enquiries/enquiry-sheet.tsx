@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth";
 import type { AdminUser } from "@/lib/admin-api";
 import { ENQUIRY_STATUSES, enquiriesApi, type Enquiry, type EnquiryStatus, type UpdateEnquiryInput } from "@/lib/admin-ops-api";
 import { errorText, formatDate, titleCase } from "../ui";
+import { useIsAdmin } from "@/components/staff/use-staff";
 import { ConvertDialog } from "./convert-dialog";
 import { ContactButtons, SourcePill, STATUS_HELP, StatusPill } from "./enquiry-bits";
 
@@ -33,6 +34,8 @@ export function EnquirySheet({ enquiry, staff, onOpenChange, onChanged }: {
 
 function EnquiryDetail({ enquiry, staff, onChanged }: { enquiry: Enquiry; staff: AdminUser[]; onChanged: (enquiry: Enquiry) => void }) {
   const { withToken } = useAuth();
+  // Faculty may only change the status of enquiries assigned to them; reassigning and converting are for admins.
+  const admin = useIsAdmin();
   const [saving, setSaving] = useState<string | null>(null);
   const [converting, setConverting] = useState(false);
 
@@ -89,7 +92,7 @@ function EnquiryDetail({ enquiry, staff, onChanged }: { enquiry: Enquiry; staff:
         <p className="text-xs text-muted-foreground">{STATUS_HELP[enquiry.status]}. Last updated {formatDate(enquiry.updated_at, true)}.</p>
       </section>
 
-      <section className="grid gap-2">
+      {admin && <section className="grid gap-2">
         <h3 className="text-sm font-medium" id="assign-label">Assigned to</h3>
         <Select value={enquiry.assigned_to === null ? UNASSIGNED : String(enquiry.assigned_to)} onValueChange={assign} disabled={saving === "assign"}>
           <SelectTrigger className="w-full" aria-labelledby="assign-label"><SelectValue /></SelectTrigger>
@@ -99,7 +102,7 @@ function EnquiryDetail({ enquiry, staff, onChanged }: { enquiry: Enquiry; staff:
             {staff.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.full_name}{s.roles.includes("ADMIN") ? " (admin)" : ""}</SelectItem>)}
           </SelectContent>
         </Select>
-      </section>
+      </section>}
 
       <Separator />
 
@@ -119,14 +122,15 @@ function EnquiryDetail({ enquiry, staff, onChanged }: { enquiry: Enquiry; staff:
 
       <Separator />
 
-      <section className="grid gap-2">
+      {admin ? <section className="grid gap-2">
         {enquiry.status === "CONVERTED"
           ? <p className="text-sm text-muted-foreground">This enquiry is converted. Find the student under <Link href="/admin/users?role=STUDENT" className="text-primary hover:underline">Users</Link>, or create another account below.</p>
           : <p className="text-sm text-muted-foreground">Ready to enrol? Create their student account; the enquiry is marked converted.</p>}
         <Button variant={enquiry.status === "CONVERTED" ? "outline" : "default"} onClick={() => setConverting(true)}><GraduationCap /> Convert to student</Button>
       </section>
+        : <p className="text-sm text-muted-foreground">Ready to join? Tell the academy office so they can create the student account and enrol them, then mark this enquiry converted.</p>}
     </div>
 
-    <ConvertDialog enquiry={enquiry} open={converting} onOpenChange={setConverting} onConverted={onChanged} />
+    {admin && <ConvertDialog enquiry={enquiry} open={converting} onOpenChange={setConverting} onConverted={onChanged} />}
   </>;
 }

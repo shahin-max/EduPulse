@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, Layers, NotebookPen } from "lucide-react";
+import { CalendarDays, ClipboardList, FileText, Inbox, LayoutDashboard, Layers, Megaphone, NotebookPen, UserRound } from "lucide-react";
 import PortalShell, { type PortalConfig } from "@/components/portal/portal-shell";
 
 /** The faculty portal. Admins may open it too (e.g. an admin who also teaches). */
@@ -10,6 +10,7 @@ const config: PortalConfig = {
   subtitle: "Faculty portal",
   roles: ["FACULTY", "ADMIN"],
   denied: { title: "Faculty only", text: "The faculty portal is for EduPulse teachers. Ask the academy if you should have access." },
+  accountHref: () => "/teach/account",
   nav: [
     { group: "General", items: [
       { label: "Overview", href: "/teach", icon: LayoutDashboard },
@@ -20,6 +21,13 @@ const config: PortalConfig = {
       { label: "Study materials", href: "/teach/materials", icon: FileText },
       { label: "Assignments", href: "/teach/assignments", icon: NotebookPen },
       { label: "Exams", href: "/teach/exams", icon: ClipboardList },
+    ] },
+    { group: "Communication", items: [
+      { label: "Announcements", href: "/teach/announcements", icon: Megaphone },
+      { label: "My enquiries", href: "/teach/enquiries", icon: Inbox },
+    ] },
+    { group: "Account", items: [
+      { label: "My profile", href: "/teach/account", icon: UserRound },
     ] },
   ],
 };

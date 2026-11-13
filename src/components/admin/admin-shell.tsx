@@ -9,7 +9,7 @@ const config: PortalConfig = {
   subtitle: "Admin portal",
   roles: ["ADMIN"],
   denied: { title: "Admins only", text: "Your account does not have access to the admin portal." },
-  accountHref: user => `/admin/users/${user.id}`,
+  accountHref: () => "/admin/account",
   nav: [
     { group: "General", items: [
       { label: "Overview", href: "/admin", icon: LayoutDashboard },

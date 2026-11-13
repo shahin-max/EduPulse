@@ -17,6 +17,7 @@ import {
   type Announcement, type AnnouncementAudience, type AnnouncementStatus,
 } from "@/lib/admin-ops-api";
 import { useAdminData } from "../use-admin-data";
+import { batchLabel, useIsAdmin, useStaffBatches } from "@/components/staff/use-staff";
 import { EmptyState, ErrorAlert, errorText, formatDate, LoadingRows, PageHeader, Pager, titleCase } from "../ui";
 import { AnnouncementDialog } from "./announcement-dialog";
 import { AUDIENCE_HELP, audienceLabel, isScheduled, StatusPill } from "./announcement-bits";
@@ -28,13 +29,17 @@ export default function AnnouncementsList() {
   const { withToken } = useAuth();
   const [status, setStatus] = useState<AnnouncementStatus | undefined>();
   const [audience, setAudience] = useState<AnnouncementAudience | undefined>();
+  const [batchId, setBatchId] = useState<number | undefined>();
+  // Used in both portals. The API shows faculty only the announcements they wrote, all for a batch they teach.
+  const admin = useIsAdmin();
+  const staffBatches = useStaffBatches();
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Announcement | undefined>();
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
 
-  const query = { status, audience, page, limit: 20 };
+  const query = { status, audience, batchId, page, limit: 20 };
   const { data, error, loading, reload } = useAdminData(token => announcementsApi.list(token, query), JSON.stringify(query));
 
   const openCreate = () => { setEditing(undefined); setFormOpen(true); };
@@ -61,10 +66,15 @@ export default function AnnouncementsList() {
     archive: a => void run(a, "archive"),
     remove: a => setConfirm({ kind: "delete", announcement: a }),
     busy,
+    // Authors may delete their drafts; only admins delete published or archived ones.
+    canDelete: a => admin || a.status === "DRAFT",
   };
+  const filtered = !!(status || audience || batchId);
 
   return <>
-    <PageHeader title="Announcements" description="Notices for students, faculty and batches. Publishing notifies the audience."
+    <PageHeader title="Announcements" description={admin
+      ? "Notices for students, faculty and batches. Publishing notifies the audience."
+      : "Notices for the batches you teach. Publishing notifies the batch's students."}
       actions={<Button onClick={openCreate}><Plus /> New announcement</Button>} />
 
     <Card className="gap-0 py-0">
@@ -76,22 +86,30 @@ export default function AnnouncementsList() {
             {ANNOUNCEMENT_STATUSES.map(s => <SelectItem key={s} value={s}>{titleCase(s)}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={audience ?? ALL} onValueChange={v => { setAudience(v === ALL ? undefined : v as AnnouncementAudience); setPage(1); }}>
-          <SelectTrigger className="w-full sm:w-40" aria-label="Filter by audience"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All audiences</SelectItem>
-            {AUDIENCES.map(a => <SelectItem key={a} value={a}>{audienceLabel({ audience: a, batches: null })}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {admin
+          ? <Select value={audience ?? ALL} onValueChange={v => { setAudience(v === ALL ? undefined : v as AnnouncementAudience); setPage(1); }}>
+            <SelectTrigger className="w-full sm:w-40" aria-label="Filter by audience"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All audiences</SelectItem>
+              {AUDIENCES.map(a => <SelectItem key={a} value={a}>{audienceLabel({ audience: a, batches: null })}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          : <Select value={batchId ? String(batchId) : ALL} onValueChange={v => { setBatchId(v === ALL ? undefined : Number(v)); setPage(1); }}>
+            <SelectTrigger className="w-full sm:w-56" aria-label="Filter by batch"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All my batches</SelectItem>
+              {staffBatches.batches.map(b => <SelectItem key={b.id} value={String(b.id)}>{batchLabel(b)}</SelectItem>)}
+            </SelectContent>
+          </Select>}
       </div>
 
       <CardContent className="p-0">
         {error && <div className="p-4"><ErrorAlert message={error} onRetry={reload} /></div>}
         {!data && loading && <LoadingRows />}
         {data && data.data.length === 0 && <EmptyState icon={Megaphone}
-          title={status || audience ? "No announcements match these filters" : "No announcements yet"}
-          description={status || audience ? "Try clearing the filters." : "Write the first notice for your students or staff."}
-          action={!status && !audience && <Button onClick={openCreate}><Plus /> New announcement</Button>} />}
+          title={filtered ? "No announcements match these filters" : "No announcements yet"}
+          description={filtered ? "Try clearing the filters." : admin ? "Write the first notice for your students or staff." : "Tell a batch about a test, a schedule change or a holiday."}
+          action={!filtered && <Button onClick={openCreate}><Plus /> New announcement</Button>} />}
         {data && data.data.length > 0 && <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <AnnouncementsTable rows={data.data} actions={actions} />
           <AnnouncementsCards rows={data.data} actions={actions} />
@@ -132,6 +150,7 @@ type RowActions = {
   archive: (a: Announcement) => void;
   remove: (a: Announcement) => void;
   busy: number | null;
+  canDelete: (a: Announcement) => boolean;
 };
 
 function ActionButtons({ a, actions, labels = false }: { a: Announcement; actions: RowActions; labels?: boolean }) {
@@ -141,10 +160,10 @@ function ActionButtons({ a, actions, labels = false }: { a: Announcement; action
     a.status !== "PUBLISHED"
       ? { label: archived ? "Republish" : "Publish", icon: Send, onClick: () => actions.publish(a) }
       : { label: "Archive", icon: Archive, onClick: () => actions.archive(a) },
-    { label: "Delete", icon: Trash2, onClick: () => actions.remove(a), destructive: true },
+    ...(actions.canDelete(a) ? [{ label: "Delete", icon: Trash2, onClick: () => actions.remove(a), destructive: true }] : []),
   ];
   const busy = actions.busy === a.id;
-  return <div className={labels ? "grid grid-cols-3 gap-2" : "flex justify-end gap-1"}>
+  return <div className={labels ? (items.length === 3 ? "grid grid-cols-3 gap-2" : "grid grid-cols-2 gap-2") : "flex justify-end gap-1"}>
     {items.map(({ label, icon: Icon, onClick, destructive }) => {
       const className = destructive ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : undefined;
       const button = <Button variant={labels ? "outline" : "ghost"} size={labels ? "sm" : "icon"} className={className} onClick={onClick} disabled={busy} aria-label={`${label} ${a.title}`}>

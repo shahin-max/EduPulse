@@ -13,15 +13,19 @@ import { usersApi } from "@/lib/admin-api";
 import { useAdminData } from "./use-admin-data";
 import { DeleteUserDialog, PasswordLinkDialog, StudentProfileDialog, UserFormDialog } from "./user-dialogs";
 import { ErrorAlert, formatDate, RoleBadges, StatusBadge, UserAvatar } from "./ui";
+import { FacultyProfileDialog } from "./faculty-profile-dialog";
+import { PhotoField } from "@/components/portal/photo-field";
+import { photoApi } from "@/lib/account-api";
 
 export default function UserDetail({ id }: { id: number }) {
   const router = useRouter();
-  const { user: me } = useAuth();
+  const { user: me, setCurrentUser } = useAuth();
   const { data: user, error, loading, reload, setData } = useAdminData(token => usersApi.get(token, id), String(id));
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [linking, setLinking] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [editingFaculty, setEditingFaculty] = useState(false);
 
   const back = <Button variant="ghost" size="sm" asChild className="-ml-2 w-fit text-muted-foreground"><Link href="/admin/users"><ArrowLeft /> All users</Link></Button>;
 
@@ -38,7 +42,11 @@ export default function UserDetail({ id }: { id: number }) {
 
     <Card>
       <CardContent className="flex flex-col gap-5 sm:flex-row sm:items-center">
-        <UserAvatar name={user.full_name} className="size-16 text-lg" />
+        {deleted
+          ? <UserAvatar name={user.full_name} src={user.photo_url} className="size-16 text-lg" />
+          : <PhotoField name={user.full_name} photoUrl={user.photo_url}
+            upload={(token, file) => photoApi.setFor(token, user.id, file)} remove={token => photoApi.removeFor(token, user.id)}
+            onChanged={updated => { setData({ ...user, photo_url: updated.photo_url }); if (isSelf) setCurrentUser(updated); }} />}
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="truncate text-2xl font-semibold tracking-tight">{user.full_name}</h1>
@@ -72,7 +80,10 @@ export default function UserDetail({ id }: { id: number }) {
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle><CardDescription>Student and faculty information.</CardDescription>
-          {user.student_profiles && !deleted && <CardAction><Button variant="outline" size="sm" onClick={() => setEditingProfile(true)}><Pencil /> Edit details</Button></CardAction>}
+          {!deleted && (user.student_profiles || user.faculty_profiles) && <CardAction className="flex flex-col gap-2 sm:flex-row">
+            {user.student_profiles && <Button variant="outline" size="sm" onClick={() => setEditingProfile(true)}><Pencil /> {user.faculty_profiles ? "Student details" : "Edit details"}</Button>}
+            {user.faculty_profiles && <Button variant="outline" size="sm" onClick={() => setEditingFaculty(true)}><Pencil /> {user.student_profiles ? "Faculty details" : "Edit details"}</Button>}
+          </CardAction>}
         </CardHeader>
         <CardContent className="grid gap-6">
           {!user.student_profiles && !user.faculty_profiles && <p className="text-sm text-muted-foreground">No student or faculty profile. Admin-only accounts do not have one.</p>}
@@ -91,6 +102,7 @@ export default function UserDetail({ id }: { id: number }) {
             ["Qualification", user.faculty_profiles.qualification],
             ["Specialization", user.faculty_profiles.specialization],
             ["Joined on", user.faculty_profiles.joined_on && formatDate(user.faculty_profiles.joined_on)],
+            ["Introduction", user.faculty_profiles.biography],
           ]} />}
         </CardContent>
       </Card>
@@ -98,6 +110,7 @@ export default function UserDetail({ id }: { id: number }) {
 
     <UserFormDialog open={editing} onOpenChange={setEditing} user={user} onSaved={updated => { setData({ ...user, ...updated }); reload(); }} />
     {user.student_profiles && <StudentProfileDialog userId={user.id} profile={user.student_profiles} open={editingProfile} onOpenChange={setEditingProfile} onSaved={reload} />}
+    {user.faculty_profiles && <FacultyProfileDialog userId={user.id} profile={user.faculty_profiles} open={editingFaculty} onOpenChange={setEditingFaculty} onSaved={reload} />}
     <PasswordLinkDialog user={user} open={linking} onOpenChange={setLinking} />
     <DeleteUserDialog user={user} open={deleting} onOpenChange={setDeleting} onDeleted={() => router.push("/admin/users")} />
   </>;

@@ -146,7 +146,7 @@ function UsersTable({ users, actions }: { users: AdminUser[]; actions: RowAction
       {users.map(u => <TableRow key={u.id}>
         <TableCell className="pl-4">
           <div className="flex min-w-0 items-center gap-3">
-            <UserAvatar name={u.full_name} />
+            <UserAvatar name={u.full_name} src={u.photo_url} />
             <div className="min-w-0">
               <Link href={`/admin/users/${u.id}`} className="block max-w-[16rem] truncate font-medium hover:underline">{u.full_name}</Link>
               <p className="max-w-[16rem] truncate text-xs text-muted-foreground">{u.email ?? u.mobile}</p>
@@ -169,7 +169,7 @@ function UsersCards({ users, actions }: { users: AdminUser[]; actions: RowAction
   return <ul className="divide-y md:hidden">
     {users.map(u => <li key={u.id} className="grid gap-3 p-4">
       <div className="flex items-start gap-3">
-        <UserAvatar name={u.full_name} />
+        <UserAvatar name={u.full_name} src={u.photo_url} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{u.full_name}</p>
           {u.email && <p className="truncate text-xs text-muted-foreground">{u.email}</p>}

@@ -1,5 +1,6 @@
 "use client";
 
+import { GradebookCard } from "@/components/staff/reports/gradebook";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -72,6 +73,7 @@ export default function BatchDetail({ id }: { id: number }) {
 
     <FacultyCard batch={batch} onChange={setData} onReload={reload} />
     <RosterCard batch={batch} onSeatsChanged={reload} />
+    <GradebookCard batchId={batch.id} />
 
     <BatchFormDialog open={editing} onOpenChange={setEditing} batch={batch} onSaved={setData} />
     <DeleteBatchDialog batch={batch} open={deleting} onOpenChange={setDeleting} onDeleted={() => router.push("/admin/batches")} onUpdated={setData} />

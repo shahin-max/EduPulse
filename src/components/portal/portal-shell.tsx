@@ -20,6 +20,7 @@ import { homeFor, type RoleCode, type User } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { setDarkMode, useDarkMode } from "@/lib/theme";
 import { UserAvatar } from "@/components/admin/ui";
+import { NotificationsBell } from "./notifications";
 
 export type NavItem = { label: string; href: string; icon: LucideIcon; soon?: string };
 export type NavGroup = { group: string; items: NavItem[] };
@@ -162,7 +163,7 @@ function UserMenu({ config }: { config: PortalConfig }) {
   return <DropdownMenu>
     <DropdownMenuTrigger asChild>
       <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
-        <UserAvatar name={user.full_name} className="size-8 rounded-lg" />
+        <UserAvatar name={user.full_name} src={user.photo_url} className="size-8 rounded-lg" />
         <span className="grid flex-1 text-left text-sm leading-tight">
           <span className="truncate font-medium">{user.full_name}</span>
           <span className="truncate text-xs text-muted-foreground">{user.email ?? user.mobile}</span>
@@ -187,6 +188,9 @@ function PortalTopbar({ config }: { config: PortalConfig }) {
   const pathname = usePathname();
   const dark = useDarkMode();
   const items = config.nav.flatMap(section => section.items);
+  // The account page is reached from the user menu, so it may not be in the sidebar.
+  if (config.accountHref && !items.some(item => item.href === `${config.base}/account`))
+    items.push({ label: "My account", href: `${config.base}/account`, icon: UserRound });
   const current = [...items].sort((a, b) => b.href.length - a.href.length).find(item => pathname === item.href || pathname.startsWith(`${item.href}/`));
   const isDetail = current && pathname !== current.href;
   const atHome = !current || current.href === config.base;
@@ -205,6 +209,7 @@ function PortalTopbar({ config }: { config: PortalConfig }) {
         {atHome && <><BreadcrumbSeparator className="hidden sm:inline-flex" /><BreadcrumbItem><BreadcrumbPage>Overview</BreadcrumbPage></BreadcrumbItem></>}
       </BreadcrumbList>
     </Breadcrumb>
+    <NotificationsBell />
     <Button variant="ghost" size="icon" onClick={() => setDarkMode(!dark)} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}>
       {dark ? <Sun /> : <Moon />}
     </Button>

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, CalendarDays, ClipboardList, FileText, Layers, NotebookPen, Phone, Search, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, ClipboardList, FileText, Layers, NotebookPen, Phone, Search, TableProperties, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { GradebookCard } from "@/components/staff/reports/gradebook";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -56,6 +58,7 @@ export function FacultyBatchDetail({ id }: { id: number }) {
   const batch = useAdminData(token => request<StaffBatch>(`/batches/${id}`, { token }), `batch:${id}`);
   const roster = useAdminData(token => request<RosterEntry[]>(`/batches/${id}/students`, { token }), `roster:${id}`);
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"students" | "gradebook">("students");
 
   const students = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -94,7 +97,15 @@ export function FacultyBatchDetail({ id }: { id: number }) {
       {links.map(({ label, icon: Icon, href }) => <Button key={label} asChild variant="outline"><Link href={href}><Icon /> {label}</Link></Button>)}
     </div>
 
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="flex gap-1 rounded-lg border bg-muted/40 p-1 sm:w-fit" role="tablist" aria-label="Batch view">
+      {([["students", "Students & teachers", Users], ["gradebook", "Gradebook", TableProperties]] as const).map(([value, label, Icon]) =>
+        <Button key={value} role="tab" aria-selected={view === value} size="sm" variant={view === value ? "secondary" : "ghost"}
+          className={cn("flex-1 sm:flex-none", view === value && "bg-background shadow-xs")} onClick={() => setView(value)}>
+          <Icon /> {label}
+        </Button>)}
+    </div>
+
+    {view === "gradebook" ? <GradebookCard batchId={id} /> : <div className="grid gap-6 lg:grid-cols-3">
       <Card className="min-w-0 lg:col-span-2 gap-0 py-0">
         <CardHeader className="border-b py-4 [.border-b]:pb-4">
           <CardTitle>Students</CardTitle>
@@ -117,7 +128,7 @@ export function FacultyBatchDetail({ id }: { id: number }) {
               return <li key={r.id} className="flex items-center gap-3 p-4">
                 <UserAvatar name={p.users.full_name} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{p.users.full_name}</p>
+                  <Link href={`/teach/batches/${id}/students/${p.user_id}`} className="block truncate font-medium hover:underline">{p.users.full_name}</Link>
                   <p className="truncate text-xs text-muted-foreground">{[p.admission_number, p.grade && `Class ${p.grade}`, p.guardian_name && `Guardian: ${p.guardian_name}`].filter(Boolean).join(" · ") || "—"}</p>
                 </div>
                 {r.status !== "ACTIVE" && <Pill value={r.status} tones={ENROLLMENT_TONES} />}
@@ -138,7 +149,7 @@ export function FacultyBatchDetail({ id }: { id: number }) {
             </li>)}</ul>}
         </CardContent>
       </Card>
-    </div>
+    </div>}
   </>;
 }
 

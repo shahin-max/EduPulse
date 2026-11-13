@@ -11,13 +11,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { cn } from "@/lib/utils";
 import { ENQUIRY_STATUSES, enquiriesApi, listCourses, type Enquiry, type EnquiryStatus } from "@/lib/admin-ops-api";
 import { useAdminData } from "../use-admin-data";
+import { useIsAdmin } from "@/components/staff/use-staff";
 import { EmptyState, ErrorAlert, formatDate, LoadingRows, PageHeader, Pager, titleCase } from "../ui";
 import { ContactButtons, loadStaff, SourcePill, StatusPill } from "./enquiry-bits";
 import { EnquirySheet } from "./enquiry-sheet";
 
 const ALL = "all";
 
+/** Admins see every enquiry; faculty (in the faculty portal) only the ones assigned to them, which the API enforces. */
 export default function EnquiriesList() {
+  const admin = useIsAdmin();
   const [status, setStatus] = useState<EnquiryStatus | undefined>();
   const [courseId, setCourseId] = useState<number | undefined>();
   const [assignedTo, setAssignedTo] = useState<number | undefined>();
@@ -34,7 +37,8 @@ export default function EnquiriesList() {
   const query = { status, courseId, assignedTo, search, page, limit: 20 };
   const { data, error, loading, reload } = useAdminData(token => enquiriesApi.list(token, query), JSON.stringify(query));
   const newCount = useAdminData(token => enquiriesApi.list(token, { status: "NEW", limit: 1 }), "new");
-  const staff = useAdminData(loadStaff, "staff");
+  // Faculty cannot list users, and cannot reassign anyway.
+  const staff = useAdminData(token => admin ? loadStaff(token) : Promise.resolve([]), `staff:${admin}`);
   const courses = useAdminData(listCourses, "courses");
 
   const refresh = () => { reload(); newCount.reload(); };
@@ -44,7 +48,9 @@ export default function EnquiriesList() {
   const newTotal = newCount.data?.meta.total;
 
   return <>
-    <PageHeader title="Enquiries" description="Admission enquiries and callback requests from the website."
+    <PageHeader title={admin ? "Enquiries" : "My enquiries"} description={admin
+      ? "Admission enquiries and callback requests from the website."
+      : "Enquiries the office assigned to you. Call them back and keep the status up to date."}
       actions={<Button variant="outline" onClick={refresh} disabled={loading}><RefreshCw className={cn(loading && "animate-spin")} /> Refresh</Button>} />
 
     <button type="button" onClick={() => filterStatus(status === "NEW" ? undefined : "NEW")}
@@ -53,7 +59,7 @@ export default function EnquiriesList() {
       <span className="text-3xl font-semibold tabular-nums text-sky-700 dark:text-sky-300">{newTotal ?? "–"}</span>
       <span className="min-w-0">
         <span className="block font-medium">New {newTotal === 1 ? "enquiry" : "enquiries"} waiting</span>
-        <span className="block text-sm text-muted-foreground">{status === "NEW" ? "Showing new only. Tap to show all." : newTotal ? "Not contacted yet. Tap to show them." : "Everyone has been contacted."}</span>
+        <span className="block text-sm text-muted-foreground">{status === "NEW" ? "Showing new only. Tap to show all." : newTotal ? "Not contacted yet. Tap to show them." : admin ? "Everyone has been contacted." : "You have contacted everyone assigned to you."}</span>
       </span>
     </button>
 
@@ -80,13 +86,13 @@ export default function EnquiriesList() {
               {courses.data?.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.title}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={assignedTo ? String(assignedTo) : ALL} onValueChange={v => { setAssignedTo(v === ALL ? undefined : Number(v)); setPage(1); }}>
+          {admin && <Select value={assignedTo ? String(assignedTo) : ALL} onValueChange={v => { setAssignedTo(v === ALL ? undefined : Number(v)); setPage(1); }}>
             <SelectTrigger className="w-full sm:w-44" aria-label="Filter by assignee"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>Anyone</SelectItem>
               {staff.data?.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.full_name}</SelectItem>)}
             </SelectContent>
-          </Select>
+          </Select>}
         </div>
       </div>
 
@@ -94,10 +100,10 @@ export default function EnquiriesList() {
         {error && <div className="p-4"><ErrorAlert message={error} onRetry={reload} /></div>}
         {!data && loading && <LoadingRows />}
         {data && data.data.length === 0 && <EmptyState icon={Inbox}
-          title={filtered ? "No enquiries match these filters" : "No enquiries yet"}
-          description={filtered ? "Try a different search or clear the filters." : "Requests from the website's callback and admission forms appear here."} />}
+          title={filtered ? "No enquiries match these filters" : admin ? "No enquiries yet" : "No enquiries assigned to you"}
+          description={filtered ? "Try a different search or clear the filters." : admin ? "Requests from the website's callback and admission forms appear here." : "When the office assigns you an enquiry to follow up, it appears here."} />}
         {data && data.data.length > 0 && <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
-          <EnquiriesTable rows={data.data} onOpen={setSelected} />
+          <EnquiriesTable rows={data.data} onOpen={setSelected} showAssignee={admin} />
           <EnquiriesCards rows={data.data} onOpen={setSelected} />
         </div>}
       </CardContent>
@@ -119,7 +125,7 @@ const preview = (message: string | null) => {
   return (useful.length ? useful : lines).slice(0, 2).join(" · ");
 };
 
-function EnquiriesTable({ rows, onOpen }: { rows: Enquiry[]; onOpen: (e: Enquiry) => void }) {
+function EnquiriesTable({ rows, onOpen, showAssignee }: { rows: Enquiry[]; onOpen: (e: Enquiry) => void; showAssignee: boolean }) {
   return <Table className="hidden md:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
@@ -127,7 +133,7 @@ function EnquiriesTable({ rows, onOpen }: { rows: Enquiry[]; onOpen: (e: Enquiry
         <TableHead>Mobile</TableHead>
         <TableHead className="hidden lg:table-cell">Course</TableHead>
         <TableHead>Status</TableHead>
-        <TableHead className="hidden xl:table-cell">Assigned to</TableHead>
+        {showAssignee && <TableHead className="hidden xl:table-cell">Assigned to</TableHead>}
         <TableHead className="hidden lg:table-cell">Received</TableHead>
         <TableHead className="pr-4 text-right">Contact</TableHead>
       </TableRow>
@@ -144,7 +150,7 @@ function EnquiriesTable({ rows, onOpen }: { rows: Enquiry[]; onOpen: (e: Enquiry
         <TableCell className="tabular-nums text-muted-foreground">{e.mobile}</TableCell>
         <TableCell className="hidden max-w-[12rem] truncate text-muted-foreground lg:table-cell">{e.courses?.title ?? "—"}</TableCell>
         <TableCell><StatusPill status={e.status} /></TableCell>
-        <TableCell className="hidden text-muted-foreground xl:table-cell">{e.users?.full_name ?? "Unassigned"}</TableCell>
+        {showAssignee && <TableCell className="hidden text-muted-foreground xl:table-cell">{e.users?.full_name ?? "Unassigned"}</TableCell>}
         <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(e.created_at, true)}</TableCell>
         <TableCell className="pr-4" onClick={ev => ev.stopPropagation()}>
           <div className="flex justify-end gap-1"><ContactButtons mobile={e.mobile} name={e.student_name} /></div>

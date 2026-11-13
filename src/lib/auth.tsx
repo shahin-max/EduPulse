@@ -12,6 +12,8 @@ type AuthContextValue = {
   login: (input: LoginInput) => Promise<User>;
   register: (input: RegisterInput) => Promise<User>;
   logout: () => Promise<void>;
+  /** Replaces the signed-in user's details, e.g. after they change their photo. */
+  setCurrentUser: (user: User) => void;
   /** Runs an authenticated call, refreshing the access token once if it has expired. */
   withToken: <T>(call: (accessToken: string) => Promise<T>) => Promise<T>;
 };
@@ -84,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     status,
     withToken,
+    setCurrentUser: next => setUser(current => current && current.id === next.id ? { ...current, ...next } : current),
     login: async input => { const tokens = await authApi.login(input); apply(tokens); return tokens.user; },
     register: async input => { const tokens = await authApi.register(input); apply(tokens); return tokens.user; },
     logout: async () => {
