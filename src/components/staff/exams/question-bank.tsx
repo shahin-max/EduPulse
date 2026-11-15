@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CircleCheck, FileQuestion, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { CircleCheck, FileQuestion, FileUp, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -19,6 +19,7 @@ import { useAdminData } from "@/components/admin/use-admin-data";
 import { useIsAdmin } from "@/components/staff/use-staff";
 import { ALL, DifficultyPill, formatMarks, useCourses, useCurriculum } from "./exam-shared";
 import { QuestionDialog, type QuestionDefaults } from "./question-dialog";
+import { QuestionImportDialog } from "./question-import";
 
 type ActiveFilter = "active" | "inactive" | typeof ALL;
 
@@ -37,6 +38,7 @@ export function QuestionBank() {
   const [form, setForm] = useState<{ question?: Question } | null>(null);
   const [defaults, setDefaults] = useState<QuestionDefaults>({});
   const [deleting, setDeleting] = useState<Question | null>(null);
+  const [importing, setImporting] = useState(false);
   const { subjects } = useCurriculum(courseId);
   const chapters = subjects.find(s => s.id === courseSubjectId)?.chapters ?? [];
 
@@ -76,7 +78,10 @@ export function QuestionBank() {
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input type="search" placeholder="Search question text" value={searchText} onChange={e => setSearchText(e.target.value)} className="pl-9" aria-label="Search questions" />
         </div>
-        <Button onClick={openNew}><Plus /> New question</Button>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <Button variant="outline" onClick={() => setImporting(true)}><FileUp /> Import from Excel/CSV</Button>
+          <Button onClick={openNew}><Plus /> New question</Button>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Select value={courseId ? String(courseId) : ALL} onValueChange={v => { setCourseId(v === ALL ? undefined : Number(v)); setCourseSubjectId(undefined); setChapterId(undefined); setPage(1); }}>
@@ -137,6 +142,9 @@ export function QuestionBank() {
         if (!form.question) setDefaults({ courseId: q.course_subjects.courses.id, courseSubjectId: q.course_subject_id, chapterId: q.chapter_id ?? undefined });
         reload();
       }} />}
+    {/* Imports go to the course/subject/chapter chosen in the filters (or the last one used). */}
+    <QuestionImportDialog open={importing} onOpenChange={setImporting} onImported={reload}
+      defaults={courseId ? { courseId, courseSubjectId, chapterId } : defaults} />
     {deleting && <DeleteQuestionDialog question={deleting} onClose={() => setDeleting(null)} onDone={reload} />}
   </Card>;
 }

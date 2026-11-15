@@ -29,6 +29,10 @@ export type TeachingDashboard = {
   due_soon: { id: number; title: string; due_at: string; batches: BatchRef; submitted: number; enrolled: number }[];
   upcoming_exams: { id: number; title: string; kind: string; opens_at: string | null; closes_at: string | null; duration_minutes: number; batches: BatchRef[] }[];
   enquiries: { new: number; follow_up: number };
+  /** Actively enrolled students under 75% (at least 3 classes counted), lowest first, max 10. */
+  low_attendance: (AttendanceSummary & {
+    enrollment_id: number; user_id: number; full_name: string; photo_url: string | null; batch: BatchRef; counted: number;
+  })[];
 };
 
 // ---------------------------------------------------------------- gradebook

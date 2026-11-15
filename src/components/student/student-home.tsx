@@ -35,7 +35,7 @@ export default function StudentHome() {
   const attempts = useAdminData(token => studentApi.myAttempts(token), "student-attempts");
 
   const notEnrolled = courses.data?.length === 0;
-  const toDo = (assignments.data ?? []).filter(a => a.status === "PUBLISHED" && (a.state === "MISSING" || a.state === "NOT_DUE"));
+  const toDo = (assignments.data ?? []).filter(a => a.current && a.status === "PUBLISHED" && (a.state === "MISSING" || a.state === "NOT_DUE"));
   const openTests = (exams.data ?? []).filter(e => e.window === "OPEN" && (e.in_progress_attempt_id || e.attempts_remaining > 0));
   const att = (attendance.data ?? []).reduce((s, b) => ({ attended: s.attended + b.summary.present + b.summary.late, counted: s.counted + b.summary.present + b.summary.late + b.summary.absent }), { attended: 0, counted: 0 });
   const attPct = att.counted ? Math.round((att.attended / att.counted) * 1000) / 10 : null;

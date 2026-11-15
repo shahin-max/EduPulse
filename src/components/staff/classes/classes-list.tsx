@@ -18,15 +18,17 @@ import { useAdminData } from "@/components/admin/use-admin-data";
 import { EmptyState, ErrorAlert, LoadingRows, PageHeader, Pager, Pill, titleCase } from "@/components/admin/ui";
 import { batchLabel, useIsAdmin, useStaffBatches } from "../use-staff";
 import { CancelClassDialog, ClassFormDialog } from "./class-dialogs";
+import { WeekGrid } from "./week-grid";
 import { CLASS_TONES, ClassLinks, dayLabel, hasStarted, isLive, timeRange, useTeacherName } from "./class-shared";
 
 const ALL = "all";
 const PAGE_SIZE = 50;
 
-type View = "today" | "week" | "past" | "all";
+type View = "today" | "week" | "calendar" | "past" | "all";
 const VIEWS: { value: View; label: string; batchOnly?: boolean }[] = [
   { value: "today", label: "Today" },
   { value: "week", label: "This week" },
+  { value: "calendar", label: "Week grid" },
   { value: "past", label: "Past 30 days" },
   { value: "all", label: "All", batchOnly: true },
 ];
@@ -35,7 +37,7 @@ const VIEWS: { value: View; label: string; batchOnly?: boolean }[] = [
 function windowOf(view: View): { from?: string; to?: string } {
   switch (view) {
     case "today": return { from: startOfDay(0).toISOString(), to: startOfDay(1).toISOString() };
-    case "week": return { from: startOfDay(0).toISOString(), to: startOfDay(7).toISOString() };
+    case "week": case "calendar": return { from: startOfDay(0).toISOString(), to: startOfDay(7).toISOString() };
     case "past": return { from: startOfDay(-30).toISOString(), to: new Date(Math.floor(Date.now() / 60000) * 60000).toISOString() };
     case "all": return {};
   }
@@ -59,7 +61,10 @@ export default function ClassesList() {
   // with a batch the paginated list also offers "All" dates and filters by status on the server.
   const range = windowOf(view);
   const key = JSON.stringify({ batchId, view, status, page });
-  const { data, error, loading, reload } = useAdminData<Paginated<ClassSession> | ClassSession[]>(token => batchId
+  // The week grid loads its own week; the list is not fetched meanwhile.
+  const { data, error, loading, reload } = useAdminData<Paginated<ClassSession> | ClassSession[]>(token => view === "calendar"
+    ? Promise.resolve([])
+    : batchId
     ? classesApi.list(token, { batchId, ...range, status, page, limit: PAGE_SIZE })
     : classesApi.timetable(token, range), key);
 
@@ -121,6 +126,8 @@ export default function ClassesList() {
       <CardContent className="p-0">
         {staff.error && <div className="p-4 pb-0"><ErrorAlert title="Could not load your batches" message={staff.error} onRetry={staff.reload} /></div>}
         {error && <div className="p-4"><ErrorAlert message={error} onRetry={reload} /></div>}
+        {view === "calendar" && <WeekGrid batchId={batchId} status={status} base={base} />}
+        {view !== "calendar" && <>
         {!rows && loading && <LoadingRows />}
         {rows && rows.length === 0 && <EmptyState icon={CalendarDays}
           title={view === "today" ? "No classes today" : view === "week" ? "No classes this week" : view === "past" ? "No classes in the past 30 days" : "No classes yet"}
@@ -130,9 +137,10 @@ export default function ClassesList() {
           <ClassesTable sessions={rows} actions={actions} />
           <ClassesCards sessions={rows} actions={actions} />
         </div>}
+        </>}
       </CardContent>
 
-      {meta && meta.total > 0 && <CardFooter className="border-t p-4 [.border-t]:pt-4"><div className="w-full"><Pager meta={meta} onPage={setPage} /></div></CardFooter>}
+      {view !== "calendar" && meta && meta.total > 0 && <CardFooter className="border-t p-4 [.border-t]:pt-4"><div className="w-full"><Pager meta={meta} onPage={setPage} /></div></CardFooter>}
     </Card>
 
     <ClassFormDialog open={formOpen} onOpenChange={setFormOpen} session={editing} defaultBatchId={batchId} onSaved={reload} />

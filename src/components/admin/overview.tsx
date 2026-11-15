@@ -9,7 +9,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { request } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { healthApi, query, usersApi, type Paginated } from "@/lib/admin-api";
+import { adminSummaryApi } from "@/lib/admin-ops-api";
 import { useAdminData } from "./use-admin-data";
+import { AdminCharts } from "./charts/admin-charts";
 import { ErrorAlert, formatDate, PageHeader, RoleBadges, StatusBadge, UserAvatar } from "./ui";
 
 type Enquiry = { id: number; student_name: string; mobile: string; source: string | null; created_at: string; courses: { title: string } | null };
@@ -45,6 +47,8 @@ const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: 
 export default function AdminOverview() {
   const { user } = useAuth();
   const { data, error, reload } = useAdminData(loadOverview, "overview");
+  // Loaded on its own so a slow summary never holds up the rest of the home page.
+  const summary = useAdminData(adminSummaryApi.get, "admin-summary");
 
   const stats = [
     { label: "Students", value: data?.students, icon: GraduationCap, href: "/admin/users?role=STUDENT" },
@@ -74,6 +78,8 @@ export default function AdminOverview() {
         </Card>
       </Link>)}
     </div>
+
+    <AdminCharts data={summary.data} error={summary.error && !summary.data ? summary.error : undefined} />
 
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <Card className="min-w-0 lg:col-span-2">

@@ -77,7 +77,7 @@ export default function ResultsPage() {
                   {a.status === "IN_PROGRESS" ? "Continue →"
                     : a.status === "INVALIDATED" ? "Does not count"
                     : hasScore(a) ? <><strong>{n(a.score)}</strong> / {n(a.max_score)} <span className="text-muted-foreground">({n(a.percentage)}%)</span></>
-                    : "Result pending"}
+                    : a.exam.results_release_at ? `Results on ${formatDate(a.exam.results_release_at)}` : "Result pending"}
                 </span>
               </Link>
             </li>)}

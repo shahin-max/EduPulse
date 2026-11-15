@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Eye, Pencil, Search, Trash2, UserPlus, Users } from "lucide-react";
+import { Download, Eye, Loader2, Pencil, Search, Trash2, UserPlus, Users } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,7 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth";
 import type { RoleCode } from "@/lib/api";
-import { ROLES, USER_STATUSES, usersApi, type AdminUser, type UserStatus } from "@/lib/admin-api";
+import { ROLES, USER_STATUSES, usersApi, type AdminUser, type ListUsersQuery, type UserStatus } from "@/lib/admin-api";
+import { downloadCsv } from "@/lib/teaching-api";
 import { useAdminData } from "./use-admin-data";
 import { DeleteUserDialog, UserFormDialog } from "./user-dialogs";
 import { ErrorAlert, formatDate, PageHeader, Pager, RoleBadges, StatusBadge, titleCase, UserAvatar } from "./ui";
@@ -25,7 +27,8 @@ const pick = <T extends string>(value: string | null, allowed: readonly T[]) => 
 
 export default function UsersList() {
   const params = useSearchParams();
-  const { user: me } = useAuth();
+  const { user: me, withToken } = useAuth();
+  const [exporting, setExporting] = useState<string | null>(null);
   const [role, setRole] = useState<RoleCode | undefined>(pick(params.get("role"), ROLES));
   const [status, setStatus] = useState<UserStatus | undefined>(pick(params.get("status"), USER_STATUSES));
   const [searchText, setSearchText] = useState("");
@@ -46,6 +49,30 @@ export default function UsersList() {
   const { data, error, loading, reload } = useAdminData(token => usersApi.list(token, query), JSON.stringify(query));
 
   const openCreate = () => { setEditing(undefined); setFormOpen(true); };
+
+  /** Every user matching the current filters, fetched 100 at a time, as a CSV download. */
+  async function exportUsers(filters: ListUsersQuery) {
+    setExporting("Exporting…");
+    try {
+      const rows: AdminUser[] = [];
+      for (let p = 1; ; p++) {
+        const result = await withToken(token => usersApi.list(token, { ...filters, page: p, limit: 100 }));
+        rows.push(...result.data);
+        setExporting(`Exporting ${rows.length} of ${result.meta.total}…`);
+        if (p >= result.meta.totalPages) break;
+      }
+      const day = (iso: string | null) => iso ? iso.slice(0, 10) : "";
+      downloadCsv(`users-${(filters.role ?? "all").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`, [
+        ["Name", "Email", "Mobile", "Roles", "Status", "Joined", "Last login"],
+        ...rows.map(u => [u.full_name, u.email, u.mobile, u.roles.join(", "), u.deleted_at ? "DELETED" : u.status, day(u.created_at), day(u.last_login_at)]),
+      ]);
+      toast.success(`Exported ${rows.length} ${rows.length === 1 ? "user" : "users"}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not export users.");
+    } finally {
+      setExporting(null);
+    }
+  }
   const actions = {
     edit: (u: AdminUser) => { setEditing(u); setFormOpen(true); },
     remove: (u: AdminUser) => setDeleting(u),
@@ -53,7 +80,12 @@ export default function UsersList() {
   };
 
   return <>
-    <PageHeader title="Users" description="Manage students, faculty and admins." actions={<Button onClick={openCreate}><UserPlus /> Add user</Button>} />
+    <PageHeader title="Users" description="Manage students, faculty and admins." actions={<>
+      <Button variant="outline" disabled={exporting !== null || !data?.meta.total} onClick={() => void exportUsers({ role, status, search, includeDeleted })}>
+        {exporting !== null ? <Loader2 className="animate-spin" /> : <Download />}{exporting ?? "Export CSV"}
+      </Button>
+      <Button onClick={openCreate}><UserPlus /> Add user</Button>
+    </>} />
 
     <Card className="gap-0 py-0">
       <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center">

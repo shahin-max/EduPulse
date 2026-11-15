@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import { ArrowRight, CalendarDays, CalendarPlus, CheckCircle2, ClipboardCheck, ClipboardList, FilePlus2, Inbox, Layers, Megaphone, NotebookPen, Video } from "lucide-react";
+import { ArrowRight, CalendarDays, CalendarPlus, CheckCircle2, ClipboardCheck, ClipboardList, FilePlus2, Inbox, Layers, Megaphone, NotebookPen, TrendingDown, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -233,6 +233,29 @@ export default function FacultyOverview() {
         </CardContent>
       </Card>
     </div>
+
+    <Card className="min-w-0">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><TrendingDown className="size-4 text-red-600 dark:text-red-400" /> Low attendance</CardTitle>
+        <CardDescription>Students in your running batches below 75% (after at least 3 classes). Late counts as present.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {!d ? <div className="grid gap-3 sm:grid-cols-2">{Array.from({ length: 2 }, (_, i) => <Skeleton key={i} className="h-14" />)}</div>
+          : d.low_attendance.length === 0 ? <p className="flex items-center gap-2 py-2 text-sm text-muted-foreground"><CheckCircle2 className="size-4 text-emerald-600" /> Everyone is above 75%.</p>
+          : <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {d.low_attendance.map(s => <li key={s.enrollment_id}>
+              <Link href={`/teach/batches/${s.batch.id}/students/${s.user_id}`} className={rowLink}>
+                <UserAvatar name={s.full_name} src={s.photo_url} className="size-9" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{s.full_name}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{s.batch.name} · {s.present + s.late} present, {s.absent} absent</span>
+                </span>
+                <span className="shrink-0 text-lg font-semibold tabular-nums text-red-700 dark:text-red-400">{s.percentage}%</span>
+              </Link>
+            </li>)}
+          </ul>}
+      </CardContent>
+    </Card>
 
     <Card className="min-w-0">
       <CardHeader>

@@ -28,7 +28,7 @@ type RosterEntry = {
     grade: string | null;
     guardian_name: string | null;
     guardian_mobile: string | null;
-    users: { full_name: string; email: string | null; mobile: string | null };
+    users: { full_name: string; email: string | null; mobile: string | null; photo_url?: string | null };
   };
 };
 
@@ -126,7 +126,7 @@ export function FacultyBatchDetail({ id }: { id: number }) {
             {students.map(r => {
               const p = r.student_profiles;
               return <li key={r.id} className="flex items-center gap-3 p-4">
-                <UserAvatar name={p.users.full_name} />
+                <UserAvatar name={p.users.full_name} src={p.users.photo_url} />
                 <div className="min-w-0 flex-1">
                   <Link href={`/teach/batches/${id}/students/${p.user_id}`} className="block truncate font-medium hover:underline">{p.users.full_name}</Link>
                   <p className="truncate text-xs text-muted-foreground">{[p.admission_number, p.grade && `Class ${p.grade}`, p.guardian_name && `Guardian: ${p.guardian_name}`].filter(Boolean).join(" · ") || "—"}</p>

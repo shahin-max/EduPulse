@@ -67,7 +67,7 @@ export type RosterEntry = {
     grade: string | null;
     guardian_name: string | null;
     guardian_mobile: string | null;
-    users: { full_name: string; email: string | null; mobile: string | null };
+    users: { full_name: string; email: string | null; mobile: string | null; photo_url: string | null };
   };
 };
 

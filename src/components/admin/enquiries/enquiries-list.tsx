@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Inbox, RefreshCw, Search } from "lucide-react";
+import { Download, Inbox, Loader2, MessageSquareText, RefreshCw, Search } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
+import { downloadCsv } from "@/lib/teaching-api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -9,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { ENQUIRY_STATUSES, enquiriesApi, listCourses, type Enquiry, type EnquiryStatus } from "@/lib/admin-ops-api";
+import { ENQUIRY_STATUSES, enquiriesApi, listCourses, type Enquiry, type EnquiryStatus, type ListEnquiriesQuery } from "@/lib/admin-ops-api";
 import { useAdminData } from "../use-admin-data";
 import { useIsAdmin } from "@/components/staff/use-staff";
 import { EmptyState, ErrorAlert, formatDate, LoadingRows, PageHeader, Pager, titleCase } from "../ui";
@@ -51,7 +54,10 @@ export default function EnquiriesList() {
     <PageHeader title={admin ? "Enquiries" : "My enquiries"} description={admin
       ? "Admission enquiries and callback requests from the website."
       : "Enquiries the office assigned to you. Call them back and keep the status up to date."}
-      actions={<Button variant="outline" onClick={refresh} disabled={loading}><RefreshCw className={cn(loading && "animate-spin")} /> Refresh</Button>} />
+      actions={<>
+        {admin && <ExportEnquiries filters={{ status, courseId, assignedTo, search }} disabled={!data?.meta.total} />}
+        <Button variant="outline" onClick={refresh} disabled={loading}><RefreshCw className={cn(loading && "animate-spin")} /> Refresh</Button>
+      </>} />
 
     <button type="button" onClick={() => filterStatus(status === "NEW" ? undefined : "NEW")}
       className={cn("flex items-center gap-4 rounded-xl border bg-card p-4 text-left shadow-xs transition-colors hover:bg-accent/50",
@@ -144,6 +150,7 @@ function EnquiriesTable({ rows, onOpen, showAssignee }: { rows: Enquiry[]; onOpe
           <button type="button" className="block max-w-[16rem] truncate text-left font-medium hover:underline" onClick={ev => { ev.stopPropagation(); onOpen(e); }}>{e.student_name}</button>
           <div className="mt-1 flex items-center gap-2">
             <SourcePill source={e.source} />
+            <NotesCount enquiry={e} />
             <span className="max-w-[12rem] truncate text-xs text-muted-foreground">{preview(e.message)}</span>
           </div>
         </TableCell>
@@ -173,6 +180,7 @@ function EnquiriesCards({ rows, onOpen }: { rows: Enquiry[]; onOpen: (e: Enquiry
         {preview(e.message) && <span className="line-clamp-2 text-xs text-muted-foreground">{preview(e.message)}</span>}
         <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <SourcePill source={e.source} />
+          <NotesCount enquiry={e} />
           <span>{formatDate(e.created_at, true)}</span>
           {e.users && <span>· {e.users.full_name}</span>}
         </span>
@@ -183,4 +191,48 @@ function EnquiriesCards({ rows, onOpen }: { rows: Enquiry[]; onOpen: (e: Enquiry
       </div>
     </li>)}
   </ul>;
+}
+
+/** Admin-only CSV of every enquiry matching the current filters, fetched 100 at a time. */
+function ExportEnquiries({ filters, disabled }: { filters: ListEnquiriesQuery; disabled: boolean }) {
+  const { withToken } = useAuth();
+  const [progress, setProgress] = useState<string | null>(null);
+
+  async function run() {
+    setProgress("Exporting…");
+    try {
+      const rows: Enquiry[] = [];
+      for (let p = 1; ; p++) {
+        const result = await withToken(token => enquiriesApi.list(token, { ...filters, page: p, limit: 100 }));
+        rows.push(...result.data);
+        setProgress(`Exporting ${rows.length} of ${result.meta.total}…`);
+        if (p >= result.meta.totalPages) break;
+      }
+      downloadCsv(`enquiries-${(filters.status ?? "all").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`, [
+        ["Received", "Name", "Mobile", "Email", "Course", "Source", "Status", "Assigned to", "Notes", "Message"],
+        ...rows.map(e => [
+          e.created_at.slice(0, 16).replace("T", " "), e.student_name, e.mobile, e.email, e.courses?.title, e.source,
+          e.status, e.users?.full_name, e._count?.enquiry_notes ?? 0, e.message,
+        ]),
+      ]);
+      toast.success(`Exported ${rows.length} ${rows.length === 1 ? "enquiry" : "enquiries"}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not export enquiries.");
+    } finally {
+      setProgress(null);
+    }
+  }
+
+  return <Button variant="outline" disabled={disabled || progress !== null} onClick={() => void run()}>
+    {progress !== null ? <Loader2 className="animate-spin" /> : <Download />}{progress ?? "Export CSV"}
+  </Button>;
+}
+
+/** A small "2 notes" marker when staff have logged calls on the enquiry. */
+function NotesCount({ enquiry }: { enquiry: Enquiry }) {
+  const count = enquiry._count?.enquiry_notes ?? 0;
+  if (!count) return null;
+  return <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground" title={`${count} call ${count === 1 ? "note" : "notes"}`}>
+    <MessageSquareText className="size-3.5" aria-hidden="true" />{count}<span className="sr-only"> call {count === 1 ? "note" : "notes"}</span>
+  </span>;
 }

@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, GraduationCap, Loader2, Mail } from "lucide-react";
+import { Check, GraduationCap, Loader2, Mail, MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import type { AdminUser } from "@/lib/admin-api";
-import { ENQUIRY_STATUSES, enquiriesApi, type Enquiry, type EnquiryStatus, type UpdateEnquiryInput } from "@/lib/admin-ops-api";
+import { ENQUIRY_STATUSES, enquiriesApi, type Enquiry, type EnquiryNote, type EnquiryStatus, type UpdateEnquiryInput } from "@/lib/admin-ops-api";
 import { errorText, formatDate, titleCase } from "../ui";
+import { useAdminData } from "../use-admin-data";
 import { useIsAdmin } from "@/components/staff/use-staff";
 import { ConvertDialog } from "./convert-dialog";
 import { ContactButtons, SourcePill, STATUS_HELP, StatusPill } from "./enquiry-bits";
@@ -122,6 +124,10 @@ function EnquiryDetail({ enquiry, staff, onChanged }: { enquiry: Enquiry; staff:
 
       <Separator />
 
+      <CallNotes enquiry={enquiry} onChanged={onChanged} />
+
+      <Separator />
+
       {admin ? <section className="grid gap-2">
         {enquiry.status === "CONVERTED"
           ? <p className="text-sm text-muted-foreground">This enquiry is converted. Find the student under <Link href="/admin/users?role=STUDENT" className="text-primary hover:underline">Users</Link>, or create another account below.</p>
@@ -133,4 +139,66 @@ function EnquiryDetail({ enquiry, staff, onChanged }: { enquiry: Enquiry; staff:
 
     {admin && <ConvertDialog enquiry={enquiry} open={converting} onOpenChange={setConverting} onConverted={onChanged} />}
   </>;
+}
+
+/** "3 hours ago" for the last week, then the date. */
+function when(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60_000) return "just now";
+  if (diff < 3_600_000) return `${Math.round(diff / 60_000)} min ago`;
+  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)} h ago`;
+  if (diff < 7 * 86_400_000) return `${Math.round(diff / 86_400_000)} d ago`;
+  return formatDate(iso, true);
+}
+
+/**
+ * What happened on each call ("asked to call back Monday"), oldest first, by the admin or the
+ * assigned teacher. The first note on a NEW enquiry makes the server mark it CONTACTED, so the
+ * enquiry is refetched to update its status.
+ */
+function CallNotes({ enquiry, onChanged }: { enquiry: Enquiry; onChanged: (enquiry: Enquiry) => void }) {
+  const { withToken } = useAuth();
+  const { data, error, reload, setData } = useAdminData(token => enquiriesApi.notes(token, enquiry.id), `enquiry-notes:${enquiry.id}`);
+  const [body, setBody] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function add() {
+    const text = body.trim();
+    if (!text || saving) return;
+    setSaving(true);
+    try {
+      const note = await withToken(token => enquiriesApi.addNote(token, enquiry.id, text));
+      setData((current: EnquiryNote[] | null) => [...(current ?? []), note]);
+      setBody("");
+      toast.success("Note added");
+      onChanged(await withToken(token => enquiriesApi.get(token, enquiry.id)));
+    } catch (e) {
+      toast.error(errorText(e, "Could not add the note."));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return <section className="grid gap-3">
+    <h3 className="flex items-center gap-2 text-sm font-medium"><MessageSquareText className="size-4" /> Call notes {data && data.length > 0 && <span className="text-muted-foreground">({data.length})</span>}</h3>
+    {error && <p className="text-sm text-destructive">{error} <button type="button" className="underline" onClick={reload}>Retry</button></p>}
+    {!data && !error && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading notes…</p>}
+    {data?.length === 0 && <p className="text-sm text-muted-foreground">No notes yet. Write down what happened after each call.</p>}
+    {data && data.length > 0 && <ol className="grid gap-2">
+      {data.map(n => <li key={n.id} className="rounded-md border bg-muted/30 p-3">
+        <p className="text-sm break-words whitespace-pre-wrap">{n.body}</p>
+        <p className="mt-1 text-xs text-muted-foreground" title={formatDate(n.created_at, true)}>{n.users?.full_name ?? "Former staff"} · {when(n.created_at)}</p>
+      </li>)}
+    </ol>}
+    <form className="grid gap-2" onSubmit={e => { e.preventDefault(); void add(); }}>
+      <label htmlFor={`note-${enquiry.id}`} className="sr-only">Add a call note</label>
+      <Textarea id={`note-${enquiry.id}`} rows={3} maxLength={2000} value={body} onChange={e => setBody(e.target.value)} disabled={saving}
+        placeholder="Called; asked to call back on Monday after 5 pm."
+        onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void add(); } }} />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">{enquiry.status === "NEW" ? "Adding a note marks this enquiry contacted. " : ""}Ctrl+Enter to save.</span>
+        <Button type="submit" size="sm" disabled={!body.trim() || saving}>{saving && <Loader2 className="animate-spin" />}Add note</Button>
+      </div>
+    </form>
+  </section>;
 }

@@ -36,7 +36,11 @@ export type Enquiry = {
   updated_at: string;
   courses: { id: number; code: string; title: string } | null;
   users: Ref | null;
+  _count?: { enquiry_notes: number };
 };
+
+/** A call note on an enquiry (oldest first). */
+export type EnquiryNote = { id: number; body: string; created_at: string; users: Ref | null };
 
 export type ListEnquiriesQuery = { page?: number; limit?: number; status?: EnquiryStatus; courseId?: number; assignedTo?: number; search?: string };
 export type UpdateEnquiryInput = { status?: EnquiryStatus; assignedTo?: number | null };
@@ -45,6 +49,27 @@ export const enquiriesApi = {
   list: (token: string, params: ListEnquiriesQuery = {}) => request<Paginated<Enquiry>>(`/admission-enquiries${query(params)}`, { token }),
   get: (token: string, id: number) => request<Enquiry>(`/admission-enquiries/${id}`, { token }),
   update: (token: string, id: number, input: UpdateEnquiryInput) => request<Enquiry>(`/admission-enquiries/${id}`, { token, ...json("PATCH", input) }),
+  notes: (token: string, id: number) => request<EnquiryNote[]>(`/admission-enquiries/${id}/notes`, { token }),
+  /** Max 2000 characters. The first note on a NEW enquiry marks it CONTACTED. */
+  addNote: (token: string, id: number, body: string) => request<EnquiryNote>(`/admission-enquiries/${id}/notes`, { token, ...json("POST", { body }) }),
+};
+
+// ---------------------------------------------------------------------------
+// Admin home charts (GET /reports/admin-summary)
+// ---------------------------------------------------------------------------
+
+export type AdminSummary = {
+  /** "2026-06" … current month (IST), oldest first; the arrays below line up with it. */
+  months: string[];
+  /** Confirmed payments minus confirmed refunds, in rupees. */
+  collections: number[];
+  enrollments: number[];
+  enquiries: { total: number; converted: number }[];
+  batch_attendance: { batch: BatchOption; percentage: number | null; marked: number }[];
+};
+
+export const adminSummaryApi = {
+  get: (token: string) => request<AdminSummary>("/reports/admin-summary", { token }),
 };
 
 /** Courses for the enquiry filter (staff see drafts and archived ones too with includeAll). */

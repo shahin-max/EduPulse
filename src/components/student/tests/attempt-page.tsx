@@ -290,7 +290,9 @@ function AttemptResult({ attempt: a }: { attempt: Attempt }) {
               </div>)}
             </dl>
             : <p className="flex items-start gap-2 rounded-lg border bg-muted/40 p-4 text-sm"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-              Your answers are submitted. Your score will appear here once your teacher releases the results.</p>}
+              {a.exam.results_release_at
+                ? `Your answers are submitted. Results will be released on ${formatDate(a.exam.results_release_at, true)}.`
+                : "Your answers are submitted. Your score will appear here once your teacher releases the results."}</p>}
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline"><Link href="/student/tests"><ArrowLeft /> Tests</Link></Button>
           <Button asChild variant="outline"><Link href="/student/results"><History /> My results</Link></Button>
@@ -304,7 +306,9 @@ function AttemptResult({ attempt: a }: { attempt: Attempt }) {
         <h2 className="text-lg font-semibold">Answer review</h2>
         <ol className="grid gap-4">{a.questions.map((q, i) => <ReviewQuestion key={q.question_id} question={q} number={i + 1} />)}</ol>
       </section>
-      : a.results_visible && a.status !== "INVALIDATED" && <p className="text-sm text-muted-foreground">The correct answers for this test are not available to review yet.</p>}
+      : a.results_visible && a.status !== "INVALIDATED" && <p className="text-sm text-muted-foreground">{a.exam.answer_review_release_at
+        ? `You can review the correct answers from ${formatDate(a.exam.answer_review_release_at, true)}.`
+        : "Your teacher has not made the correct answers available for this test."}</p>}
   </>;
 }
 

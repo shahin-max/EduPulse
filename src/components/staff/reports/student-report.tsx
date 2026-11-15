@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, CalendarCheck, ClipboardList, FileText, Mail, NotebookPen, Phone } from "lucide-react";
+import { ArrowLeft, CalendarCheck, ClipboardList, FileText, Mail, NotebookPen, Phone, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,8 +42,16 @@ export function StudentReport({ batchId, userId }: { batchId: number; userId: nu
   ];
 
   return <>
-    {back}
-    <Card>
+    <div className="flex items-center justify-between gap-2 print:hidden">
+      {back}
+      <Button variant="outline" size="sm" onClick={() => window.print()}><Printer /> Print report</Button>
+    </div>
+    {/* Printed reports (e.g. for a parent meeting) carry the academy name and the date. */}
+    <div className="hidden items-baseline justify-between border-b pb-2 print:flex">
+      <p className="text-lg font-semibold">EduPulse Academy · Student progress report</p>
+      <p className="text-sm">{new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
+    </div>
+    <Card className="break-inside-avoid">
       <CardContent className="flex flex-col gap-5 sm:flex-row sm:items-center">
         <UserAvatar name={student.users.full_name} src={student.users.photo_url} className="size-16 text-lg" />
         <div className="min-w-0 flex-1 space-y-1">
@@ -62,7 +70,7 @@ export function StudentReport({ batchId, userId }: { batchId: number; userId: nu
       </CardContent>
     </Card>
 
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 break-inside-avoid sm:gap-4 lg:grid-cols-4 print:grid-cols-4">
       {stats.map(({ label, value, sub, icon: Icon, alert }) => <Card key={label} className={cn("gap-1 py-4", alert && "border-red-500/40")}>
         <CardContent className="grid gap-1 px-4">
           <p className="flex items-center justify-between gap-2 text-xs text-muted-foreground">{label}<Icon className="size-4" /></p>
@@ -92,8 +100,8 @@ export function StudentReport({ batchId, userId }: { batchId: number; userId: nu
       </CardContent>
     </Card>
 
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <Card className="min-w-0 gap-0 py-0">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 print:grid-cols-1">
+      <Card className="min-w-0 gap-0 py-0 break-inside-avoid">
         <CardHeader className="border-b py-4 [.border-b]:pb-4"><CardTitle>Tests</CardTitle><CardDescription>Best graded attempt, with every attempt listed.</CardDescription></CardHeader>
         <CardContent className="p-0">
           {exams.length === 0 ? <p className="p-6 text-sm text-muted-foreground">No tests assigned to this batch yet.</p> : <ul className="divide-y">
@@ -123,7 +131,7 @@ export function StudentReport({ batchId, userId }: { batchId: number; userId: nu
           <CardDescription>{attendance.present} present · {attendance.late} late · {attendance.absent} absent · {attendance.excused} excused</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          {attendance.sessions.length === 0 ? <p className="p-6 text-sm text-muted-foreground">No classes held yet.</p> : <ul className="max-h-[28rem] divide-y overflow-y-auto">
+          {attendance.sessions.length === 0 ? <p className="p-6 text-sm text-muted-foreground">No classes held yet.</p> : <ul className="max-h-[28rem] divide-y overflow-y-auto print:max-h-none print:overflow-visible">
             {attendance.sessions.map(s => <li key={s.id}>
               <Link href={`${base}/classes/${s.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40">
                 <span className="min-w-0 flex-1">

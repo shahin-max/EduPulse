@@ -95,7 +95,9 @@ export default function StudentAssignmentDetail({ id }: { id: number }) {
 function SubmissionCard({ assignment: a, submission, now, onSaved }: { assignment: AssignmentDetail; submission: MySubmission | null; now: number; onSaved: (s: MySubmission) => void }) {
   const [editing, setEditing] = useState(false);
   const reviewed = !!submission?.reviewed_at;
-  const closed = a.status === "CLOSED";
+  // can_submit is false once the student's batch has ended (or the assignment is closed).
+  const ended = a.status === "PUBLISHED" && a.can_submit === false;
+  const closed = a.status === "CLOSED" || ended;
 
   if (reviewed || closed || (submission && !editing)) {
     return <Card>
@@ -103,6 +105,7 @@ function SubmissionCard({ assignment: a, submission, now, onSaved }: { assignmen
         <CardTitle className="flex items-center gap-2">{reviewed ? <><CheckCircle2 className="size-5 text-emerald-600" /> Reviewed</> : submission ? "Your submission" : "Not submitted"}</CardTitle>
         <CardDescription>
           {reviewed ? "Your teacher has marked this. It can no longer be changed."
+            : ended ? "Your batch has ended, so this can no longer be handed in or changed."
             : closed ? "This assignment is closed for submissions."
             : "You can still change your answer until your teacher reviews it."}
         </CardDescription>

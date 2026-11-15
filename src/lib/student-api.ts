@@ -60,6 +60,8 @@ export type StudentAssignment = {
   created_at: string;
   subjects: { id: number; name: string } | null;
   batches: Ref;
+  /** False for a batch the student has finished: read-only (their work and feedback stay visible). */
+  current: boolean;
   state: SubmissionState;
   my_submission: { id: number; submitted_at: string; marks_awarded: string | null; reviewed_at: string | null; asset_id: number | null; is_late: boolean } | null;
 };
@@ -71,6 +73,8 @@ export type AssignmentDetail = {
   subjects: { id: number; code: string; name: string } | null;
   file_assets: { id: number; original_filename: string; mime_type: string } | null;
   users: { id: number; full_name: string } | null;
+  /** Students only: a current enrollment and a PUBLISHED assignment. */
+  can_submit?: boolean;
 };
 
 /** GET/PUT /assignments/:id/submission. */
@@ -113,7 +117,14 @@ export type AttemptQuestion = {
 
 /** The attempt header (GET /exam-attempts/me items). Score fields appear only once results are visible. */
 export type AttemptHeader = {
-  id: number; exam: { id: number; title: string; kind: ExamKind }; batch_id: number; enrollment_id: number;
+  id: number; batch_id: number; enrollment_id: number;
+  exam: {
+    id: number; title: string; kind: ExamKind;
+    /** When the score becomes visible; null when shown straight away. */
+    results_release_at: string | null;
+    /** When correct answers become visible; null = never shown to students. */
+    answer_review_release_at: string | null;
+  };
   attempt_number: number; status: AttemptStatus; started_at: string; expires_at: string; submitted_at: string | null; max_score: string;
   score?: string | null; percentage?: string | null; correct_count?: number; wrong_count?: number; unanswered_count?: number; graded_at?: string | null;
 };

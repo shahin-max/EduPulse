@@ -12,16 +12,20 @@ import { useAdminData } from "@/components/admin/use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, LoadingRows, PageHeader } from "@/components/admin/ui";
 import { dueHint, marksText, StatePill } from "./assignment-bits";
 
-type Tab = "todo" | "submitted" | "reviewed" | "all";
+type Tab = "todo" | "submitted" | "reviewed" | "all" | "past";
 
-/** To do: nothing handed in yet and the assignment still accepts work. */
+/**
+ * To do: nothing handed in yet and the assignment still accepts work. Past batches (finished
+ * enrollments) only appear under their own tab: read-only, so students can look back at feedback.
+ */
 const FILTERS: Record<Tab, (a: StudentAssignment) => boolean> = {
-  todo: a => !a.my_submission && a.status === "PUBLISHED",
-  submitted: a => a.state === "SUBMITTED" || a.state === "LATE",
-  reviewed: a => a.state === "REVIEWED",
-  all: () => true,
+  todo: a => a.current && !a.my_submission && a.status === "PUBLISHED",
+  submitted: a => a.current && (a.state === "SUBMITTED" || a.state === "LATE"),
+  reviewed: a => a.current && a.state === "REVIEWED",
+  all: a => a.current,
+  past: a => !a.current,
 };
-const TABS: [Tab, string][] = [["todo", "To do"], ["submitted", "Submitted"], ["reviewed", "Reviewed"], ["all", "All"]];
+const TABS: [Tab, string][] = [["todo", "To do"], ["submitted", "Submitted"], ["reviewed", "Reviewed"], ["all", "All"], ["past", "Past batches"]];
 
 /** The current time, refreshed every minute (render stays pure). */
 function useNow(stepMs = 60_000) {
@@ -47,6 +51,7 @@ export default function StudentAssignments() {
     <div className="flex gap-1 overflow-x-auto rounded-lg border bg-muted/40 p-1 sm:w-fit" role="tablist" aria-label="Filter assignments">
       {TABS.map(([value, label]) => {
         const count = all.filter(FILTERS[value]).length;
+        if (value === "past" && !count) return null;
         return <Button key={value} role="tab" aria-selected={tab === value} size="sm" variant={tab === value ? "secondary" : "ghost"}
           className={cn("shrink-0", tab === value && "bg-background shadow-xs")} onClick={() => setTab(value)}>
           {label}
@@ -64,14 +69,14 @@ export default function StudentAssignments() {
           description={tab === "todo" ? (all.length ? "You have handed in everything that is open." : "When your teachers post assignments, they appear here.") : "Try another tab."} />}
         {rows.length > 0 && <ul className="divide-y">
           {rows.map(a => {
-            const hint = !a.my_submission && a.status === "PUBLISHED" ? dueHint(a.due_at, now) : null;
+            const hint = a.current && !a.my_submission && a.status === "PUBLISHED" ? dueHint(a.due_at, now) : null;
             const marks = a.state === "REVIEWED" ? marksText(a.my_submission?.marks_awarded, a.max_marks) : null;
             return <li key={a.id}>
               <Link href={`/student/assignments/${a.id}`} className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/40">
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="truncate font-medium">{a.title}</span>
-                    {a.status === "CLOSED" && <Badge variant="outline">Closed</Badge>}
+                    {!a.current ? <Badge variant="outline">Past batch</Badge> : a.status === "CLOSED" && <Badge variant="outline">Closed</Badge>}
                   </div>
                   <p className="truncate text-sm text-muted-foreground">{[a.batches.name, a.subjects?.name].filter(Boolean).join(" · ")}</p>
                   <p className="text-xs text-muted-foreground">

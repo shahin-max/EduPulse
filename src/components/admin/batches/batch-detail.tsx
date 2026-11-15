@@ -272,7 +272,7 @@ function RosterTable({ rows, updating, onStatus }: { rows: RosterEntry[]; updati
         return <TableRow key={r.id}>
           <TableCell className="pl-6">
             <div className="flex min-w-0 items-center gap-3">
-              <UserAvatar name={p.users.full_name} />
+              <UserAvatar name={p.users.full_name} src={p.users.photo_url} />
               <div className="min-w-0">
                 <Link href={`/admin/users/${p.user_id}`} className="block max-w-[14rem] truncate font-medium hover:underline">{p.users.full_name}</Link>
                 <p className="max-w-[14rem] truncate text-xs text-muted-foreground">{[p.admission_number && `Adm. ${p.admission_number}`, p.grade].filter(Boolean).join(" · ") || "No admission no."}</p>
@@ -303,7 +303,7 @@ function RosterCards({ rows, updating, onStatus }: { rows: RosterEntry[]; updati
       const p = r.student_profiles;
       return <li key={r.id} className="grid gap-3 px-4 py-4">
         <div className="flex items-start gap-3">
-          <UserAvatar name={p.users.full_name} />
+          <UserAvatar name={p.users.full_name} src={p.users.photo_url} />
           <div className="min-w-0 flex-1">
             <Link href={`/admin/users/${p.user_id}`} className="block truncate font-medium hover:underline">{p.users.full_name}</Link>
             <p className="truncate text-xs text-muted-foreground">{[p.admission_number && `Adm. ${p.admission_number}`, p.users.mobile].filter(Boolean).join(" · ") || p.users.email}</p>
@@ -329,3 +329,4 @@ function DetailSkeleton() {
     <Skeleton className="h-64 rounded-xl" />
   </div>;
 }
+
