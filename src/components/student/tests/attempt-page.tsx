@@ -18,6 +18,7 @@ import { KIND_LABEL, studentApi, type Attempt, type AttemptQuestion } from "@/li
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { ErrorAlert, errorText, formatDate, Pill } from "@/components/admin/ui";
 import { LeaderboardButton } from "./leaderboard";
+import { OmrLayout } from "./omr-sheet";
 
 const n = (value: string | number | null | undefined) => value === null || value === undefined ? "—" : String(Number(value));
 const STATUS_TONES = { IN_PROGRESS: "amber", SUBMITTED: "green", AUTO_SUBMITTED: "blue", INVALIDATED: "red" } as const;
@@ -136,6 +137,8 @@ function TestRunner({ attempt, onFinished }: { attempt: Attempt; onFinished: (at
   const low = remaining <= 300;
 
   const palette = <QuestionPalette questions={questions} answers={answers} current={index} onPick={i => { setIndex(i); setPaletteOpen(false); }} />;
+  // OMR practice tests show the whole paper with a bubble answer sheet instead of one question at a time.
+  const omr = attempt.exam.kind === "OMR_PRACTICE";
 
   return <>
     <div className="sticky top-14 z-[5] -mx-4 flex flex-wrap items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
@@ -153,6 +156,10 @@ function TestRunner({ attempt, onFinished }: { attempt: Attempt; onFinished: (at
       <Button onClick={() => setConfirming(true)} disabled={submitting}>{submitting ? <Loader2 className="animate-spin" /> : <Send />}Submit</Button>
     </div>
 
+    {omr ? <OmrLayout questions={questions} disabled={submitting}
+      selected={Object.fromEntries(questions.map(x => [x.question_id, answers[x.question_id].selected]))}
+      onSelect={(question, optionId) => save(question.question_id, { ...answers[question.question_id], selected: optionId }, { selectedOptionId: optionId })} />
+    : <>
     <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
       <Card className="min-w-0">
         <CardHeader>
@@ -205,6 +212,7 @@ function TestRunner({ attempt, onFinished }: { attempt: Attempt; onFinished: (at
         <div className="px-4 pb-6">{palette}</div>
       </SheetContent>
     </Sheet>
+    </>}
 
     <AlertDialog open={confirming} onOpenChange={o => { if (!submitting) setConfirming(o); }}>
       <AlertDialogContent>

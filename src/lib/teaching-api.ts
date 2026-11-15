@@ -106,6 +106,8 @@ export type StudentReport = {
   }[];
   exams: { id: number; title: string; kind: string; total_marks: string; opens_at: string | null; closes_at: string | null; attempts: ExamAttempt[]; best: ExamAttempt | null }[];
   materials: { total: number; completed: number; in_progress: number };
+  /** Per-subject results (staff see unreleased tests too). */
+  subjects: import("@/components/portal/subject-performance").SubjectPerformance[];
 };
 
 export const teachingApi = {

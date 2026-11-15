@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, PlayCircle, Video } from "lucide-react";
+import { CalendarDays, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { studentApi, type StudentClass } from "@/lib/student-api";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { EmptyState, ErrorAlert, LoadingRows, PageHeader, Pill } from "@/components/admin/ui";
 import { dayOf, isJoinable, timeOf, useNow } from "./shared";
+import { RecordingButton } from "@/components/portal/video-player";
 
 type View = "week" | "next" | "past";
 const VIEWS: { value: View; label: string }[] = [
@@ -73,7 +74,7 @@ export default function StudentClasses() {
                     {!cancelled && !over && c.meeting_url && <Button asChild size="sm" variant={live ? "default" : "outline"}>
                       <a href={c.meeting_url} target="_blank" rel="noopener noreferrer"><Video /> {live ? "Join now" : "Class link"}</a>
                     </Button>}
-                    {c.recording_url && <Button asChild size="sm" variant="outline"><a href={c.recording_url} target="_blank" rel="noopener noreferrer"><PlayCircle /> Recording</a></Button>}
+                    {c.recording_url && <RecordingButton url={c.recording_url} title={c.title} />}
                   </div>
                 </li>;
               })}

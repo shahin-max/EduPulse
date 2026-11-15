@@ -1,5 +1,6 @@
 "use client";
 
+import { SubjectPerformanceCard } from "@/components/portal/subject-performance";
 import Link from "next/link";
 import { ArrowRight, ClipboardList, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ const hasScore = (a: AttemptHeader) => a.score !== undefined && a.score !== null
 /** Every test attempt (GET /exam-attempts/me), grouped by test, newest first. */
 export default function ResultsPage() {
   const { data, error, reload } = useAdminData(token => studentApi.myAttempts(token), "student-attempts");
+  const subjects = useAdminData(studentApi.performance, "student-performance");
 
   // Attempts arrive newest first, so each test's group keeps that order and groups follow their latest attempt.
   const groups = new Map<number, AttemptHeader[]>();
@@ -51,6 +53,9 @@ export default function ResultsPage() {
         </CardContent>
       </Card>)}
     </div>
+
+    {subjects.data && <SubjectPerformanceCard subjects={subjects.data}
+      description="Released tests count each question towards its subject (best attempt per test), plus your marked assignments. 75%+ is green, 50%+ amber." />}
 
     {!data && !error && <div className="grid gap-4">{Array.from({ length: 2 }, (_, i) => <Skeleton key={i} className="h-40 rounded-xl" />)}</div>}
     {data && data.length === 0 && <Card><EmptyState icon={Trophy} title="No attempts yet" description="When you take a test, your attempts and scores are listed here."

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  BookOpen, CheckCircle2, ChevronDown, CircleDot, Download, ExternalLink, FileText, FolderOpen, NotebookText, ScrollText, Video,
+  BookOpen, CheckCircle2, ChevronDown, CircleDot, Download, ExternalLink, FileText, FolderOpen, NotebookText, PlayCircle, ScrollText, Video,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import { useAdminData } from "@/components/admin/use-admin-data";
 import { EmptyState, ErrorAlert, errorText, PageHeader, Pill } from "@/components/admin/ui";
 import { useOpenFile } from "@/components/staff/materials/files";
 import { RowActions as ActionMenu } from "@/components/portal/row-actions";
+import { isEmbeddable, VideoDialog } from "@/components/portal/video-player";
 
 const KIND_ICON: Record<MaterialKind, LucideIcon> = {
   PDF_NOTE: FileText, WORKSHEET: NotebookText, PREVIOUS_PAPER: ScrollText, VIDEO_LINK: Video, OTHER: FolderOpen,
@@ -146,11 +147,15 @@ function MaterialRow({ material: m, saving, onProgress }: { material: StudentMat
   const { withToken } = useAuth();
   const { open, busy } = useOpenFile();
   const [downloading, setDownloading] = useState(false);
+  const [watching, setWatching] = useState(false);
   const Icon = KIND_ICON[m.kind];
   const done = m.progress === "COMPLETED";
+  // YouTube, Drive and Vimeo links play inside the portal instead of opening the raw link.
+  const playable = !m.file_assets && isEmbeddable(m.external_url);
 
   function openMaterial() {
     if (m.file_assets) void open(m.file_assets);
+    else if (playable) setWatching(true);
     else if (m.external_url) window.open(m.external_url, "_blank", "noopener,noreferrer");
     else return;
     // Opening counts as starting; done stays done.
@@ -187,17 +192,18 @@ function MaterialRow({ material: m, saving, onProgress }: { material: StudentMat
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <span>{MATERIAL_LABEL[m.kind]}</span>
         {m.file_assets && <span>{formatBytes(m.file_assets.size_bytes)}</span>}
-        {!m.file_assets && m.external_url && <span>External link</span>}
+        {!m.file_assets && m.external_url && <span>{playable ? "Video" : "External link"}</span>}
         <Pill value={m.progress} label={PROGRESS_LABEL[m.progress]} tones={PROGRESS_TONES} />
       </p>
     </div>
     <ActionMenu label={m.title} busy={opening || downloading || saving} items={[
-      { label: "Open", icon: ExternalLink, onSelect: openMaterial, disabled: !canOpen, hint: canOpen ? undefined : "Nothing to open yet" },
+      { label: playable ? "Play video" : "Open", icon: playable ? PlayCircle : ExternalLink, onSelect: openMaterial, disabled: !canOpen, hint: canOpen ? undefined : "Nothing to open yet" },
       m.is_downloadable && m.file_assets && { label: "Download", icon: Download, onSelect: () => void download() },
       done
         ? { label: "Mark as not done", icon: CircleDot, onSelect: () => onProgress(m, "IN_PROGRESS") }
         : { label: "Mark as done", icon: CheckCircle2, onSelect: () => onProgress(m, "COMPLETED") },
     ]} />
+    {playable && <VideoDialog url={m.external_url} title={m.title} open={watching} onOpenChange={setWatching} />}
   </li>;
 }
 

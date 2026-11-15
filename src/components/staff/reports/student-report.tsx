@@ -1,5 +1,6 @@
 "use client";
 
+import { SubjectPerformanceCard } from "@/components/portal/subject-performance";
 import Link from "next/link";
 import { ArrowLeft, CalendarCheck, ClipboardList, FileText, Mail, NotebookPen, Phone, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ export function StudentReport({ batchId, userId }: { batchId: number; userId: nu
   if (error) return <>{back}<ErrorAlert title="Report not available" message={error} onRetry={reload} /></>;
   if (!data) return <>{back}<div className="grid gap-4"><Skeleton className="h-28 rounded-xl" /><div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div><Skeleton className="h-64 rounded-xl" /></div></>;
 
-  const { student, attendance, assignments, exams, materials } = data;
+  const { student, attendance, assignments, exams, materials, subjects } = data;
   const due = assignments.filter(a => a.state !== "NOT_DUE");
   const handedIn = due.filter(a => a.state !== "MISSING").length;
   const taken = exams.filter(e => e.best);
@@ -79,6 +80,8 @@ export function StudentReport({ batchId, userId }: { batchId: number; userId: nu
         </CardContent>
       </Card>)}
     </div>
+
+    <SubjectPerformanceCard subjects={subjects} className="break-inside-avoid" />
 
     <Card className="min-w-0 gap-0 py-0">
       <CardHeader className="border-b py-4 [.border-b]:pb-4"><CardTitle>Assignments</CardTitle><CardDescription>Published assignments for the batch, newest first.</CardDescription></CardHeader>

@@ -207,6 +207,8 @@ export const studentApi = {
   leaderboard: (token: string, examId: number) => request<Leaderboard>(`/exams/${examId}/leaderboard${query({ limit: 50 })}`, { token }),
 
   attendance: (token: string) => request<MyAttendance>("/attendance/me", { token }),
+  /** Results per subject: released tests and marked assignments. */
+  performance: (token: string) => request<import("@/components/portal/subject-performance").SubjectPerformance[]>("/student/performance", { token }),
   /** At most 31 days; includes cancelled classes. */
   timetable: (token: string, from: Date, to: Date) =>
     request<StudentClass[]>(`/class-sessions/timetable${query({ from: from.toISOString(), to: to.toISOString() })}`, { token }),

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, CalendarCheck, CalendarDays, ClipboardList, IndianRupee, Megaphone, NotebookPen, PlayCircle, Trophy, Video } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarCheck, CalendarDays, ClipboardList, IndianRupee, Megaphone, NotebookPen, Trophy, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +12,7 @@ import { LOW_ATTENDANCE, num } from "@/lib/teaching-api";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, PageHeader, Pill } from "@/components/admin/ui";
 import { isJoinable, relative, timeOf, useNow } from "./shared";
+import { RecordingButton } from "@/components/portal/video-player";
 
 function loadToday(token: string) {
   const start = new Date();
@@ -97,7 +98,7 @@ export default function StudentHome() {
                   {c.status !== "CANCELLED" && c.meeting_url && <Button asChild size="sm" variant={live ? "default" : "outline"} className="sm:w-auto">
                     <a href={c.meeting_url} target="_blank" rel="noopener noreferrer"><Video /> {live ? "Join now" : "Class link"}</a>
                   </Button>}
-                  {c.recording_url && <Button asChild size="sm" variant="outline"><a href={c.recording_url} target="_blank" rel="noopener noreferrer"><PlayCircle /> Recording</a></Button>}
+                  {c.recording_url && <RecordingButton url={c.recording_url} title={c.title} />}
                 </li>;
               })}
             </ul>}
