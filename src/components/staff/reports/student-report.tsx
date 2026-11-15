@@ -52,7 +52,7 @@ export function StudentReport({ batchId, userId }: { batchId: number; userId: nu
       <p className="text-sm">{new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
     </div>
     <Card className="break-inside-avoid">
-      <CardContent className="flex flex-col gap-5 sm:flex-row sm:items-center">
+      <CardContent className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center">
         <UserAvatar name={student.users.full_name} src={student.users.photo_url} className="size-16 text-lg" />
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -85,15 +85,15 @@ export function StudentReport({ batchId, userId }: { batchId: number; userId: nu
       <CardContent className="p-0">
         {assignments.length === 0 ? <p className="p-6 text-sm text-muted-foreground">No assignments yet.</p> : <Table>
           <TableHeader><TableRow className="hover:bg-transparent">
-            <TableHead className="pl-4">Assignment</TableHead><TableHead>Due</TableHead><TableHead>Status</TableHead><TableHead>Marks</TableHead><TableHead className="hidden pr-4 md:table-cell">Feedback</TableHead>
+            <TableHead className="pl-4">Assignment</TableHead><TableHead className="hidden @xl/main:table-cell">Due</TableHead><TableHead>Status</TableHead><TableHead>Marks</TableHead><TableHead className="hidden pr-4 @3xl/main:table-cell">Feedback</TableHead>
           </TableRow></TableHeader>
           <TableBody>
             {assignments.map(a => <TableRow key={a.id}>
-              <TableCell className="max-w-56 pl-4"><Link href={`${base}/assignments/${a.id}`} className="block truncate font-medium hover:underline">{a.title}</Link>{a.subjects && <span className="text-xs text-muted-foreground">{a.subjects.name}</span>}</TableCell>
-              <TableCell className="text-muted-foreground">{a.due_at ? formatDate(a.due_at, true) : "—"}</TableCell>
+              <TableCell className="max-w-56 pl-4"><Link href={`${base}/assignments/${a.id}`} className="block truncate font-medium hover:underline">{a.title}</Link>{a.subjects && <span className="text-xs text-muted-foreground">{a.subjects.name}</span>}<span className="block text-xs text-muted-foreground @xl/main:hidden">{a.due_at ? `Due ${formatDate(a.due_at, true)}` : "No due date"}</span></TableCell>
+              <TableCell className="hidden text-muted-foreground @xl/main:table-cell">{a.due_at ? formatDate(a.due_at, true) : "—"}</TableCell>
               <TableCell><Pill value={a.state} label={SUBMISSION_LABEL[a.state]} tones={STATE_TONES} /></TableCell>
               <TableCell className="tabular-nums">{a.submission?.marks_awarded != null ? `${num(a.submission.marks_awarded)}${a.max_marks ? ` / ${num(a.max_marks)}` : ""}` : "—"}</TableCell>
-              <TableCell className="hidden max-w-64 truncate pr-4 text-muted-foreground md:table-cell">{a.submission?.feedback || "—"}</TableCell>
+              <TableCell className="hidden max-w-64 truncate pr-4 text-muted-foreground @3xl/main:table-cell">{a.submission?.feedback || "—"}</TableCell>
             </TableRow>)}
           </TableBody>
         </Table>}

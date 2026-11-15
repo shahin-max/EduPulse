@@ -9,9 +9,9 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { BATCH_STATUSES, batchesApi, type Batch, type BatchStatus } from "@/lib/admin-batches-api";
 import { useAdminData } from "../use-admin-data";
+import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { EmptyState, ErrorAlert, LoadingRows, PageHeader, Pager, Pill, titleCase } from "../ui";
 import { BatchFormDialog, courseLabel, DeleteBatchDialog, useBatchPickers } from "./batch-dialogs";
 import { BATCH_TONES, dateRange, Seats, useDebounced } from "./batch-shared";
@@ -41,7 +41,7 @@ export default function BatchesList() {
   const filtered = !!(branchId || courseId || status || search);
 
   const openCreate = () => { setEditing(undefined); setFormOpen(true); };
-  const actions: RowActions = { edit: b => { setEditing(b); setFormOpen(true); }, remove: b => setDeleting(b) };
+  const actions: RowHandlers = { edit: b => { setEditing(b); setFormOpen(true); }, remove: b => setDeleting(b) };
   const resetPage = () => setPage(1);
 
   return <>
@@ -99,63 +99,51 @@ export default function BatchesList() {
   </>;
 }
 
-type RowActions = { edit: (b: Batch) => void; remove: (b: Batch) => void };
+type RowHandlers = { edit: (b: Batch) => void; remove: (b: Batch) => void };
 
-function ActionButtons({ batch, actions, labels = false }: { batch: Batch; actions: RowActions; labels?: boolean }) {
-  const items = [
+/** The ⋮ menu of a batch row: view, edit, delete. */
+function BatchActions({ batch, actions }: { batch: Batch; actions: RowHandlers }) {
+  return <RowActions label={batch.name} items={[
     { label: "View", icon: Eye, href: `/admin/batches/${batch.id}` },
-    { label: "Edit", icon: Pencil, onClick: () => actions.edit(batch) },
-    { label: "Delete", icon: Trash2, onClick: () => actions.remove(batch), destructive: true },
-  ];
-  return <div className={labels ? "grid grid-cols-3 gap-2" : "flex justify-end gap-1"}>
-    {items.map(({ label, icon: Icon, href, onClick, destructive }) => {
-      const className = destructive ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : undefined;
-      const button = href
-        ? <Button asChild variant={labels ? "outline" : "ghost"} size={labels ? "sm" : "icon"} className={className}><Link href={href} aria-label={`View ${batch.code}`}><Icon />{labels && label}</Link></Button>
-        : <Button variant={labels ? "outline" : "ghost"} size={labels ? "sm" : "icon"} className={className} onClick={onClick} aria-label={`${label} ${batch.code}`}><Icon />{labels && label}</Button>;
-      if (labels) return <span key={label} className="contents">{button}</span>;
-      return <Tooltip key={label}>
-        <TooltipTrigger asChild><span className="inline-flex">{button}</span></TooltipTrigger>
-        <TooltipContent>{label}</TooltipContent>
-      </Tooltip>;
-    })}
-  </div>;
+    { label: "Edit", icon: Pencil, onSelect: () => actions.edit(batch) },
+    { label: "Delete", icon: Trash2, onSelect: () => actions.remove(batch), destructive: true },
+  ]} />;
 }
 
 /** md and up: a table. Lower-priority columns appear as the screen widens. */
-function BatchesTable({ batches, actions }: { batches: Batch[]; actions: RowActions }) {
-  return <Table className="hidden md:table">
+function BatchesTable({ batches, actions }: { batches: Batch[]; actions: RowHandlers }) {
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Batch</TableHead>
-        <TableHead className="hidden lg:table-cell">Course</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Course</TableHead>
         <TableHead>Branch</TableHead>
-        <TableHead className="hidden xl:table-cell">Dates</TableHead>
+        <TableHead className="hidden @4xl/main:table-cell">Dates</TableHead>
         <TableHead>Seats</TableHead>
         <TableHead>Status</TableHead>
-        <TableHead className="pr-4 text-right">Actions</TableHead>
+        <ActionsHead />
       </TableRow>
     </TableHeader>
     <TableBody>
       {batches.map(b => <TableRow key={b.id}>
         <TableCell className="pl-4">
           <Link href={`/admin/batches/${b.id}`} className="block max-w-[14rem] truncate font-medium hover:underline">{b.name}</Link>
-          <p className="max-w-[14rem] truncate font-mono text-xs text-muted-foreground">{b.code}<span className="font-sans lg:hidden"> · {b.courses.title}</span></p>
+          <p className="max-w-[14rem] truncate font-mono text-xs text-muted-foreground">{b.code}<span className="font-sans @3xl/main:hidden"> · {b.courses.title}</span></p>
         </TableCell>
-        <TableCell className="hidden lg:table-cell"><p className="max-w-[14rem] truncate">{b.courses.title}</p></TableCell>
+        <TableCell className="hidden @3xl/main:table-cell"><p className="max-w-[14rem] truncate">{b.courses.title}</p></TableCell>
         <TableCell><p className="max-w-[10rem] truncate">{b.branches.name}</p></TableCell>
-        <TableCell className="hidden text-muted-foreground xl:table-cell">{dateRange(b)}</TableCell>
+        <TableCell className="hidden text-muted-foreground @4xl/main:table-cell">{dateRange(b)}</TableCell>
         <TableCell className="w-36"><Seats batch={b} /></TableCell>
         <TableCell><Pill value={b.status} tones={BATCH_TONES} /></TableCell>
-        <TableCell className="pr-4"><ActionButtons batch={b} actions={actions} /></TableCell>
+        <TableCell className="pr-4 text-right"><BatchActions batch={b} actions={actions} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
-/** Below md: one card per batch with full-width action buttons. */
-function BatchesCards({ batches, actions }: { batches: Batch[]; actions: RowActions }) {
-  return <ul className="divide-y md:hidden">
+/** Narrow screens: one card per batch, actions in the ⋮ menu. */
+function BatchesCards({ batches, actions }: { batches: Batch[]; actions: RowHandlers }) {
+  return <ul className="divide-y @2xl/main:hidden">
     {batches.map(b => <li key={b.id} className="grid gap-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -163,13 +151,15 @@ function BatchesCards({ batches, actions }: { batches: Batch[]; actions: RowActi
           <p className="truncate text-xs text-muted-foreground"><span className="font-mono">{b.code}</span> · {b.branches.name}</p>
           <p className="truncate text-xs text-muted-foreground">{b.courses.title}</p>
         </div>
-        <Pill value={b.status} tones={BATCH_TONES} className="shrink-0" />
+        <div className="flex shrink-0 items-center gap-1">
+          <Pill value={b.status} tones={BATCH_TONES} />
+          <BatchActions batch={b} actions={actions} />
+        </div>
       </div>
       <div className="grid grid-cols-2 items-end gap-3">
         <Seats batch={b} />
         <p className="flex items-center justify-end gap-1.5 text-right text-xs text-muted-foreground"><CalendarRange className="size-3.5 shrink-0" />{dateRange(b)}</p>
       </div>
-      <ActionButtons batch={b} actions={actions} labels />
     </li>)}
   </ul>;
 }

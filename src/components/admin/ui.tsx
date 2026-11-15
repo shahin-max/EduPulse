@@ -91,7 +91,7 @@ export function formatDate(value: string | null | undefined, withTime = false) {
 export const initials = (name: string) => name.split(/\s+/).map(part => part.replace(/[^\p{L}\p{N}]/gu, "")).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join("") || "?";
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: React.ReactNode }) {
-  return <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+  return <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
     <div className="min-w-0">
       <h1 className="truncate text-2xl font-semibold tracking-tight">{title}</h1>
       {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
@@ -146,7 +146,7 @@ export function Pager({ meta, onPage }: { meta: Paginated<unknown>["meta"]; onPa
   if (meta.total === 0) return null;
   const first = (meta.page - 1) * meta.limit + 1;
   const last = Math.min(meta.page * meta.limit, meta.total);
-  return <div className="flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row">
+  return <div className="flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row sm:flex-wrap">
     <span>Showing <strong className="text-foreground">{first}–{last}</strong> of <strong className="text-foreground">{meta.total}</strong></span>
     <div className="flex items-center gap-2">
       <Button size="sm" variant="outline" disabled={meta.page <= 1} onClick={() => onPage(meta.page - 1)}><ChevronLeft /> Previous</Button>

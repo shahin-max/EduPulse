@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Banknote, Search } from "lucide-react";
+import { Banknote, FileText, ReceiptText, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { feeLookupsApi, PAYMENT_METHODS, paymentsApi, type PaymentListItem, type PaymentMethod, type PaymentsSummary } from "@/lib/admin-fees-api";
+import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAdminData } from "../use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, formatMoney, LoadingRows, Pager, Pill } from "../ui";
 import { methodLabel, PAYMENT_TONES, todayIso } from "./shared";
@@ -171,17 +172,18 @@ function ReceiptLink({ payment }: { payment: PaymentListItem }) {
 
 /** md and up, and when printed. */
 function PaymentsTable({ payments }: { payments: PaymentListItem[] }) {
-  return <Table className="hidden md:table print:table">
+  return <Table className="hidden @2xl/main:table print:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Paid</TableHead>
         <TableHead>Receipt</TableHead>
         <TableHead>Student</TableHead>
-        <TableHead className="hidden lg:table-cell print:table-cell">Invoice</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell print:table-cell">Invoice</TableHead>
         <TableHead>Method</TableHead>
-        <TableHead className="hidden xl:table-cell print:table-cell">Taken by</TableHead>
+        <TableHead className="hidden @4xl/main:table-cell print:table-cell">Taken by</TableHead>
         <TableHead className="text-right">Amount</TableHead>
-        <TableHead className="pr-4">Status</TableHead>
+        <TableHead>Status</TableHead>
+        <ActionsHead className="print:hidden" />
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -192,36 +194,47 @@ function PaymentsTable({ payments }: { payments: PaymentListItem[] }) {
           <p className="max-w-[14rem] truncate font-medium">{student(p).users.full_name}</p>
           <p className="max-w-[14rem] truncate text-xs text-muted-foreground">{batch(p).code}{student(p).admission_number ? ` · ${student(p).admission_number}` : ""}</p>
         </TableCell>
-        <TableCell className="hidden lg:table-cell print:table-cell">
+        <TableCell className="hidden @3xl/main:table-cell print:table-cell">
           <Link href={`/admin/fees/invoices/${p.fee_invoices.id}`} className="font-mono text-xs hover:underline print:no-underline">{p.fee_invoices.invoice_number}</Link>
         </TableCell>
         <TableCell>
           <p>{methodLabel(p.method)}</p>
           {p.external_reference && <p className="max-w-[10rem] truncate text-xs text-muted-foreground">{p.external_reference}</p>}
         </TableCell>
-        <TableCell className="hidden text-muted-foreground xl:table-cell print:table-cell">{p.users?.full_name ?? "—"}</TableCell>
+        <TableCell className="hidden text-muted-foreground @4xl/main:table-cell print:table-cell">{p.users?.full_name ?? "—"}</TableCell>
         <TableCell className="text-right font-medium tabular-nums">
           {formatMoney(p.amount)}
           {p.payment_refunds.some(r => r.status === "CONFIRMED") && <p className="text-xs font-normal text-red-700 dark:text-red-300">refunded {formatMoney(p.payment_refunds.filter(r => r.status === "CONFIRMED").reduce((t, r) => t + Number(r.amount), 0))}</p>}
         </TableCell>
-        <TableCell className="pr-4"><Pill value={p.status} tones={PAYMENT_TONES} /></TableCell>
+        <TableCell><Pill value={p.status} tones={PAYMENT_TONES} /></TableCell>
+        <TableCell className="pr-4 text-right print:hidden"><RowActions label={`payment of ${formatMoney(p.amount)} by ${student(p).users.full_name}`} items={paymentActions(p)} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
+/** The receipt (confirmed payments only), the invoice it was taken against, and the student. */
+const paymentActions = (p: PaymentListItem) => [
+  !!p.receipt_number && { label: "View receipt", icon: ReceiptText, href: `/admin/fees/receipts/${p.id}` },
+  { label: "Open invoice", icon: FileText, href: `/admin/fees/invoices/${p.fee_invoices.id}` },
+  { label: "View student", icon: UserRound, href: `/admin/users/${p.fee_invoices.enrollments.student_user_id}` },
+];
+
 /** Below md (never printed: the table prints instead). */
 function PaymentsCards({ payments }: { payments: PaymentListItem[] }) {
-  return <ul className="divide-y md:hidden print:hidden">
+  return <ul className="divide-y @2xl/main:hidden print:hidden">
     {payments.map(p => <li key={p.id} className="grid gap-1.5 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-medium">{student(p).users.full_name}</p>
           <p className="truncate text-xs text-muted-foreground">{batch(p).code} · {formatDate(p.paid_at ?? p.created_at, true)}</p>
         </div>
-        <div className="text-right">
-          <p className="font-semibold tabular-nums">{formatMoney(p.amount)}</p>
-          <p className="text-xs text-muted-foreground">{methodLabel(p.method)}</p>
+        <div className="flex shrink-0 items-start gap-1">
+          <div className="text-right">
+            <p className="font-semibold tabular-nums">{formatMoney(p.amount)}</p>
+            <p className="text-xs text-muted-foreground">{methodLabel(p.method)}</p>
+          </div>
+          <RowActions label={`payment of ${formatMoney(p.amount)} by ${student(p).users.full_name}`} items={paymentActions(p)} />
         </div>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs">

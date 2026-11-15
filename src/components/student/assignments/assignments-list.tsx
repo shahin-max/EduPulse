@@ -48,7 +48,7 @@ export default function StudentAssignments() {
   return <>
     <PageHeader title="Assignments" description="Homework and worksheets from your teachers. Hand them in before the due date." />
 
-    <div className="flex gap-1 overflow-x-auto rounded-lg border bg-muted/40 p-1 sm:w-fit" role="tablist" aria-label="Filter assignments">
+    <div className="flex flex-wrap gap-1 rounded-lg border bg-muted/40 p-1 sm:w-fit" role="tablist" aria-label="Filter assignments">
       {TABS.map(([value, label]) => {
         const count = all.filter(FILTERS[value]).length;
         if (value === "past" && !count) return null;

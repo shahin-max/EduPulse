@@ -3,19 +3,16 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { BookOpen, Globe, Layers, Loader2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, Globe, Layers, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { COURSE_STATUSES, coursesApi, type Course, type CourseStatus, type CourseWithSubjects } from "@/lib/admin-catalog-api";
 import { useAdminData } from "../use-admin-data";
+import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { EmptyState, ErrorAlert, LoadingRows, PageHeader, titleCase } from "../ui";
 import {
   archiveAction, CourseStatusPill, CreateCourseDialog, DeleteCourseDialog, primaryStatusAction, SegmentedTabs, useCourseStatus,
@@ -81,7 +78,7 @@ function CoursesPanel({ data, error, loading, reload, setData, onCreate }: {
     return result;
   }, [data]);
 
-  const actions: RowActions = { pending, setStatus, remove: setDeleting };
+  const actions: RowHandlers = { pending, setStatus, remove: setDeleting };
 
   return <>
     <Alert>
@@ -93,7 +90,7 @@ function CoursesPanel({ data, error, loading, reload, setData, onCreate }: {
     </Alert>
 
     <Card className="gap-0 py-0">
-      <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input type="search" placeholder="Search by title, code or slug" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" aria-label="Search courses" />
@@ -125,95 +122,74 @@ function CoursesPanel({ data, error, loading, reload, setData, onCreate }: {
   </>;
 }
 
-type RowActions = {
+type RowHandlers = {
   pending: number | null;
   setStatus: (course: Course, status: CourseStatus) => void;
   remove: (course: Course) => void;
 };
 
-/** The one-click status button (Publish / Unpublish / Restore). */
-function StatusButton({ course, actions, full }: { course: Course; actions: RowActions; full?: boolean }) {
-  const action = primaryStatusAction(course.status);
-  const busy = actions.pending === course.id;
-  const button = <Button size="sm" variant={action.variant} disabled={busy} onClick={() => actions.setStatus(course, action.to)} className={full ? "w-full" : "w-28"}>
-    {busy ? <Loader2 className="animate-spin" /> : <action.icon />}{action.label}
-  </Button>;
-  if (full) return button;
-  return <Tooltip>
-    <TooltipTrigger asChild><span className="inline-flex">{button}</span></TooltipTrigger>
-    <TooltipContent>{action.tip}</TooltipContent>
-  </Tooltip>;
-}
-
-function MoreMenu({ course, actions }: { course: Course; actions: RowActions }) {
-  return <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="ghost" size="icon" aria-label={`More actions for ${course.title}`}><MoreHorizontal /></Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
-      <DropdownMenuItem asChild><Link href={`/admin/courses/${course.id}`}><Pencil /> Edit course & syllabus</Link></DropdownMenuItem>
-      {course.status === "ARCHIVED"
-        ? <DropdownMenuItem onSelect={() => actions.setStatus(course, "PUBLISHED")}><Globe /> Publish</DropdownMenuItem>
-        : <DropdownMenuItem onSelect={() => actions.setStatus(course, archiveAction.to)}><archiveAction.icon /> Archive</DropdownMenuItem>}
-      <DropdownMenuSeparator />
-      <DropdownMenuItem variant="destructive" onSelect={() => actions.remove(course)}><Trash2 /> Delete</DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>;
+/**
+ * The ⋮ menu of a course: edit, the status change that fits (publish / unpublish / restore), archive
+ * or publish an archived course, delete.
+ */
+function CourseActions({ course, actions }: { course: Course; actions: RowHandlers }) {
+  const primary = primaryStatusAction(course.status);
+  return <RowActions label={course.title} busy={actions.pending === course.id} items={[
+    { label: "Edit course & syllabus", icon: Pencil, href: `/admin/courses/${course.id}` },
+    { label: primary.label, icon: primary.icon, onSelect: () => actions.setStatus(course, primary.to), hint: primary.tip },
+    course.status === "ARCHIVED"
+      ? { label: "Publish", icon: Globe, onSelect: () => actions.setStatus(course, "PUBLISHED"), hint: "Show it on the website again" }
+      : { label: archiveAction.label, icon: archiveAction.icon, onSelect: () => actions.setStatus(course, archiveAction.to), hint: "Keep it, but hide it everywhere" },
+    { label: "Delete", icon: Trash2, onSelect: () => actions.remove(course), destructive: true },
+  ]} />;
 }
 
 const subjectNames = (c: CourseWithSubjects) => c.course_subjects.map(cs => cs.subjects.name).join(", ");
 
-function CoursesTable({ courses, actions }: { courses: CourseWithSubjects[]; actions: RowActions }) {
-  return <Table className="hidden md:table">
+function CoursesTable({ courses, actions }: { courses: CourseWithSubjects[]; actions: RowHandlers }) {
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Course</TableHead>
-        <TableHead className="hidden lg:table-cell">Slug</TableHead>
-        <TableHead className="hidden xl:table-cell">Subjects</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Slug</TableHead>
+        <TableHead className="hidden @4xl/main:table-cell">Subjects</TableHead>
         <TableHead>Status</TableHead>
         <TableHead className="text-right">Order</TableHead>
-        <TableHead className="pr-4 text-right">Actions</TableHead>
+        <ActionsHead />
       </TableRow>
     </TableHeader>
     <TableBody>
       {courses.map(c => <TableRow key={c.id}>
         <TableCell className="pl-4">
           <Link href={`/admin/courses/${c.id}`} className="block max-w-[18rem] truncate font-medium hover:underline">{c.title}</Link>
-          <p className="font-mono text-xs text-muted-foreground">{c.code}<span className="lg:hidden"> · {c.slug}</span></p>
+          <p className="font-mono text-xs text-muted-foreground">{c.code}<span className="@3xl/main:hidden"> · {c.slug}</span></p>
         </TableCell>
-        <TableCell className="hidden font-mono text-xs text-muted-foreground lg:table-cell">{c.slug}</TableCell>
-        <TableCell className="hidden max-w-[16rem] truncate text-muted-foreground xl:table-cell" title={subjectNames(c)}>{subjectNames(c) || "—"}</TableCell>
+        <TableCell className="hidden font-mono text-xs text-muted-foreground @3xl/main:table-cell">{c.slug}</TableCell>
+        <TableCell className="hidden max-w-[16rem] truncate text-muted-foreground @4xl/main:table-cell" title={subjectNames(c)}>{subjectNames(c) || "—"}</TableCell>
         <TableCell><CourseStatusPill status={c.status} /></TableCell>
         <TableCell className="text-right tabular-nums text-muted-foreground">{c.sort_order}</TableCell>
-        <TableCell className="pr-4">
-          <div className="flex items-center justify-end gap-1">
-            <StatusButton course={c} actions={actions} />
-            <MoreMenu course={c} actions={actions} />
-          </div>
-        </TableCell>
+        <TableCell className="pr-4 text-right"><CourseActions course={c} actions={actions} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
-function CoursesCards({ courses, actions }: { courses: CourseWithSubjects[]; actions: RowActions }) {
-  return <ul className="divide-y md:hidden">
+function CoursesCards({ courses, actions }: { courses: CourseWithSubjects[]; actions: RowHandlers }) {
+  return <ul className="divide-y @2xl/main:hidden">
     {courses.map(c => <li key={c.id} className="grid gap-3 p-4">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <Link href={`/admin/courses/${c.id}`} className="block truncate font-medium hover:underline">{c.title}</Link>
           <p className="truncate font-mono text-xs text-muted-foreground">{c.code} · {c.slug}</p>
         </div>
-        <CourseStatusPill status={c.status} />
+        <div className="flex shrink-0 items-center gap-1">
+          <CourseStatusPill status={c.status} />
+          <CourseActions course={c} actions={actions} />
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">
         {c.course_subjects.length ? `${c.course_subjects.length} subject${c.course_subjects.length === 1 ? "" : "s"}: ${subjectNames(c)}` : "No subjects yet"} · Order {c.sort_order}
       </p>
-      <div className="flex items-center gap-2">
-        <div className="flex-1"><StatusButton course={c} actions={actions} full /></div>
-        <Button asChild size="sm" variant="outline" className="flex-1"><Link href={`/admin/courses/${c.id}`}><Pencil /> Edit</Link></Button>
-        <MoreMenu course={c} actions={actions} />
-      </div>
     </li>)}
   </ul>;
 }

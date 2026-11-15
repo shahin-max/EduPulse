@@ -39,7 +39,7 @@ export function SegmentedTabs<T extends string>({ value, onChange, tabs, label }
   tabs: { value: T; label: React.ReactNode }[];
   label: string;
 }) {
-  return <div role="tablist" aria-label={label} className="inline-flex w-full rounded-lg bg-muted p-1 sm:w-auto">
+  return <div role="tablist" aria-label={label} className="flex w-full flex-wrap gap-1 rounded-lg bg-muted p-1 sm:inline-flex sm:w-auto">
     {tabs.map(tab => <button key={tab.value} type="button" role="tab" aria-selected={value === tab.value} onClick={() => onChange(tab.value)}
       className={cn("flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors sm:flex-none",
         value === tab.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>

@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { classesApi } from "@/lib/staff-classes-api";
 import { usePortal } from "@/components/portal/portal-shell";
+import { RowActions as ActionMenu } from "@/components/portal/row-actions";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { ErrorAlert, errorText, Pill } from "@/components/admin/ui";
 import AttendanceSheet from "./attendance-sheet";
@@ -58,11 +59,13 @@ export default function ClassDetail({ id }: { id: number }) {
   const started = hasStarted(session);
   const teacher = teacherName(session);
 
+  const canComplete = session.status === "SCHEDULED" && started;
+
   return <>
     {back}
 
     <Card>
-      <CardContent className="flex flex-col gap-5 lg:flex-row lg:items-start">
+      <CardContent className="flex flex-col gap-5 lg:flex-row lg:flex-wrap lg:items-start">
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className={session.status === "CANCELLED" ? "min-w-0 text-2xl font-semibold tracking-tight break-words text-muted-foreground line-through" : "min-w-0 text-2xl font-semibold tracking-tight break-words"}>{session.title}</h1>
@@ -72,10 +75,15 @@ export default function ClassDetail({ id }: { id: number }) {
           <p className="text-sm text-muted-foreground">{CLASS_STATUS_HELP[session.status]}</p>
           <ClassLinks session={session} size="default" className="pt-1" />
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-end">
-          <Button variant="outline" onClick={() => setEditing(true)}><Pencil /> Edit</Button>
-          {session.status === "SCHEDULED" && started && <Button variant="outline" onClick={complete} disabled={completing}>{completing ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Mark completed</Button>}
-          {session.status !== "CANCELLED" && <Button variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setCancelling(true)}><Ban /> Cancel class</Button>}
+        {/* One primary action stays visible; the rest live in the actions menu. */}
+        <div className="flex items-center gap-2 lg:justify-end">
+          {canComplete
+            ? <Button onClick={complete} disabled={completing}>{completing ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Mark completed</Button>
+            : <Button variant="outline" onClick={() => setEditing(true)}><Pencil /> Edit</Button>}
+          <ActionMenu label={session.title} busy={completing} items={[
+            canComplete && { label: "Edit", icon: Pencil, onSelect: () => setEditing(true) },
+            session.status !== "CANCELLED" && { label: "Cancel class", icon: Ban, onSelect: () => setCancelling(true), destructive: true },
+          ]} />
         </div>
       </CardContent>
     </Card>

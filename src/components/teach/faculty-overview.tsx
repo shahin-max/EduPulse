@@ -10,6 +10,7 @@ import { request } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { query } from "@/lib/admin-api";
 import { teachingApi } from "@/lib/teaching-api";
+import { RowActions as ActionMenu } from "@/components/portal/row-actions";
 import { cn } from "@/lib/utils";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, PageHeader, Pill, UserAvatar } from "@/components/admin/ui";
@@ -105,7 +106,7 @@ export default function FacultyOverview() {
             : <ul className="grid gap-3">
               {today.data.map(c => {
                 const live = c.status !== "CANCELLED" && new Date(c.starts_at).getTime() - 15 * 60_000 <= now && new Date(c.ends_at).getTime() >= now;
-                return <li key={c.id} className="grid gap-3 rounded-lg border p-3 sm:flex sm:items-center">
+                return <li key={c.id} className="grid gap-3 rounded-lg border p-3 sm:flex sm:flex-wrap sm:items-center">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-medium">{c.title}</p>
@@ -113,9 +114,13 @@ export default function FacultyOverview() {
                     </div>
                     <p className="text-sm text-muted-foreground">{time(c.starts_at)}–{time(c.ends_at)} · {c.batches.name}{c.subjects ? ` · ${c.subjects.name}` : ""}</p>
                   </div>
-                  {c.status !== "CANCELLED" && <div className="grid grid-cols-2 gap-2 sm:flex">
-                    {c.meeting_url && <Button asChild size="sm" variant={live ? "default" : "outline"}><a href={c.meeting_url} target="_blank" rel="noopener noreferrer"><Video /> Join</a></Button>}
-                    <Button asChild size="sm" variant="outline" className={c.meeting_url ? "" : "col-span-2"}><Link href={`/teach/classes/${c.id}`}><ClipboardCheck /> Attendance</Link></Button>
+                  {/* Joining is the one action that stays visible; the rest are in the actions menu. */}
+                  {c.status !== "CANCELLED" && <div className="flex items-center gap-2">
+                    {c.meeting_url && <Button asChild size="sm" variant={live ? "default" : "outline"} className="flex-1 sm:flex-none"><a href={c.meeting_url} target="_blank" rel="noopener noreferrer"><Video /> Join</a></Button>}
+                    <ActionMenu label={c.title} items={[
+                      { label: "Mark attendance", icon: ClipboardCheck, href: `/teach/classes/${c.id}#attendance` },
+                      { label: "View class", icon: CalendarDays, href: `/teach/classes/${c.id}` },
+                    ]} className={c.meeting_url ? undefined : "ml-auto"} />
                   </div>}
                 </li>;
               })}

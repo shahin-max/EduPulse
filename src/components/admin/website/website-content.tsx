@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAuth } from "@/lib/auth";
 import { websiteContentApi, type ContentBlock } from "@/lib/admin-ops-api";
 import { useAdminData } from "../use-admin-data";
@@ -88,7 +88,7 @@ export default function WebsiteContent() {
     }
   }
 
-  const actions: RowActions = { edit, toggle: b => void togglePublished(b), remove: setDeleting, busy };
+  const actions: RowHandlers = { edit, toggle: b => void togglePublished(b), remove: setDeleting, busy };
 
   return <>
     <PageHeader title="Website" description="Editable text on the public website." actions={<Button onClick={openCreate}><Plus /> New block</Button>} />
@@ -161,42 +161,31 @@ export default function WebsiteContent() {
   </>;
 }
 
-type RowActions = { edit: (b: ContentBlock) => void; toggle: (b: ContentBlock) => void; remove: (b: ContentBlock) => void; busy: string | null };
+type RowHandlers = { edit: (b: ContentBlock) => void; toggle: (b: ContentBlock) => void; remove: (b: ContentBlock) => void; busy: string | null };
 
-function ActionButtons({ b, actions, labels = false }: { b: ContentBlock; actions: RowActions; labels?: boolean }) {
-  const busy = actions.busy === b.content_key;
-  const items = [
-    { label: "Edit", icon: Pencil, onClick: () => actions.edit(b) },
-    { label: b.is_published ? "Unpublish" : "Publish", icon: busy ? Loader2 : b.is_published ? EyeOff : Eye, onClick: () => actions.toggle(b), spin: busy },
-    { label: "Delete", icon: Trash2, onClick: () => actions.remove(b), destructive: true },
-  ];
-  return <div className={labels ? "grid grid-cols-3 gap-2" : "flex justify-end gap-1"}>
-    {items.map(({ label, icon: Icon, onClick, destructive, spin }) => {
-      const className = destructive ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : undefined;
-      const button = <Button variant={labels ? "outline" : "ghost"} size={labels ? "sm" : "icon"} className={className} onClick={onClick} disabled={busy} aria-label={`${label} ${b.content_key}`}>
-        <Icon className={spin ? "animate-spin" : undefined} />{labels && label}
-      </Button>;
-      if (labels) return <span key={label} className="contents">{button}</span>;
-      return <Tooltip key={label}>
-        <TooltipTrigger asChild><span className="inline-flex">{button}</span></TooltipTrigger>
-        <TooltipContent>{label}</TooltipContent>
-      </Tooltip>;
-    })}
-  </div>;
+/** The ⋮ menu of a content block: edit, publish / unpublish, delete. */
+function BlockActions({ b, actions }: { b: ContentBlock; actions: RowHandlers }) {
+  return <RowActions label={b.content_key} busy={actions.busy === b.content_key} items={[
+    { label: "Edit", icon: Pencil, onSelect: () => actions.edit(b) },
+    b.is_published
+      ? { label: "Unpublish", icon: EyeOff, onSelect: () => actions.toggle(b), hint: "Hide it on the website" }
+      : { label: "Publish", icon: Eye, onSelect: () => actions.toggle(b), hint: "Show it on the website" },
+    { label: "Delete", icon: Trash2, onSelect: () => actions.remove(b), destructive: true },
+  ]} />;
 }
 
 const preview = (b: ContentBlock) => b.title || b.body?.split(/\r?\n/).find(l => l.trim())?.trim() || "Empty";
 
-function BlocksTable({ rows, actions }: { rows: ContentBlock[]; actions: RowActions }) {
-  return <Table className="hidden md:table">
+function BlocksTable({ rows, actions }: { rows: ContentBlock[]; actions: RowHandlers }) {
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Key</TableHead>
         <TableHead>Content</TableHead>
         <TableHead>State</TableHead>
-        <TableHead className="hidden lg:table-cell">Order</TableHead>
-        <TableHead className="hidden lg:table-cell">Updated</TableHead>
-        <TableHead className="pr-4 text-right">Actions</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Order</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Updated</TableHead>
+        <ActionsHead />
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -207,24 +196,26 @@ function BlocksTable({ rows, actions }: { rows: ContentBlock[]; actions: RowActi
         </TableCell>
         <TableCell className="max-w-[18rem] truncate text-muted-foreground">{preview(b)}</TableCell>
         <TableCell><PublishedPill published={b.is_published} /></TableCell>
-        <TableCell className="hidden tabular-nums text-muted-foreground lg:table-cell">{b.sort_order}</TableCell>
-        <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(b.updated_at, true)}</TableCell>
-        <TableCell className="pr-4"><ActionButtons b={b} actions={actions} /></TableCell>
+        <TableCell className="hidden tabular-nums text-muted-foreground @3xl/main:table-cell">{b.sort_order}</TableCell>
+        <TableCell className="hidden text-muted-foreground @3xl/main:table-cell">{formatDate(b.updated_at, true)}</TableCell>
+        <TableCell className="pr-4 text-right"><BlockActions b={b} actions={actions} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
-function BlocksCards({ rows, actions }: { rows: ContentBlock[]; actions: RowActions }) {
-  return <ul className="divide-y md:hidden">
+function BlocksCards({ rows, actions }: { rows: ContentBlock[]; actions: RowHandlers }) {
+  return <ul className="divide-y @2xl/main:hidden">
     {rows.map(b => <li key={b.id} className="grid gap-3 p-4">
       <div className="flex items-start justify-between gap-2">
         <button type="button" className="min-w-0 break-all text-left font-mono text-sm font-medium" onClick={() => actions.edit(b)}>{b.content_key}</button>
-        <PublishedPill published={b.is_published} />
+        <div className="flex shrink-0 items-center gap-1">
+          <PublishedPill published={b.is_published} />
+          <BlockActions b={b} actions={actions} />
+        </div>
       </div>
       <p className="line-clamp-2 text-sm break-words text-muted-foreground">{preview(b)}</p>
       <p className="text-xs text-muted-foreground">Order {b.sort_order} · Updated {formatDate(b.updated_at, true)}</p>
-      <ActionButtons b={b} actions={actions} labels />
     </li>)}
   </ul>;
 }

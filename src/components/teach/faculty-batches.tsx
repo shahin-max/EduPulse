@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, CalendarDays, ClipboardList, FileText, Layers, NotebookPen, Phone, Search, TableProperties, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GradebookCard } from "@/components/staff/reports/gradebook";
+import { RowActions as ActionMenu } from "@/components/portal/row-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -132,7 +133,11 @@ export function FacultyBatchDetail({ id }: { id: number }) {
                   <p className="truncate text-xs text-muted-foreground">{[p.admission_number, p.grade && `Class ${p.grade}`, p.guardian_name && `Guardian: ${p.guardian_name}`].filter(Boolean).join(" · ") || "—"}</p>
                 </div>
                 {r.status !== "ACTIVE" && <Pill value={r.status} tones={ENROLLMENT_TONES} />}
-                {(p.guardian_mobile ?? p.users.mobile) && <Button asChild variant="ghost" size="icon" aria-label={`Call about ${p.users.full_name}`}><a href={`tel:${p.guardian_mobile ?? p.users.mobile}`}><Phone /></a></Button>}
+                <ActionMenu label={p.users.full_name} items={[
+                  { label: "View progress", icon: TableProperties, href: `/teach/batches/${id}/students/${p.user_id}` },
+                  !!p.guardian_mobile && { label: "Call guardian", icon: Phone, href: `tel:${p.guardian_mobile}`, hint: p.guardian_name ? `${p.guardian_name} · ${p.guardian_mobile}` : p.guardian_mobile },
+                  !!p.users.mobile && { label: "Call student", icon: Phone, href: `tel:${p.users.mobile}`, hint: p.users.mobile },
+                ]} />
               </li>;
             })}
           </ul>}

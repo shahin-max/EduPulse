@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth";
 import { EmptyState, ErrorAlert, errorText, LoadingRows, PageHeader, Pill } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
@@ -16,6 +15,7 @@ import { coursesApi, type Chapter } from "@/lib/admin-catalog-api";
 import { MATERIAL_KIND_LABEL, materialsApi, type MaterialKind, type StudyMaterial } from "@/lib/staff-learning-api";
 import { AddChapterDialog, DeleteMaterialDialog, MaterialFormDialog } from "./material-dialogs";
 import { FileLink } from "./files";
+import { RowActions as ActionMenu } from "@/components/portal/row-actions";
 import ProgressReport from "./progress-report";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +47,7 @@ export default function MaterialsLibrary() {
     <PageHeader title="Study materials" description="Notes, worksheets, previous papers and recorded lectures, chapter by chapter." />
 
     <Card className="gap-0 py-0">
-      <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-center">
         <span className="text-sm font-medium sm:w-16">Course</span>
         <Select value={courseId ? String(courseId) : ""} onValueChange={v => setPicked(Number(v))} disabled={!courses.length}>
           <SelectTrigger className="w-full sm:w-80" aria-label="Course"><SelectValue placeholder={listLoading ? "Loading courses…" : "No courses"} /></SelectTrigger>
@@ -82,7 +82,7 @@ function Curriculum({ courseId }: { courseId: number }) {
   const nextOrder = subject.chapters.reduce((max, c) => Math.max(max, c.sort_order), 0) + 1;
 
   return <>
-    <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-center">
       <span className="text-sm font-medium sm:w-16">Subject</span>
       <Select value={String(subject.id)} onValueChange={v => setSubjectPick(Number(v))}>
         <SelectTrigger className="w-full sm:w-80" aria-label="Subject"><SelectValue /></SelectTrigger>
@@ -143,7 +143,7 @@ function ChapterMaterials({ chapter }: { chapter: Chapter }) {
     {!data && loading && <LoadingRows rows={2} />}
     {data && materials.length === 0 && <p className="py-3 text-sm text-muted-foreground">No materials in this chapter yet.</p>}
     {materials.length > 0 && <ul className="grid gap-2 py-2">
-      {materials.map(m => <li key={m.id} className="flex flex-col gap-2 rounded-md border bg-background p-3 sm:flex-row sm:items-center">
+      {materials.map(m => <li key={m.id} className="flex items-start gap-2 rounded-md border bg-background p-3">
         <div className="flex min-w-0 flex-1 items-start gap-3">
           <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
             {m.file_assets ? <FileText className="size-4 text-muted-foreground" /> : <Link2 className="size-4 text-muted-foreground" />}
@@ -163,13 +163,11 @@ function ChapterMaterials({ chapter }: { chapter: Chapter }) {
             </div>
           </div>
         </div>
-        <div className="flex justify-end gap-1">
-          <IconAction label={m.is_published ? "Hide from students" : "Publish"} onClick={() => togglePublished(m)} disabled={toggling === m.id}>
-            {m.is_published ? <EyeOff /> : <Eye />}
-          </IconAction>
-          <IconAction label="Edit" onClick={() => { setEditing(m); setFormOpen(true); }}><Pencil /></IconAction>
-          <IconAction label="Delete" onClick={() => setDeleting(m)} destructive><Trash2 /></IconAction>
-        </div>
+        <ActionMenu label={m.title} busy={toggling === m.id} items={[
+          { label: m.is_published ? "Hide from students" : "Publish", icon: m.is_published ? EyeOff : Eye, onSelect: () => void togglePublished(m) },
+          { label: "Edit", icon: Pencil, onSelect: () => { setEditing(m); setFormOpen(true); } },
+          { label: "Delete", icon: Trash2, onSelect: () => setDeleting(m), destructive: true },
+        ]} />
       </li>)}
     </ul>}
     <Button size="sm" variant="outline" className="mt-1" onClick={() => { setEditing(undefined); setFormOpen(true); }}><Plus /> Add material</Button>
@@ -177,15 +175,5 @@ function ChapterMaterials({ chapter }: { chapter: Chapter }) {
     <MaterialFormDialog open={formOpen} onOpenChange={setFormOpen} chapter={chapter} material={editing} nextOrder={nextOrder} onSaved={reload} />
     <DeleteMaterialDialog material={deleting} open={!!deleting} onOpenChange={open => { if (!open) setDeleting(null); }} onDone={reload} />
   </div>;
-}
-
-function IconAction({ label, onClick, children, disabled, destructive }: { label: string; onClick: () => void; children: React.ReactNode; disabled?: boolean; destructive?: boolean }) {
-  return <Tooltip>
-    <TooltipTrigger asChild>
-      <Button variant="ghost" size="icon" aria-label={label} onClick={onClick} disabled={disabled}
-        className={destructive ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : undefined}>{children}</Button>
-    </TooltipTrigger>
-    <TooltipContent>{label}</TooltipContent>
-  </Tooltip>;
 }
 

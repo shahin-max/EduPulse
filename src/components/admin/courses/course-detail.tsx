@@ -4,17 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowUpDown, Eye, EyeOff, Globe, Layers, Loader2, MoreHorizontal, Pencil, Plus, Save, Trash2, Unlink } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Eye, EyeOff, Globe, Layers, Loader2, Pencil, Plus, Save, Trash2, Unlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth";
 import { chaptersApi, coursesApi, type Chapter, type Course, type CourseSubject, type CourseWithSubjects, type Curriculum } from "@/lib/admin-catalog-api";
 import { cn } from "@/lib/utils";
+import { RowActions } from "@/components/portal/row-actions";
 import { useAdminData } from "../use-admin-data";
 import { EmptyState, ErrorAlert, errorText, formatDate, Pill } from "../ui";
 import {
@@ -53,7 +50,7 @@ export default function CourseDetail({ id }: { id: number }) {
     {back}
 
     <Card>
-      <CardContent className="flex flex-col gap-5 lg:flex-row lg:items-center">
+      <CardContent className="flex flex-col gap-5 lg:flex-row lg:flex-wrap lg:items-center">
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight">{course.title}</h1>
@@ -65,14 +62,16 @@ export default function CourseDetail({ id }: { id: number }) {
             {STATUS_HELP[course.status]}{!live && " Only published courses appear on the website."}
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex">
-          <Button variant={primary.variant} disabled={busy} onClick={() => setStatus(course, primary.to)} title={primary.tip}>
+        <div className="flex items-center gap-2">
+          <Button className="flex-1 sm:flex-none" variant={primary.variant} disabled={busy} onClick={() => setStatus(course, primary.to)} title={primary.tip}>
             {busy ? <Loader2 className="animate-spin" /> : <primary.icon />}{primary.label}
           </Button>
-          {course.status === "ARCHIVED"
-            ? <Button variant="outline" disabled={busy} onClick={() => setStatus(course, "PUBLISHED")}><Globe /> Publish</Button>
-            : <Button variant="outline" disabled={busy} onClick={() => setStatus(course, archiveAction.to)}><archiveAction.icon /> Archive</Button>}
-          <Button variant="outline" className="col-span-2 text-destructive hover:bg-destructive/10 hover:text-destructive sm:col-span-1" onClick={() => setDeleting(true)}><Trash2 /> Delete</Button>
+          <RowActions label={`course ${course.title}`} title="More actions" busy={busy} items={[
+            course.status === "ARCHIVED"
+              ? { label: "Publish", icon: Globe, onSelect: () => setStatus(course, "PUBLISHED") }
+              : { label: "Archive", icon: archiveAction.icon, onSelect: () => setStatus(course, archiveAction.to), hint: "Hide it from the website" },
+            { label: "Delete course", icon: Trash2, onSelect: () => setDeleting(true), destructive: true },
+          ]} />
         </div>
       </CardContent>
     </Card>
@@ -124,7 +123,7 @@ function CourseForm({ course, onSaved }: { course: Course; onSaved: (course: Cou
     <CourseFields value={value} onChange={setValue} slugTouched={slugTouched} onSlugTouched={() => setSlugTouched(true)} />
     {patch.slug !== undefined && course.status === "PUBLISHED" && <p className="text-xs text-amber-700 dark:text-amber-300">Changing the slug changes the course&apos;s website address; old links will stop working.</p>}
     {error && <ErrorAlert title="Could not save" message={error} />}
-    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
       {dirty && <Button type="button" variant="outline" onClick={() => { setValue(courseFormValue(course)); setError(""); }}>Discard</Button>}
       <Button type="submit" disabled={busy || !dirty}>{busy ? <Loader2 className="animate-spin" /> : <Save />}Save changes</Button>
     </div>
@@ -171,15 +170,11 @@ function Syllabus({ courseId, subjects, onChanged }: { courseId: number; subject
             <h3 className="truncate font-medium">{s.subjects.name}</h3>
             <p className="text-xs text-muted-foreground"><span className="font-mono">{s.subjects.code}</span> · order {s.sort_order} · {s.chapters.length} chapter{s.chapters.length === 1 ? "" : "s"}</p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setChapterTarget({ subject: s })}><Plus /> Chapter</Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={`More actions for ${s.subjects.name}`}><MoreHorizontal /></Button></DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => setSubjectDialog({ editing: s })}><ArrowUpDown /> Change position</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={() => setDetaching(s)}><Unlink /> Remove from course</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <RowActions label={s.subjects.name} items={[
+            { label: "Add chapter", icon: Plus, onSelect: () => setChapterTarget({ subject: s }) },
+            { label: "Change position", icon: ArrowUpDown, onSelect: () => setSubjectDialog({ editing: s }) },
+            { label: "Remove from course", icon: Unlink, onSelect: () => setDetaching(s), destructive: true },
+          ]} />
         </div>
         {s.chapters.length === 0
           ? <p className="px-3 py-4 text-sm text-muted-foreground">No chapters yet.</p>
@@ -193,13 +188,13 @@ function Syllabus({ courseId, subjects, onChanged }: { courseId: number; subject
                 </div>
                 {ch.description && <p className="line-clamp-2 text-xs text-muted-foreground">{ch.description}</p>}
               </div>
-              <div className="flex shrink-0 items-center">
-                <IconAction label={ch.is_published ? "Unpublish (hide from students)" : "Publish to students"} onClick={() => togglePublished(ch)} disabled={toggling === ch.id}>
-                  {toggling === ch.id ? <Loader2 className="animate-spin" /> : ch.is_published ? <Eye /> : <EyeOff />}
-                </IconAction>
-                <IconAction label="Edit chapter" onClick={() => setChapterTarget({ subject: s, chapter: ch })}><Pencil /></IconAction>
-                <IconAction label="Delete chapter" onClick={() => setDeletingChapter(ch)} destructive><Trash2 /></IconAction>
-              </div>
+              <RowActions label={ch.title} busy={toggling === ch.id} className="shrink-0" items={[
+                ch.is_published
+                  ? { label: "Unpublish", icon: EyeOff, onSelect: () => togglePublished(ch), hint: "Hide from students" }
+                  : { label: "Publish to students", icon: Eye, onSelect: () => togglePublished(ch) },
+                { label: "Edit chapter", icon: Pencil, onSelect: () => setChapterTarget({ subject: s, chapter: ch }) },
+                { label: "Delete chapter", icon: Trash2, onSelect: () => setDeletingChapter(ch), destructive: true },
+              ]} />
             </li>)}
           </ol>}
       </section>)}
@@ -213,17 +208,6 @@ function Syllabus({ courseId, subjects, onChanged }: { courseId: number; subject
       subject={chapterTarget?.subject ?? null} chapter={chapterTarget?.chapter} nextOrder={nextOrder(chapterTarget?.subject.chapters ?? [])} onSaved={onChanged} />
     <DeleteChapterDialog chapter={deletingChapter} open={!!deletingChapter} onOpenChange={open => { if (!open) setDeletingChapter(null); }} onDone={onChanged} />
   </Card>;
-}
-
-/** Icon button with a tooltip; touch targets stay 36px. */
-function IconAction({ label, onClick, disabled, destructive, children }: { label: string; onClick: () => void; disabled?: boolean; destructive?: boolean; children: React.ReactNode }) {
-  return <Tooltip>
-    <TooltipTrigger asChild>
-      <Button size="icon" variant="ghost" aria-label={label} onClick={onClick} disabled={disabled}
-        className={destructive ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : undefined}>{children}</Button>
-    </TooltipTrigger>
-    <TooltipContent>{label}</TooltipContent>
-  </Tooltip>;
 }
 
 function DetailSkeleton() {

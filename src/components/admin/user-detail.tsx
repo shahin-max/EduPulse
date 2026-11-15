@@ -15,6 +15,7 @@ import { DeleteUserDialog, PasswordLinkDialog, StudentProfileDialog, UserFormDia
 import { ErrorAlert, formatDate, RoleBadges, StatusBadge, UserAvatar } from "./ui";
 import { FacultyProfileDialog } from "./faculty-profile-dialog";
 import { PhotoField } from "@/components/portal/photo-field";
+import { RowActions } from "@/components/portal/row-actions";
 import { photoApi } from "@/lib/account-api";
 
 export default function UserDetail({ id }: { id: number }) {
@@ -41,7 +42,7 @@ export default function UserDetail({ id }: { id: number }) {
     {back}
 
     <Card>
-      <CardContent className="flex flex-col gap-5 sm:flex-row sm:items-center">
+      <CardContent className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center">
         {deleted
           ? <UserAvatar name={user.full_name} src={user.photo_url} className="size-16 text-lg" />
           : <PhotoField name={user.full_name} photoUrl={user.photo_url}
@@ -55,10 +56,14 @@ export default function UserDetail({ id }: { id: number }) {
           <RoleBadges roles={user.roles} />
           <p className="text-sm text-muted-foreground">User #{user.id} · joined {formatDate(user.created_at)}</p>
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-col lg:flex-row">
+        {/* One primary action; the rest live in the ⋮ menu, so the header stays one row on phones. */}
+        <div className="flex items-center gap-2">
           <Button onClick={() => setEditing(true)} disabled={deleted}><Pencil /> Edit</Button>
-          <Button variant="outline" onClick={() => setLinking(true)} disabled={deleted}><KeyRound /> <span className="truncate">Password</span></Button>
-          <Button variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleting(true)} disabled={deleted || isSelf} title={isSelf ? "You cannot delete your own account" : undefined}><Trash2 /> Delete</Button>
+          <RowActions label={user.full_name} className="size-9 border" items={[
+            { label: "Password link", icon: KeyRound, onSelect: () => setLinking(true), disabled: deleted, hint: "Set-password or reset link" },
+            { label: "Delete user", icon: Trash2, onSelect: () => setDeleting(true), destructive: true, disabled: deleted || isSelf,
+              hint: isSelf ? "You cannot delete your own account" : deleted ? "Already deleted" : undefined },
+          ]} />
         </div>
       </CardContent>
     </Card>
@@ -80,7 +85,7 @@ export default function UserDetail({ id }: { id: number }) {
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle><CardDescription>Student and faculty information.</CardDescription>
-          {!deleted && (user.student_profiles || user.faculty_profiles) && <CardAction className="flex flex-col gap-2 sm:flex-row">
+          {!deleted && (user.student_profiles || user.faculty_profiles) && <CardAction className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {user.student_profiles && <Button variant="outline" size="sm" onClick={() => setEditingProfile(true)}><Pencil /> {user.faculty_profiles ? "Student details" : "Edit details"}</Button>}
             {user.faculty_profiles && <Button variant="outline" size="sm" onClick={() => setEditingFaculty(true)}><Pencil /> {user.student_profiles ? "Faculty details" : "Edit details"}</Button>}
           </CardAction>}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Eye, FilePlus2, ReceiptText, Search } from "lucide-react";
+import { Eye, FilePlus2, ReceiptText, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { feeLookupsApi, INVOICE_STATUSES, invoicesApi, toPaise, type Invoice, type InvoiceStatus, type InvoiceSummary } from "@/lib/admin-fees-api";
+import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAdminData } from "../use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, formatMoney, LoadingRows, Pager, Pill, titleCase } from "../ui";
 import { INVOICE_TONES, isOverdue } from "./shared";
@@ -133,18 +134,18 @@ function DueDate({ invoice }: { invoice: Invoice }) {
 }
 
 function InvoicesTable({ invoices }: { invoices: Invoice[] }) {
-  return <Table className="hidden md:table">
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Invoice</TableHead>
         <TableHead>Student</TableHead>
-        <TableHead className="hidden lg:table-cell">Batch</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Batch</TableHead>
         <TableHead className="text-right">Amount</TableHead>
-        <TableHead className="hidden text-right xl:table-cell">Paid</TableHead>
+        <TableHead className="hidden text-right @4xl/main:table-cell">Paid</TableHead>
         <TableHead className="text-right">Balance</TableHead>
-        <TableHead className="hidden lg:table-cell">Due</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Due</TableHead>
         <TableHead>Status</TableHead>
-        <TableHead className="pr-4 text-right"><span className="sr-only">Actions</span></TableHead>
+        <ActionsHead />
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -157,22 +158,26 @@ function InvoicesTable({ invoices }: { invoices: Invoice[] }) {
           <p className="max-w-[12rem] truncate font-medium">{student(i).users.full_name}</p>
           {student(i).admission_number && <p className="text-xs text-muted-foreground">{student(i).admission_number}</p>}
         </TableCell>
-        <TableCell className="hidden text-muted-foreground lg:table-cell">{i.enrollments.batches.code}</TableCell>
+        <TableCell className="hidden text-muted-foreground @3xl/main:table-cell">{i.enrollments.batches.code}</TableCell>
         <TableCell className="text-right tabular-nums">{formatMoney(i.amount_due)}</TableCell>
-        <TableCell className="hidden text-right tabular-nums text-muted-foreground xl:table-cell">{formatMoney(i.amount_paid)}</TableCell>
+        <TableCell className="hidden text-right tabular-nums text-muted-foreground @4xl/main:table-cell">{formatMoney(i.amount_paid)}</TableCell>
         <TableCell className="text-right font-medium tabular-nums">{i.status === "VOID" ? "—" : formatMoney(i.balance_due)}</TableCell>
-        <TableCell className="hidden lg:table-cell"><DueDate invoice={i} /></TableCell>
+        <TableCell className="hidden @3xl/main:table-cell"><DueDate invoice={i} /></TableCell>
         <TableCell><Pill value={i.status} tones={INVOICE_TONES} /></TableCell>
-        <TableCell className="pr-4 text-right">
-          <Button asChild variant="ghost" size="icon"><Link href={`/admin/fees/invoices/${i.id}`} aria-label={`View ${i.invoice_number}`}><Eye /></Link></Button>
-        </TableCell>
+        <TableCell className="pr-4 text-right"><RowActions label={i.invoice_number} items={invoiceActions(i)} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
+/** Open the invoice (record payments, issue, void there) or the student's account. */
+const invoiceActions = (i: Invoice) => [
+  { label: "Open invoice", icon: Eye, href: `/admin/fees/invoices/${i.id}` },
+  { label: "View student", icon: UserRound, href: `/admin/users/${i.enrollments.student_user_id}` },
+];
+
 function InvoicesCards({ invoices }: { invoices: Invoice[] }) {
-  return <ul className="divide-y md:hidden">
+  return <ul className="divide-y @2xl/main:hidden">
     {invoices.map(i => <li key={i.id}>
       <Link href={`/admin/fees/invoices/${i.id}`} className="grid gap-2 p-4 hover:bg-muted/50">
         <div className="flex items-start justify-between gap-3">

@@ -127,7 +127,7 @@ export default function AttendanceSheet({ session }: { session: ClassSession }) 
       {sheet.data && rows.length === 0 && <EmptyState icon={Users} title="No students in this batch" description="Students with an active enrollment appear here." />}
 
       {rows.length > 0 && <>
-        <div className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:px-6">
+        <div className="flex flex-col gap-2 px-4 sm:flex-row sm:flex-wrap sm:items-center sm:px-6">
           {editable && <Button size="lg" className="h-11 sm:w-auto" onClick={() => markPresent(counts.unmarked > 0)}>
             <CheckCheck />{counts.unmarked > 0 && counts.unmarked < rows.length ? `Mark remaining ${counts.unmarked} present` : "Mark all present"}
           </Button>}
@@ -143,7 +143,7 @@ export default function AttendanceSheet({ session }: { session: ClassSession }) 
         </ul>
 
         {/* Sticky save bar: stays at the bottom of the screen while the list scrolls. */}
-        <div className="sticky bottom-0 z-10 flex flex-col gap-2 rounded-b-xl border-t bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:flex-row sm:items-center sm:px-6">
+        <div className="sticky bottom-0 z-10 flex flex-col gap-2 rounded-b-xl border-t bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:flex-row sm:flex-wrap sm:items-center sm:px-6">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm" aria-live="polite">
             {ATTENDANCE_STATUSES.filter(s => s !== "EXCUSED" || counts.EXCUSED > 0).map(s => <span key={s} className={cn("font-medium tabular-nums", ATTENDANCE_META[s].text)}>{counts[s]} {ATTENDANCE_META[s].label.toLowerCase()}</span>)}
             {counts.unmarked > 0 && <span className="tabular-nums text-muted-foreground">{counts.unmarked} unmarked</span>}

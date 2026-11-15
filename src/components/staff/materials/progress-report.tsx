@@ -62,7 +62,7 @@ function BatchProgress({ batch, page, onPage }: { batch: StaffBatch; page: numbe
           </div>)}
         </div>
         <ProgressTable rows={rows} />
-        <ul className="divide-y md:hidden">
+        <ul className="divide-y @2xl/main:hidden">
           {rows.map(r => <li key={r.id} className="grid gap-1 p-4">
             <div className="flex items-start justify-between gap-2">
               <p className="min-w-0 truncate font-medium">{r.enrollments.student_profiles.users.full_name}</p>
@@ -79,13 +79,13 @@ function BatchProgress({ batch, page, onPage }: { batch: StaffBatch; page: numbe
 }
 
 function ProgressTable({ rows }: { rows: MaterialProgress[] }) {
-  return <Table className="hidden md:table">
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Student</TableHead>
         <TableHead>Material</TableHead>
         <TableHead>Status</TableHead>
-        <TableHead className="hidden lg:table-cell">Last opened</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Last opened</TableHead>
         <TableHead className="pr-4">Completed</TableHead>
       </TableRow>
     </TableHeader>
@@ -94,7 +94,7 @@ function ProgressTable({ rows }: { rows: MaterialProgress[] }) {
         <TableCell className="pl-4 font-medium">{r.enrollments.student_profiles.users.full_name}</TableCell>
         <TableCell className="max-w-[18rem] truncate">{r.study_materials.title}</TableCell>
         <TableCell><Pill value={r.status} tones={STATUS_TONES} /></TableCell>
-        <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(r.last_accessed_at, true)}</TableCell>
+        <TableCell className="hidden text-muted-foreground @3xl/main:table-cell">{formatDate(r.last_accessed_at, true)}</TableCell>
         <TableCell className="pr-4 text-muted-foreground">{formatDate(r.completed_at)}</TableCell>
       </TableRow>)}
     </TableBody>

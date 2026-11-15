@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { EmptyState, ErrorAlert, formatDate, LoadingRows, PageHeader, Pill, UserAvatar } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { usePortal } from "@/components/portal/portal-shell";
+import { RowActions as ActionMenu } from "@/components/portal/row-actions";
 import { batchLabel, useStaffBatches } from "@/components/staff/use-staff";
 import { assignmentsApi, type Assignment, type RosterEntry, type Submission } from "@/lib/staff-learning-api";
 import { FileLink } from "@/components/staff/materials/files";
@@ -170,7 +171,9 @@ function MissingItem({ e }: { e: RosterEntry }) {
       </p>
     </div>
     {mobile
-      ? <Button asChild size="sm" variant="outline"><a href={`tel:${mobile}`} aria-label={`Call ${p.users.full_name}`}><Phone /><span className="hidden sm:inline">{mobile}</span></a></Button>
+      ? <ActionMenu label={p.users.full_name} items={[
+        { label: `Call ${p.users.mobile ? "student" : "guardian"}`, icon: Phone, href: `tel:${mobile}`, hint: mobile },
+      ]} />
       : <UserX className="size-4 text-muted-foreground" aria-label="No phone number" />}
   </li>;
 }

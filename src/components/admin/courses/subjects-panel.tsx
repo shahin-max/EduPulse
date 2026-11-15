@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { CODE_PATTERN, subjectsApi, type CourseWithSubjects, type Subject, type SubjectInput } from "@/lib/admin-catalog-api";
@@ -38,12 +38,12 @@ export default function SubjectsPanel({ courses, onChanged }: { courses: CourseW
   }, [data, search]);
 
   const openCreate = () => { setEditing(undefined); setFormOpen(true); };
-  const actions: RowActions = { edit: s => { setEditing(s); setFormOpen(true); }, remove: setDeleting, usedBy: s => usedBy.get(s.id) ?? [] };
+  const actions: RowHandlers = { edit: s => { setEditing(s); setFormOpen(true); }, remove: setDeleting, usedBy: s => usedBy.get(s.id) ?? [] };
   const saved = () => { reload(); onChanged(); };
 
   return <>
     <Card className="gap-0 py-0">
-      <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input type="search" placeholder="Search subjects" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" aria-label="Search subjects" />
@@ -69,37 +69,32 @@ export default function SubjectsPanel({ courses, onChanged }: { courses: CourseW
   </>;
 }
 
-type RowActions = { edit: (s: Subject) => void; remove: (s: Subject) => void; usedBy: (s: Subject) => string[] };
+type RowHandlers = { edit: (s: Subject) => void; remove: (s: Subject) => void; usedBy: (s: Subject) => string[] };
 
 function UsedBy({ titles }: { titles: string[] }) {
   if (!titles.length) return <span className="text-muted-foreground">Not used</span>;
   return <span className="text-muted-foreground" title={titles.join(", ")}>{titles.length} course{titles.length === 1 ? "" : "s"}</span>;
 }
 
-function RowButtons({ subject, actions, labels }: { subject: Subject; actions: RowActions; labels?: boolean }) {
-  const items = [
-    { label: "Edit", icon: Pencil, onClick: () => actions.edit(subject) },
-    { label: "Delete", icon: Trash2, onClick: () => actions.remove(subject), destructive: true },
-  ];
-  return <div className={labels ? "grid grid-cols-2 gap-2" : "flex justify-end gap-1"}>
-    {items.map(({ label, icon: Icon, onClick, destructive }) => {
-      const className = destructive ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : undefined;
-      const button = <Button variant={labels ? "outline" : "ghost"} size={labels ? "sm" : "icon"} className={className} onClick={onClick} aria-label={`${label} ${subject.name}`}><Icon />{labels && label}</Button>;
-      if (labels) return <span key={label} className="contents">{button}</span>;
-      return <Tooltip key={label}><TooltipTrigger asChild>{button}</TooltipTrigger><TooltipContent>{label}</TooltipContent></Tooltip>;
-    })}
-  </div>;
+/** The ⋮ menu of a subject: edit, delete (refused while courses use it). */
+function SubjectActions({ subject, actions }: { subject: Subject; actions: RowHandlers }) {
+  const used = actions.usedBy(subject).length;
+  return <RowActions label={subject.name} items={[
+    { label: "Edit", icon: Pencil, onSelect: () => actions.edit(subject) },
+    { label: "Delete", icon: Trash2, onSelect: () => actions.remove(subject), destructive: true,
+      hint: used ? `Used by ${used} course${used === 1 ? "" : "s"}` : undefined },
+  ]} />;
 }
 
-function SubjectsTable({ subjects, actions }: { subjects: Subject[]; actions: RowActions }) {
-  return <Table className="hidden md:table">
+function SubjectsTable({ subjects, actions }: { subjects: Subject[]; actions: RowHandlers }) {
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Subject</TableHead>
         <TableHead>Code</TableHead>
         <TableHead>Used by</TableHead>
-        <TableHead className="hidden lg:table-cell">Added</TableHead>
-        <TableHead className="pr-4 text-right">Actions</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Added</TableHead>
+        <ActionsHead />
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -107,24 +102,26 @@ function SubjectsTable({ subjects, actions }: { subjects: Subject[]; actions: Ro
         <TableCell className="pl-4 font-medium">{s.name}</TableCell>
         <TableCell className="font-mono text-xs">{s.code}</TableCell>
         <TableCell><UsedBy titles={actions.usedBy(s)} /></TableCell>
-        <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(s.created_at)}</TableCell>
-        <TableCell className="pr-4"><RowButtons subject={s} actions={actions} /></TableCell>
+        <TableCell className="hidden text-muted-foreground @3xl/main:table-cell">{formatDate(s.created_at)}</TableCell>
+        <TableCell className="pr-4 text-right"><SubjectActions subject={s} actions={actions} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
-function SubjectsCards({ subjects, actions }: { subjects: Subject[]; actions: RowActions }) {
-  return <ul className="divide-y md:hidden">
+function SubjectsCards({ subjects, actions }: { subjects: Subject[]; actions: RowHandlers }) {
+  return <ul className="divide-y @2xl/main:hidden">
     {subjects.map(s => <li key={s.id} className="grid gap-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-medium">{s.name}</p>
           <p className="font-mono text-xs text-muted-foreground">{s.code}</p>
         </div>
-        <span className="shrink-0 text-xs"><UsedBy titles={actions.usedBy(s)} /></span>
+        <div className="flex shrink-0 items-center gap-1">
+          <span className="text-xs"><UsedBy titles={actions.usedBy(s)} /></span>
+          <SubjectActions subject={s} actions={actions} />
+        </div>
       </div>
-      <RowButtons subject={s} actions={actions} labels />
     </li>)}
   </ul>;
 }

@@ -81,7 +81,7 @@ export default function PortalShell({ config, children }: { config: PortalConfig
         <PortalSidebar config={config} />
         <SidebarInset className="min-w-0">
           <PortalTopbar config={config} />
-          <main id="main" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8 print:max-w-none print:p-0">{children}</main>
+          <main id="main" className="@container/main mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8 print:max-w-none print:p-0">{children}</main>
         </SidebarInset>
       </SidebarProvider>
       <Toaster richColors position="top-right" />

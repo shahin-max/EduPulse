@@ -42,7 +42,7 @@ export default function FeesPage() {
             : <Button onClick={() => setPlanOpen(true)}><Plus /> New fee plan</Button>} />
     </div>
 
-    <div role="tablist" aria-label="Fees sections" className="inline-flex w-full rounded-lg bg-muted p-1 sm:w-fit print:hidden">
+    <div role="tablist" aria-label="Fees sections" className="flex w-full flex-wrap gap-1 rounded-lg bg-muted p-1 sm:inline-flex sm:w-fit print:hidden">
       {TABS.map(t => <button key={t.value} type="button" role="tab" aria-selected={tab === t.value} onClick={() => switchTab(t.value)}
         className={cn("flex-1 rounded-md px-4 py-1.5 text-sm font-medium transition-colors sm:flex-none",
           tab === t.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>

@@ -112,6 +112,13 @@
 }
 
 @layer base {
+  /*
+   * A grid with no explicit columns is a single column that may shrink below its content's width
+   * (minmax(0, 1fr) instead of the implicit "auto" track). Without this, one long name or email in a
+   * list pushes the whole page wider than a phone and `truncate` never kicks in. Tailwind's
+   * grid-cols-* utilities (a later layer) still override it.
+   */
+  .grid { grid-template-columns: minmax(0, 1fr); }
   * { @apply border-border outline-ring/50; }
   body { @apply bg-background text-foreground; }
 }

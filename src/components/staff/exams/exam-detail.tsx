@@ -18,6 +18,7 @@ import { examsApi, type Exam, type ExamDetail as ExamDetailData, type ExamStatus
 import { EmptyState, ErrorAlert, errorText } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { usePortal } from "@/components/portal/portal-shell";
+import { RowActions as ActionMenu } from "@/components/portal/row-actions";
 import { batchLabel, useStaffBatches } from "@/components/staff/use-staff";
 import { ExamStatusPill, formatDateTime, formatMarks, KIND_LABEL, SegmentedTabs, STATUS_HELP } from "./exam-shared";
 import { ExamFormFields, examFormToInput, examToForm, validateExamForm, type ExamFormState } from "./exam-form";
@@ -137,7 +138,7 @@ function ExamHeader({ exam, onChanged, reload }: { exam: ExamDetailData; onChang
   }
 
   return <div className="grid gap-4">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-semibold tracking-tight break-words">{exam.title}</h1>
@@ -152,9 +153,14 @@ function ExamHeader({ exam, onChanged, reload }: { exam: ExamDetailData; onChang
           {" · "}{exam.max_attempts} {exam.max_attempts === 1 ? "attempt" : "attempts"} allowed
         </p>
       </div>
-      <div className="flex flex-wrap gap-2 print:hidden">
-        {statusActions(exam).map(a => <Button key={a.to} variant={a.variant} disabled={busy} onClick={() => { setStatusError(""); setPending(a); }}><a.icon /> {a.label}</Button>)}
-        {attempts === 0 && <Button variant="outline" disabled={busy} onClick={() => setDeleting(true)} className="text-destructive hover:bg-destructive/10 hover:text-destructive" aria-label="Delete exam"><Trash2 /></Button>}
+      {/* The main status change stays visible; other actions live in the actions menu. */}
+      <div className="flex items-center gap-2 print:hidden">
+        {statusActions(exam).slice(0, 1).map(a => <Button key={a.to} variant={a.variant} disabled={busy} onClick={() => { setStatusError(""); setPending(a); }}><a.icon /> {a.label}</Button>)}
+        <ActionMenu label={exam.title} busy={busy} items={[
+          ...statusActions(exam).slice(1).map(a => ({ label: a.label, icon: a.icon, onSelect: () => { setStatusError(""); setPending(a); } })),
+          attempts === 0 && { label: "Delete exam", icon: Trash2, onSelect: () => setDeleting(true), destructive: true },
+          attempts > 0 && { label: "Delete exam", icon: Trash2, disabled: true, destructive: true, hint: "Exams with attempts cannot be deleted" },
+        ]} />
       </div>
     </div>
 

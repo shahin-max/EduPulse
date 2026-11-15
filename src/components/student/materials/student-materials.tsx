@@ -5,10 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  BookOpen, CheckCircle2, ChevronDown, Circle, CircleDot, Download, ExternalLink, FileText, FolderOpen, Loader2, NotebookText, ScrollText, Video,
+  BookOpen, CheckCircle2, ChevronDown, CircleDot, Download, ExternalLink, FileText, FolderOpen, NotebookText, ScrollText, Video,
   type LucideIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +21,7 @@ import {
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { EmptyState, ErrorAlert, errorText, PageHeader, Pill } from "@/components/admin/ui";
 import { useOpenFile } from "@/components/staff/materials/files";
+import { RowActions as ActionMenu } from "@/components/portal/row-actions";
 
 const KIND_ICON: Record<MaterialKind, LucideIcon> = {
   PDF_NOTE: FileText, WORKSHEET: NotebookText, PREVIOUS_PAPER: ScrollText, VIDEO_LINK: Video, OTHER: FolderOpen,
@@ -177,32 +177,27 @@ function MaterialRow({ material: m, saving, onProgress }: { material: StudentMat
   }
 
   const canOpen = !!m.file_assets || !!m.external_url;
-  return <li className="grid gap-3 px-4 py-3 sm:flex sm:items-center sm:px-6">
-    <div className="flex min-w-0 flex-1 items-start gap-3">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-background ring-1 ring-border"><Icon className="size-4 text-muted-foreground" /></span>
-      <div className="min-w-0">
-        <p className="truncate font-medium">{m.title}</p>
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          <span>{MATERIAL_LABEL[m.kind]}</span>
-          {m.file_assets && <span>{formatBytes(m.file_assets.size_bytes)}</span>}
-          {!m.file_assets && m.external_url && <span>External link</span>}
-          <Pill value={m.progress} label={PROGRESS_LABEL[m.progress]} tones={PROGRESS_TONES} />
-        </p>
-      </div>
+  const opening = busy === m.file_assets?.id;
+  return <li className="flex items-start gap-3 px-4 py-3 sm:items-center sm:px-6">
+    <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-background ring-1 ring-border"><Icon className="size-4 text-muted-foreground" /></span>
+    <div className="min-w-0 flex-1">
+      {/* The title opens the material; everything else is in the actions menu. */}
+      <button type="button" onClick={openMaterial} disabled={!canOpen || opening}
+        className="block max-w-full truncate text-left font-medium hover:underline disabled:no-underline disabled:opacity-70">{m.title}</button>
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        <span>{MATERIAL_LABEL[m.kind]}</span>
+        {m.file_assets && <span>{formatBytes(m.file_assets.size_bytes)}</span>}
+        {!m.file_assets && m.external_url && <span>External link</span>}
+        <Pill value={m.progress} label={PROGRESS_LABEL[m.progress]} tones={PROGRESS_TONES} />
+      </p>
     </div>
-    <div className="flex flex-wrap gap-2 sm:shrink-0">
-      <Button size="sm" onClick={openMaterial} disabled={!canOpen || busy === m.file_assets?.id}>
-        {busy === m.file_assets?.id ? <Loader2 className="animate-spin" /> : <ExternalLink />}Open
-      </Button>
-      {m.is_downloadable && m.file_assets && <Button size="sm" variant="outline" onClick={() => void download()} disabled={downloading}>
-        {downloading ? <Loader2 className="animate-spin" /> : <Download />}Download
-      </Button>}
-      <Button size="sm" variant={done ? "secondary" : "outline"} disabled={saving} aria-pressed={done}
-        onClick={() => onProgress(m, done ? "IN_PROGRESS" : "COMPLETED")}>
-        {saving ? <Loader2 className="animate-spin" /> : done ? <CheckCircle2 className="text-emerald-600" /> : m.progress === "IN_PROGRESS" ? <CircleDot /> : <Circle />}
-        {done ? "Done" : "Mark as done"}
-      </Button>
-    </div>
+    <ActionMenu label={m.title} busy={opening || downloading || saving} items={[
+      { label: "Open", icon: ExternalLink, onSelect: openMaterial, disabled: !canOpen, hint: canOpen ? undefined : "Nothing to open yet" },
+      m.is_downloadable && m.file_assets && { label: "Download", icon: Download, onSelect: () => void download() },
+      done
+        ? { label: "Mark as not done", icon: CircleDot, onSelect: () => onProgress(m, "IN_PROGRESS") }
+        : { label: "Mark as done", icon: CheckCircle2, onSelect: () => onProgress(m, "COMPLETED") },
+    ]} />
   </li>;
 }
 

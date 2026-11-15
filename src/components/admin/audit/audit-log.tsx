@@ -154,15 +154,15 @@ function Entity({ log, onEntity }: { log: AuditLog; onEntity: (log: AuditLog) =>
 const fields = (log: AuditLog) => log.metadata?.fields?.length ? log.metadata.fields.join(", ") : "";
 
 function AuditTable({ rows, onActor, onEntity }: RowProps) {
-  return <Table className="hidden md:table">
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">When</TableHead>
         <TableHead>Who</TableHead>
         <TableHead>Action</TableHead>
         <TableHead>Record</TableHead>
-        <TableHead className="hidden lg:table-cell">Path</TableHead>
-        <TableHead className="hidden xl:table-cell pr-4">Fields sent</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Path</TableHead>
+        <TableHead className="hidden @4xl/main:table-cell pr-4">Fields sent</TableHead>
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -171,15 +171,15 @@ function AuditTable({ rows, onActor, onEntity }: RowProps) {
         <TableCell className="max-w-[12rem]"><Actor log={log} onActor={onActor} /></TableCell>
         <TableCell><span className="flex items-center gap-2"><Method log={log} /><span className="font-mono text-xs">{actionName(log)}</span></span></TableCell>
         <TableCell><Entity log={log} onEntity={onEntity} /></TableCell>
-        <TableCell className="hidden max-w-[16rem] truncate font-mono text-xs text-muted-foreground lg:table-cell" title={log.metadata?.path}>{log.metadata?.path ?? "—"}</TableCell>
-        <TableCell className="hidden max-w-[14rem] truncate pr-4 text-xs text-muted-foreground xl:table-cell" title={fields(log)}>{fields(log) || "—"}</TableCell>
+        <TableCell className="hidden max-w-[16rem] truncate font-mono text-xs text-muted-foreground @3xl/main:table-cell" title={log.metadata?.path}>{log.metadata?.path ?? "—"}</TableCell>
+        <TableCell className="hidden max-w-[14rem] truncate pr-4 text-xs text-muted-foreground @4xl/main:table-cell" title={fields(log)}>{fields(log) || "—"}</TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
 function AuditCards({ rows, onActor, onEntity }: RowProps) {
-  return <ul className="divide-y md:hidden">
+  return <ul className="divide-y @2xl/main:hidden">
     {rows.map(log => <li key={log.id} className="grid gap-2 p-4 text-sm">
       <div className="flex items-center justify-between gap-2">
         <Actor log={log} onActor={onActor} />

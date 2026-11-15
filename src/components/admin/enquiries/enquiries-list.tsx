@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Inbox, Loader2, MessageSquareText, RefreshCw, Search } from "lucide-react";
+import { Download, Inbox, Loader2, MessageSquareText, PanelRightOpen, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { downloadCsv } from "@/lib/teaching-api";
@@ -11,12 +11,13 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { cn } from "@/lib/utils";
 import { ENQUIRY_STATUSES, enquiriesApi, listCourses, type Enquiry, type EnquiryStatus, type ListEnquiriesQuery } from "@/lib/admin-ops-api";
 import { useAdminData } from "../use-admin-data";
 import { useIsAdmin } from "@/components/staff/use-staff";
 import { EmptyState, ErrorAlert, formatDate, LoadingRows, PageHeader, Pager, titleCase } from "../ui";
-import { ContactButtons, loadStaff, SourcePill, StatusPill } from "./enquiry-bits";
+import { contactActions, loadStaff, SourcePill, StatusPill } from "./enquiry-bits";
 import { EnquirySheet } from "./enquiry-sheet";
 
 const ALL = "all";
@@ -70,7 +71,7 @@ export default function EnquiriesList() {
     </button>
 
     <Card className="gap-0 py-0">
-      <div className="flex gap-1 overflow-x-auto border-b p-2" role="tablist" aria-label="Filter by status">
+      <div className="flex flex-wrap gap-1 border-b p-2" role="tablist" aria-label="Filter by status">
         {[undefined, ...ENQUIRY_STATUSES].map(s => {
           const active = status === s;
           return <Button key={s ?? ALL} role="tab" aria-selected={active} size="sm" variant={active ? "secondary" : "ghost"} className="shrink-0" onClick={() => filterStatus(s)}>
@@ -79,12 +80,12 @@ export default function EnquiriesList() {
           </Button>;
         })}
       </div>
-      <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:flex-wrap lg:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input type="search" placeholder="Search by name or mobile" value={searchText} onChange={e => setSearchText(e.target.value)} className="pl-9" aria-label="Search enquiries" />
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
+        <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
           <Select value={courseId ? String(courseId) : ALL} onValueChange={v => { setCourseId(v === ALL ? undefined : Number(v)); setPage(1); }}>
             <SelectTrigger className="w-full sm:w-48" aria-label="Filter by course"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -132,16 +133,16 @@ const preview = (message: string | null) => {
 };
 
 function EnquiriesTable({ rows, onOpen, showAssignee }: { rows: Enquiry[]; onOpen: (e: Enquiry) => void; showAssignee: boolean }) {
-  return <Table className="hidden md:table">
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Enquiry</TableHead>
         <TableHead>Mobile</TableHead>
-        <TableHead className="hidden lg:table-cell">Course</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Course</TableHead>
         <TableHead>Status</TableHead>
-        {showAssignee && <TableHead className="hidden xl:table-cell">Assigned to</TableHead>}
-        <TableHead className="hidden lg:table-cell">Received</TableHead>
-        <TableHead className="pr-4 text-right">Contact</TableHead>
+        {showAssignee && <TableHead className="hidden @4xl/main:table-cell">Assigned to</TableHead>}
+        <TableHead className="hidden @3xl/main:table-cell">Received</TableHead>
+        <ActionsHead />
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -155,22 +156,20 @@ function EnquiriesTable({ rows, onOpen, showAssignee }: { rows: Enquiry[]; onOpe
           </div>
         </TableCell>
         <TableCell className="tabular-nums text-muted-foreground">{e.mobile}</TableCell>
-        <TableCell className="hidden max-w-[12rem] truncate text-muted-foreground lg:table-cell">{e.courses?.title ?? "—"}</TableCell>
+        <TableCell className="hidden max-w-[12rem] truncate text-muted-foreground @3xl/main:table-cell">{e.courses?.title ?? "—"}</TableCell>
         <TableCell><StatusPill status={e.status} /></TableCell>
-        {showAssignee && <TableCell className="hidden text-muted-foreground xl:table-cell">{e.users?.full_name ?? "Unassigned"}</TableCell>}
-        <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(e.created_at, true)}</TableCell>
-        <TableCell className="pr-4" onClick={ev => ev.stopPropagation()}>
-          <div className="flex justify-end gap-1"><ContactButtons mobile={e.mobile} name={e.student_name} /></div>
-        </TableCell>
+        {showAssignee && <TableCell className="hidden text-muted-foreground @4xl/main:table-cell">{e.users?.full_name ?? "Unassigned"}</TableCell>}
+        <TableCell className="hidden text-muted-foreground @3xl/main:table-cell">{formatDate(e.created_at, true)}</TableCell>
+        <TableCell className="pr-4 text-right" onClick={ev => ev.stopPropagation()}><EnquiryActions enquiry={e} onOpen={onOpen} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
 function EnquiriesCards({ rows, onOpen }: { rows: Enquiry[]; onOpen: (e: Enquiry) => void }) {
-  return <ul className="divide-y md:hidden">
-    {rows.map(e => <li key={e.id} className={cn("grid gap-3 p-4", e.status === "NEW" && "bg-sky-500/5")}>
-      <button type="button" className="grid gap-1 text-left" onClick={() => onOpen(e)}>
+  return <ul className="divide-y @2xl/main:hidden">
+    {rows.map(e => <li key={e.id} className={cn("flex items-start gap-2 p-4", e.status === "NEW" && "bg-sky-500/5")}>
+      <button type="button" className="grid min-w-0 flex-1 gap-1 text-left" onClick={() => onOpen(e)}>
         <span className="flex items-start justify-between gap-2">
           <span className="min-w-0 truncate font-medium">{e.student_name}</span>
           <StatusPill status={e.status} />
@@ -185,12 +184,17 @@ function EnquiriesCards({ rows, onOpen }: { rows: Enquiry[]; onOpen: (e: Enquiry
           {e.users && <span>· {e.users.full_name}</span>}
         </span>
       </button>
-      <div className="grid grid-cols-3 gap-2">
-        <ContactButtons mobile={e.mobile} name={e.student_name} labels />
-        <Button size="sm" onClick={() => onOpen(e)}>Open</Button>
-      </div>
+      <EnquiryActions enquiry={e} onOpen={onOpen} />
     </li>)}
   </ul>;
+}
+
+/** The ⋮ menu of an enquiry: open the follow-up sheet, call, WhatsApp. */
+function EnquiryActions({ enquiry, onOpen }: { enquiry: Enquiry; onOpen: (e: Enquiry) => void }) {
+  return <RowActions label={enquiry.student_name} items={[
+    { label: "Open", icon: PanelRightOpen, onSelect: () => onOpen(enquiry), hint: "Status, notes and assignee" },
+    ...contactActions(enquiry.mobile),
+  ]} />;
 }
 
 /** Admin-only CSV of every enquiry matching the current filters, fetched 100 at a time. */

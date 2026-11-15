@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CircleCheck, FileQuestion, FileUp, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { CircleCheck, Eye, EyeOff, FileQuestion, FileUp, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { RowActions as ActionMenu } from "@/components/portal/row-actions";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -73,7 +74,7 @@ export function QuestionBank() {
 
   return <Card className="gap-0 py-0">
     <div className="grid gap-3 border-b p-4">
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input type="search" placeholder="Search question text" value={searchText} onChange={e => setSearchText(e.target.value)} className="pl-9" aria-label="Search questions" />
@@ -159,7 +160,8 @@ type RowActions = {
 /** One question with its options; stacked layout that works from 360px up. */
 function QuestionRow({ question: q, actions }: { question: Question; actions: RowActions }) {
   const editable = actions.canEdit(q);
-  return <li className="grid gap-3 p-4 md:grid-cols-[1fr_auto] md:items-start">
+  const locked = editable ? undefined : "Only the question's author or an admin can change it";
+  return <li className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 p-4">
     <div className="min-w-0">
       <div className="mb-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
         <span className="font-mono">#{q.id}</span>
@@ -180,11 +182,12 @@ function QuestionRow({ question: q, actions }: { question: Question; actions: Ro
         {!q.is_active && <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>}
       </div>
     </div>
-    <div className="flex flex-wrap gap-2 md:justify-end">
-      <Button size="sm" variant="outline" disabled={!editable} onClick={() => actions.edit(q)} title={editable ? undefined : "Faculty can only change questions they created"}><Pencil /> Edit</Button>
-      <Button size="sm" variant="outline" disabled={!editable} onClick={() => void actions.toggleActive(q)}>{q.is_active ? "Deactivate" : "Activate"}</Button>
-      <Button size="sm" variant="outline" disabled={!editable} onClick={() => actions.remove(q)} className="text-destructive hover:bg-destructive/10 hover:text-destructive" aria-label={`Delete question ${q.id}`}><Trash2 /></Button>
-    </div>
+    <ActionMenu label={`question #${q.id}`} items={[
+      { label: "Edit", icon: Pencil, onSelect: () => actions.edit(q), disabled: !editable, hint: locked },
+      { label: q.is_active ? "Deactivate" : "Activate", icon: q.is_active ? EyeOff : Eye, onSelect: () => void actions.toggleActive(q), disabled: !editable,
+        hint: editable ? (q.is_active ? "Hide it from new exams" : "Use it in exams again") : undefined },
+      { label: "Delete", icon: Trash2, onSelect: () => actions.remove(q), disabled: !editable, destructive: true },
+    ]} />
   </li>;
 }
 

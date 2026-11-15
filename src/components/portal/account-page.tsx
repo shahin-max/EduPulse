@@ -30,7 +30,7 @@ export default function AccountPage() {
 
   return <>
     <Card>
-      <CardContent className="flex flex-col gap-5 sm:flex-row sm:items-center">
+      <CardContent className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center">
         <PhotoField name={user.full_name} photoUrl={user.photo_url} upload={photoApi.setMine} remove={photoApi.removeMine} onChanged={setCurrentUser} />
         <div className="min-w-0 flex-1 space-y-2">
           <h1 className="truncate text-2xl font-semibold tracking-tight">{user.full_name}</h1>

@@ -13,11 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth";
 import type { RoleCode } from "@/lib/api";
 import { ROLES, USER_STATUSES, usersApi, type AdminUser, type ListUsersQuery, type UserStatus } from "@/lib/admin-api";
 import { downloadCsv } from "@/lib/teaching-api";
+import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAdminData } from "./use-admin-data";
 import { DeleteUserDialog, UserFormDialog } from "./user-dialogs";
 import { ErrorAlert, formatDate, PageHeader, Pager, RoleBadges, StatusBadge, titleCase, UserAvatar } from "./ui";
@@ -88,12 +88,12 @@ export default function UsersList() {
     </>} />
 
     <Card className="gap-0 py-0">
-      <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:flex-wrap lg:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input type="search" placeholder="Search by name, email or mobile" value={searchText} onChange={e => setSearchText(e.target.value)} className="pl-9" aria-label="Search users" />
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
+        <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
           <Select value={role ?? ALL} onValueChange={v => { setRole(v === ALL ? undefined : v as RoleCode); setPage(1); }}>
             <SelectTrigger className="w-full sm:w-36" aria-label="Filter by role"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -133,45 +133,31 @@ export default function UsersList() {
   </>;
 }
 
-type RowActions = { edit: (u: AdminUser) => void; remove: (u: AdminUser) => void; isSelf: (u: AdminUser) => boolean };
+type RowHandlers = { edit: (u: AdminUser) => void; remove: (u: AdminUser) => void; isSelf: (u: AdminUser) => boolean };
 
-function ActionButtons({ user, actions, labels = false }: { user: AdminUser; actions: RowActions; labels?: boolean }) {
+/** The ⋮ menu of a user row: view, edit, delete (disabled for yourself and deleted accounts). */
+function UserActions({ user, actions }: { user: AdminUser; actions: RowHandlers }) {
   const deleted = !!user.deleted_at;
-  const cannotDelete = deleted || actions.isSelf(user);
-  const items = [
+  return <RowActions label={user.full_name} items={[
     { label: "View", icon: Eye, href: `/admin/users/${user.id}` },
-    { label: "Edit", icon: Pencil, onClick: () => actions.edit(user), disabled: deleted },
-    { label: "Delete", icon: Trash2, onClick: () => actions.remove(user), disabled: cannotDelete, destructive: true,
-      tip: actions.isSelf(user) ? "You cannot delete your own account" : deleted ? "Already deleted" : "Delete" },
-  ];
-  return <div className={labels ? "grid grid-cols-3 gap-2" : "flex justify-end gap-1"}>
-    {items.map(({ label, icon: Icon, href, onClick, disabled, destructive, tip }) => {
-      const className = destructive ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : undefined;
-      const button = href
-        ? <Button asChild variant={labels ? "outline" : "ghost"} size={labels ? "sm" : "icon"} className={className}><Link href={href} aria-label={`View ${user.full_name}`}><Icon />{labels && label}</Link></Button>
-        : <Button variant={labels ? "outline" : "ghost"} size={labels ? "sm" : "icon"} className={className} onClick={onClick} disabled={disabled} aria-label={`${label} ${user.full_name}`}><Icon />{labels && label}</Button>;
-      if (labels) return <span key={label} className="contents">{button}</span>;
-      // Disabled buttons do not fire pointer events, so the tooltip wraps a span.
-      return <Tooltip key={label}>
-        <TooltipTrigger asChild><span className="inline-flex">{button}</span></TooltipTrigger>
-        <TooltipContent>{tip ?? label}</TooltipContent>
-      </Tooltip>;
-    })}
-  </div>;
+    { label: "Edit", icon: Pencil, onSelect: () => actions.edit(user), disabled: deleted, hint: deleted ? "Deleted accounts cannot be edited" : undefined },
+    { label: "Delete", icon: Trash2, onSelect: () => actions.remove(user), destructive: true, disabled: deleted || actions.isSelf(user),
+      hint: actions.isSelf(user) ? "You cannot delete your own account" : deleted ? "Already deleted" : undefined },
+  ]} />;
 }
 
 /** md and up: a table. Lower-priority columns appear as the screen widens. */
-function UsersTable({ users, actions }: { users: AdminUser[]; actions: RowActions }) {
-  return <Table className="hidden md:table">
+function UsersTable({ users, actions }: { users: AdminUser[]; actions: RowHandlers }) {
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">User</TableHead>
-        <TableHead className="hidden lg:table-cell">Mobile</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Mobile</TableHead>
         <TableHead>Roles</TableHead>
         <TableHead>Status</TableHead>
-        <TableHead className="hidden xl:table-cell">Last login</TableHead>
-        <TableHead className="hidden xl:table-cell">Joined</TableHead>
-        <TableHead className="pr-4 text-right">Actions</TableHead>
+        <TableHead className="hidden @4xl/main:table-cell">Last login</TableHead>
+        <TableHead className="hidden @4xl/main:table-cell">Joined</TableHead>
+        <ActionsHead />
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -185,35 +171,34 @@ function UsersTable({ users, actions }: { users: AdminUser[]; actions: RowAction
             </div>
           </div>
         </TableCell>
-        <TableCell className="hidden text-muted-foreground lg:table-cell">{u.mobile ?? "—"}</TableCell>
+        <TableCell className="hidden text-muted-foreground @3xl/main:table-cell">{u.mobile ?? "—"}</TableCell>
         <TableCell><RoleBadges roles={u.roles} /></TableCell>
         <TableCell><StatusBadge status={u.status} deleted={!!u.deleted_at} /></TableCell>
-        <TableCell className="hidden text-muted-foreground xl:table-cell">{formatDate(u.last_login_at, true)}</TableCell>
-        <TableCell className="hidden text-muted-foreground xl:table-cell">{formatDate(u.created_at)}</TableCell>
-        <TableCell className="pr-4"><ActionButtons user={u} actions={actions} /></TableCell>
+        <TableCell className="hidden text-muted-foreground @4xl/main:table-cell">{formatDate(u.last_login_at, true)}</TableCell>
+        <TableCell className="hidden text-muted-foreground @4xl/main:table-cell">{formatDate(u.created_at)}</TableCell>
+        <TableCell className="pr-4 text-right"><UserActions user={u} actions={actions} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
-/** Below md: one card per user with full-width action buttons. */
-function UsersCards({ users, actions }: { users: AdminUser[]; actions: RowActions }) {
-  return <ul className="divide-y md:hidden">
+/** Narrow screens: one card per user, actions in the ⋮ menu at the top right. */
+function UsersCards({ users, actions }: { users: AdminUser[]; actions: RowHandlers }) {
+  return <ul className="divide-y @2xl/main:hidden">
     {users.map(u => <li key={u.id} className="grid gap-3 p-4">
       <div className="flex items-start gap-3">
         <UserAvatar name={u.full_name} src={u.photo_url} />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">{u.full_name}</p>
+          <Link href={`/admin/users/${u.id}`} className="block truncate font-medium hover:underline">{u.full_name}</Link>
           {u.email && <p className="truncate text-xs text-muted-foreground">{u.email}</p>}
           {u.mobile && <p className="truncate text-xs text-muted-foreground">{u.mobile}</p>}
         </div>
-        <StatusBadge status={u.status} deleted={!!u.deleted_at} />
+        <UserActions user={u} actions={actions} />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <RoleBadges roles={u.roles} />
+        <div className="flex flex-wrap items-center gap-1.5"><StatusBadge status={u.status} deleted={!!u.deleted_at} /><RoleBadges roles={u.roles} /></div>
         <span className="text-xs text-muted-foreground">Joined {formatDate(u.created_at)}</span>
       </div>
-      <ActionButtons user={u} actions={actions} labels />
     </li>)}
   </ul>;
 }

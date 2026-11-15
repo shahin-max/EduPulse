@@ -41,7 +41,7 @@ export default function StudentClasses() {
 
   return <>
     <PageHeader title="Timetable" description="Your classes across all your batches. Online class links open 15 minutes before the start." />
-    <div className="flex gap-1 overflow-x-auto rounded-lg border bg-muted/40 p-1 sm:w-fit" role="tablist" aria-label="Choose a week">
+    <div className="flex flex-wrap gap-1 rounded-lg border bg-muted/40 p-1 sm:w-fit" role="tablist" aria-label="Choose a week">
       {VIEWS.map(v => <Button key={v.value} role="tab" aria-selected={view === v.value} size="sm" variant={view === v.value ? "secondary" : "ghost"}
         className={cn("shrink-0", view === v.value && "bg-background shadow-xs")} onClick={() => setView(v.value)}>{v.label}</Button>)}
     </div>
@@ -59,7 +59,7 @@ export default function StudentClasses() {
                 const live = isJoinable(c, now);
                 const cancelled = c.status === "CANCELLED";
                 const over = new Date(c.ends_at).getTime() < now;
-                return <li key={c.id} className="grid gap-3 p-4 sm:flex sm:items-center">
+                return <li key={c.id} className="grid gap-3 p-4 sm:flex sm:flex-wrap sm:items-center">
                   <div className="w-28 shrink-0 text-sm tabular-nums text-muted-foreground">{timeOf(c.starts_at)}–{timeOf(c.ends_at)}</div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">

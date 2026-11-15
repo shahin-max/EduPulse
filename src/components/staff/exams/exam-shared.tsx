@@ -51,7 +51,7 @@ export function SegmentedTabs<T extends string>({ value, onChange, tabs, label, 
   label: string;
   className?: string;
 }) {
-  return <div role="tablist" aria-label={label} className={cn("inline-flex w-full max-w-full overflow-x-auto rounded-lg bg-muted p-1 sm:w-auto", className)}>
+  return <div role="tablist" aria-label={label} className={cn("flex w-full flex-wrap gap-1 rounded-lg bg-muted p-1 sm:inline-flex sm:w-auto", className)}>
     {tabs.map(tab => <button key={tab.value} type="button" role="tab" aria-selected={value === tab.value} onClick={() => onChange(tab.value)}
       className={cn("flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors sm:flex-none sm:px-4",
         value === tab.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>

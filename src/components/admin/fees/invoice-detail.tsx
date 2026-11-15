@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { invoicesApi, toPaise, type Payment } from "@/lib/admin-fees-api";
+import { RowActions } from "@/components/portal/row-actions";
 import { useAdminData } from "../use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, formatMoney, Pill } from "../ui";
 import { EditInvoiceDialog, InvoiceActionDialog } from "./invoice-dialogs";
@@ -51,12 +52,14 @@ export default function InvoiceDetail({ id }: { id: number }) {
     invoice.status !== "DRAFT" && { label: "Record payment", icon: Wallet, onClick: () => setPaying(true), disabled: !canPay, tip: canPay ? undefined : payBlock },
     invoice.status !== "VOID" && { label: "Void", icon: Ban, onClick: () => setAction("void"), disabled: !!voidBlock, tip: voidBlock ?? undefined, variant: "outline" as const, destructive: true },
   ].filter(a => !!a);
+  // The first action (Issue for a draft, Record payment otherwise) stays a button; the rest go in the menu.
+  const [primary, ...more] = actions;
 
   return <>
     {back}
 
     <Card>
-      <CardContent className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+      <CardContent className="flex flex-col gap-5 lg:flex-row lg:flex-wrap lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="truncate text-2xl font-semibold tracking-tight tabular-nums">{invoice.invoice_number}</h1>
@@ -67,17 +70,16 @@ export default function InvoiceDetail({ id }: { id: number }) {
           <p className="text-sm text-muted-foreground">{batch.code} · {batch.name} · {batch.courses.title}</p>
           {invoice.description && <p className="text-sm">{invoice.description}</p>}
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-end">
-          {actions.map(({ label, icon: Icon, onClick, disabled, tip, variant, destructive }) => {
-            const button = <Button variant={variant ?? "default"} onClick={onClick} disabled={disabled}
-              className={cn("w-full sm:w-auto", destructive && "text-destructive hover:bg-destructive/10 hover:text-destructive")}><Icon /> {label}</Button>;
-            if (!tip) return <span key={label} className="contents">{button}</span>;
-            return <Tooltip key={label}>
-              <TooltipTrigger asChild><span className="inline-flex">{button}</span></TooltipTrigger>
-              <TooltipContent>{tip}</TooltipContent>
-            </Tooltip>;
-          })}
-        </div>
+        {primary && <div className="flex items-center gap-2 lg:justify-end">
+          {primary.tip
+            ? <Tooltip>
+              <TooltipTrigger asChild><span className="inline-flex flex-1 sm:flex-none"><Button className="w-full" onClick={primary.onClick} disabled={primary.disabled}><primary.icon /> {primary.label}</Button></span></TooltipTrigger>
+              <TooltipContent>{primary.tip}</TooltipContent>
+            </Tooltip>
+            : <Button className="flex-1 sm:flex-none" onClick={primary.onClick} disabled={primary.disabled}><primary.icon /> {primary.label}</Button>}
+          <RowActions label={`invoice ${invoice.invoice_number}`} title="More actions"
+            items={more.map(a => ({ label: a.label, icon: a.icon, onSelect: a.onClick, disabled: a.disabled, hint: a.tip, destructive: a.destructive }))} />
+        </div>}
       </CardContent>
     </Card>
 
@@ -150,7 +152,14 @@ function PaymentItem({ payment: p, onSettle, onRefund, onSettleRefund }: {
         {(p.external_reference || p.provider) && <p className="truncate text-xs text-muted-foreground">Ref: {[p.provider, p.external_reference].filter(Boolean).join(" · ")}</p>}
         {p.notes && <p className="mt-1 text-sm break-words whitespace-pre-line">{p.notes}</p>}
       </div>
-      <Pill value={p.status} tones={PAYMENT_TONES} />
+      <div className="flex shrink-0 items-center gap-1">
+        <Pill value={p.status} tones={PAYMENT_TONES} />
+        <RowActions label={`payment ${p.receipt_number ?? `#${p.id}`}`} items={[
+          p.status === "CONFIRMED" && !!p.receipt_number && { label: "View receipt", icon: Printer, href: `/admin/fees/receipts/${p.id}` },
+          p.status === "PENDING" && { label: "Settle payment", icon: CircleCheck, onSelect: onSettle, hint: "Confirm it cleared, or mark it failed" },
+          refundable > 0 && { label: "Refund", icon: Undo2, onSelect: onRefund, destructive: true },
+        ]} />
+      </div>
     </div>
 
     {p.payment_refunds.length > 0 && <ul className="grid gap-2 rounded-md bg-muted/50 p-3 text-sm">
@@ -161,16 +170,11 @@ function PaymentItem({ payment: p, onSettle, onRefund, onSettleRefund }: {
         </div>
         <div className="flex items-center gap-2">
           <Pill value={r.status} tones={PAYMENT_TONES} />
-          {r.status === "PENDING" && <Button size="sm" variant="outline" onClick={() => onSettleRefund(r)}>Settle</Button>}
+          {r.status === "PENDING" && <RowActions label={`refund of ${formatMoney(r.amount)}`} items={[{ label: "Settle refund", icon: CircleCheck, onSelect: () => onSettleRefund(r) }]} />}
         </div>
       </li>)}
     </ul>}
 
-    <div className="flex flex-wrap gap-2">
-      {p.status === "CONFIRMED" && p.receipt_number && <Button asChild size="sm" variant="outline"><Link href={`/admin/fees/receipts/${p.id}`}><Printer /> Receipt</Link></Button>}
-      {p.status === "PENDING" && <Button size="sm" variant="outline" onClick={onSettle}><CircleCheck /> Settle</Button>}
-      {refundable > 0 && <Button size="sm" variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={onRefund}><Undo2 /> Refund</Button>}
-    </div>
   </li>;
 }
 

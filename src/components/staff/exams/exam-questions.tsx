@@ -16,6 +16,7 @@ import { EmptyState, ErrorAlert, errorText, LoadingRows, Pager, titleCase } from
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { ALL, DifficultyPill, formatMarks, MARKS_PATTERN, sumMarks, useCurriculum } from "./exam-shared";
 import { QuestionDialog } from "./question-dialog";
+import { RowActions as ActionMenu } from "@/components/portal/row-actions";
 
 export function ExamQuestionsPanel({ exam, onExam, reload }: { exam: ExamDetail; onExam: (exam: ExamDetail) => void; reload: () => void }) {
   const { withToken } = useAuth();
@@ -57,7 +58,7 @@ export function ExamQuestionsPanel({ exam, onExam, reload }: { exam: ExamDetail;
   }, "Could not update the marks.");
 
   return <Card className="gap-0 py-0">
-    <CardHeader className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-start sm:justify-between [.border-b]:pb-4">
+    <CardHeader className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between [.border-b]:pb-4">
       <div className="min-w-0">
         <CardTitle className="text-base">Questions</CardTitle>
         <CardDescription>
@@ -116,13 +117,11 @@ function QuestionLine({ q, index, count, locked, busy, onMove, onRemove, onMarks
           </label>
           {dirty && <Button type="submit" size="sm" disabled={!valid || disabled}>{busy === `marks:${q.question_id}` && <Loader2 className="animate-spin" />}Save</Button>}
         </form>}
-      {!locked && <div className="flex gap-1">
-        <Button size="icon" variant="ghost" className="size-8" disabled={disabled || index === 0} onClick={() => onMove(-1)} aria-label={`Move question ${index + 1} up`}><ArrowUp /></Button>
-        <Button size="icon" variant="ghost" className="size-8" disabled={disabled || index === count - 1} onClick={() => onMove(1)} aria-label={`Move question ${index + 1} down`}><ArrowDown /></Button>
-        <Button size="icon" variant="ghost" className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={disabled} onClick={onRemove} aria-label={`Remove question ${index + 1}`}>
-          {busy === `remove:${q.question_id}` ? <Loader2 className="animate-spin" /> : <Trash2 />}
-        </Button>
-      </div>}
+      {!locked && <ActionMenu label={`question ${index + 1}`} busy={busy === `remove:${q.question_id}` || busy === `move:${index}`} items={[
+        { label: "Move up", icon: ArrowUp, onSelect: () => onMove(-1), disabled: disabled || index === 0 },
+        { label: "Move down", icon: ArrowDown, onSelect: () => onMove(1), disabled: disabled || index === count - 1 },
+        { label: "Remove from exam", icon: Trash2, onSelect: onRemove, disabled, destructive: true },
+      ]} />}
     </div>
   </li>;
 }
@@ -256,7 +255,7 @@ function QuestionPicker({ exam, onClose, onExam }: { exam: ExamDetail; onClose: 
 
       <DialogFooter className="items-center gap-2 sm:justify-between">
         <p className="text-sm text-muted-foreground">{selected.size} selected{selected.size > 0 && ` · +${formatMarks(selectedMarks)} marks`}</p>
-        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap">
           <Button variant="outline" onClick={() => setCreating(true)} disabled={adding}><Plus /> New question</Button>
           <Button onClick={() => void add()} disabled={!selected.size || adding}>{adding && <Loader2 className="animate-spin" />} Add {selected.size || ""} to exam</Button>
         </div>

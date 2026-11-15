@@ -51,7 +51,7 @@ export default function Receipt({ paymentId }: { paymentId: number }) {
       message={`This payment is ${titleCase(payment.status).toLowerCase()}. A receipt number is issued only when the payment is confirmed.`} /></div>}
 
     <article className="mx-auto w-full max-w-2xl rounded-xl border bg-card p-5 text-card-foreground shadow-sm sm:p-8 print:max-w-none print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black print:shadow-none">
-      <header className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-start sm:justify-between print:flex-row print:items-start print:justify-between print:border-black/30">
+      <header className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between print:flex-row print:items-start print:justify-between print:border-black/30">
         <div className="min-w-0">
           <p className="text-xl font-bold tracking-tight">EduPulse Academy</p>
           {branch && <p className="text-sm font-medium">{branch.name}</p>}

@@ -107,14 +107,14 @@ function BatchBadges({ exam }: { exam: Exam }) {
 }
 
 function ExamsTable({ exams, base }: { exams: Exam[]; base: string }) {
-  return <Table className="hidden md:table">
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Exam</TableHead>
-        <TableHead className="hidden lg:table-cell">Batches</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Batches</TableHead>
         <TableHead className="text-right">Questions</TableHead>
         <TableHead className="text-right">Marks</TableHead>
-        <TableHead className="hidden xl:table-cell">Window</TableHead>
+        <TableHead className="hidden @4xl/main:table-cell">Window</TableHead>
         <TableHead className="text-right">Attempts</TableHead>
         <TableHead className="pr-4">Status</TableHead>
       </TableRow>
@@ -125,10 +125,10 @@ function ExamsTable({ exams, base }: { exams: Exam[]; base: string }) {
           <Link href={`${base}/exams/${e.id}`} className="block max-w-[22rem] truncate font-medium hover:underline">{e.title}</Link>
           <p className="max-w-[22rem] truncate text-xs text-muted-foreground">{KIND_LABEL[e.kind]} · {e.courses.code}{e.subjects && ` · ${e.subjects.name}`} · {e.duration_minutes} min</p>
         </TableCell>
-        <TableCell className="hidden lg:table-cell"><BatchBadges exam={e} /></TableCell>
+        <TableCell className="hidden @3xl/main:table-cell"><BatchBadges exam={e} /></TableCell>
         <TableCell className="text-right tabular-nums">{e._count.exam_questions}</TableCell>
         <TableCell className="text-right tabular-nums">{formatMarks(e.total_marks)}</TableCell>
-        <TableCell className="hidden text-xs text-muted-foreground xl:table-cell">{windowText(e)}</TableCell>
+        <TableCell className="hidden text-xs text-muted-foreground @4xl/main:table-cell">{windowText(e)}</TableCell>
         <TableCell className="text-right tabular-nums">{e._count.exam_attempts}</TableCell>
         <TableCell className="pr-4"><ExamStatusPill status={e.status} /></TableCell>
       </TableRow>)}
@@ -137,7 +137,7 @@ function ExamsTable({ exams, base }: { exams: Exam[]; base: string }) {
 }
 
 function ExamsCards({ exams, base }: { exams: Exam[]; base: string }) {
-  return <ul className="divide-y md:hidden">
+  return <ul className="divide-y @2xl/main:hidden">
     {exams.map(e => <li key={e.id}>
       <Link href={`${base}/exams/${e.id}`} className="grid gap-2 p-4 hover:bg-muted/50">
         <div className="flex items-start justify-between gap-2">

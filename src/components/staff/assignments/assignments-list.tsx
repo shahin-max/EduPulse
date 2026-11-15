@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { EmptyState, ErrorAlert, formatDate, LoadingRows, PageHeader, Pill, titleCase } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { usePortal } from "@/components/portal/portal-shell";
+import { ActionsHead, RowActions as ActionMenu } from "@/components/portal/row-actions";
 import { batchLabel, useStaffBatches, type StaffBatch } from "@/components/staff/use-staff";
 import { ASSIGNMENT_STATUSES, assignmentsApi, type Assignment, type AssignmentStatus } from "@/lib/staff-learning-api";
 import { AssignmentFormDialog, DeleteAssignmentDialog } from "./assignment-dialogs";
@@ -53,7 +53,7 @@ export default function AssignmentsList() {
       actions={<Button onClick={openCreate} disabled={!staff.open.length}><Plus /> New assignment</Button>} />
 
     <Card className="gap-0 py-0">
-      <div className="grid gap-3 border-b p-4 sm:flex sm:items-center">
+      <div className="grid gap-3 border-b p-4 sm:flex sm:flex-wrap sm:items-center">
         <Select value={batchId ? String(batchId) : ""} onValueChange={v => setPickedBatch(Number(v))} disabled={!staff.batches.length}>
           <SelectTrigger className="w-full sm:w-80" aria-label="Batch"><SelectValue placeholder={staff.loading ? "Loading batches…" : "No batches"} /></SelectTrigger>
           <SelectContent>{staff.batches.map(b => <SelectItem key={b.id} value={String(b.id)}>{batchLabel(b)}{b.status === "ACTIVE" || b.status === "PLANNED" ? "" : ` · ${titleCase(b.status)}`}</SelectItem>)}</SelectContent>
@@ -101,37 +101,27 @@ function submissionsText(a: Assignment, batch: StaffBatch) {
   return n === undefined ? "—" : `${n} / ${batch.enrolled}`;
 }
 
-function Actions({ a, actions, labels = false }: { a: Assignment; actions: RowActions; labels?: boolean }) {
+function Actions({ a, actions }: { a: Assignment; actions: RowActions }) {
   const { base } = usePortal();
-  const items = [
+  return <ActionMenu label={a.title} items={[
     { label: "View", icon: Eye, href: `${base}/assignments/${a.id}` },
-    { label: "Edit", icon: Pencil, onClick: () => actions.edit(a) },
-    { label: "Delete", icon: Trash2, onClick: () => actions.remove(a), destructive: true },
-  ];
-  return <div className={labels ? "grid grid-cols-3 gap-2" : "flex justify-end gap-1"}>
-    {items.map(({ label, icon: Icon, href, onClick, destructive }) => {
-      const className = destructive ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : undefined;
-      const button = href
-        ? <Button asChild variant={labels ? "outline" : "ghost"} size={labels ? "sm" : "icon"}><Link href={href} aria-label={`${label} ${a.title}`}><Icon />{labels && label}</Link></Button>
-        : <Button variant={labels ? "outline" : "ghost"} size={labels ? "sm" : "icon"} className={className} onClick={onClick} aria-label={`${label} ${a.title}`}><Icon />{labels && label}</Button>;
-      if (labels) return <span key={label} className="contents">{button}</span>;
-      return <Tooltip key={label}><TooltipTrigger asChild>{button}</TooltipTrigger><TooltipContent>{label}</TooltipContent></Tooltip>;
-    })}
-  </div>;
+    { label: "Edit", icon: Pencil, onSelect: () => actions.edit(a) },
+    { label: "Delete", icon: Trash2, onSelect: () => actions.remove(a), destructive: true },
+  ]} />;
 }
 
 function AssignmentsTable({ rows, batch, actions }: { rows: Assignment[]; batch: StaffBatch; actions: RowActions }) {
   const { base } = usePortal();
-  return <Table className="hidden md:table">
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Assignment</TableHead>
-        <TableHead className="hidden lg:table-cell">Subject</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Subject</TableHead>
         <TableHead>Due</TableHead>
         <TableHead>Status</TableHead>
-        <TableHead className="hidden lg:table-cell">Max marks</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Max marks</TableHead>
         <TableHead>Submitted</TableHead>
-        <TableHead className="pr-4 text-right">Actions</TableHead>
+        <ActionsHead />
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -142,32 +132,34 @@ function AssignmentsTable({ rows, batch, actions }: { rows: Assignment[]; batch:
           </Link>
           <p className="text-xs text-muted-foreground lg:hidden">{a.subjects?.name ?? "No subject"}</p>
         </TableCell>
-        <TableCell className="hidden text-muted-foreground lg:table-cell">{a.subjects?.name ?? "—"}</TableCell>
+        <TableCell className="hidden text-muted-foreground @3xl/main:table-cell">{a.subjects?.name ?? "—"}</TableCell>
         <TableCell className="whitespace-nowrap"><DueText a={a} /></TableCell>
         <TableCell><Pill value={a.status} tones={ASSIGNMENT_TONES} /></TableCell>
-        <TableCell className="hidden tabular-nums lg:table-cell">{a.max_marks === null ? "—" : Number(a.max_marks)}</TableCell>
+        <TableCell className="hidden tabular-nums @3xl/main:table-cell">{a.max_marks === null ? "—" : Number(a.max_marks)}</TableCell>
         <TableCell className="tabular-nums">{submissionsText(a, batch)}</TableCell>
-        <TableCell className="pr-4"><Actions a={a} actions={actions} /></TableCell>
+        <TableCell className="pr-4 text-right"><Actions a={a} actions={actions} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
 function AssignmentsCards({ rows, batch, actions }: { rows: Assignment[]; batch: StaffBatch; actions: RowActions }) {
-  return <ul className="divide-y md:hidden">
+  return <ul className="divide-y @2xl/main:hidden">
     {rows.map(a => <li key={a.id} className="grid gap-2 p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-medium break-words">{a.title}</p>
           <p className="text-xs text-muted-foreground">{a.subjects?.name ?? "No subject"}{a.max_marks !== null && ` · ${Number(a.max_marks)} marks`}</p>
         </div>
-        <Pill value={a.status} tones={ASSIGNMENT_TONES} />
+        <div className="flex shrink-0 items-center gap-1">
+          <Pill value={a.status} tones={ASSIGNMENT_TONES} />
+          <Actions a={a} actions={actions} />
+        </div>
       </div>
       <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-sm">
         <span>Due <DueText a={a} /></span>
         <span className="text-muted-foreground">{submissionsText(a, batch)} submitted</span>
       </div>
-      <Actions a={a} actions={actions} labels />
     </li>)}
   </ul>;
 }

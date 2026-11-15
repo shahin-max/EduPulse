@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ActionsHead, RowActions as ActionMenu } from "@/components/portal/row-actions";
 import { toast } from "sonner";
 import { Ban, CircleCheck, CircleX, Eye, Loader2, Printer, Trophy } from "lucide-react";
 import {
@@ -38,7 +39,7 @@ export function ExamResultsPanel({ exam }: { exam: ExamDetail }) {
   const refresh = () => setVersion(v => v + 1);
 
   return <div className="grid gap-4">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between print:hidden">
       <SegmentedTabs label="Results views" value={view} onChange={setView} tabs={[{ value: "ranks", label: "Rank list" }, { value: "attempts", label: "All attempts" }]} />
       <div className="grid grid-cols-2 gap-2 sm:flex">
         <Select value={batchId ? String(batchId) : ALL} onValueChange={v => setBatchId(v === ALL ? undefined : Number(v))}>
@@ -119,11 +120,11 @@ function RankList({ exam, batchId, batchCode, entries, loading, error, reload, p
           <TableRow className="hover:bg-transparent">
             <TableHead className="w-12 pl-4">Rank</TableHead>
             <TableHead>Student</TableHead>
-            <TableHead className="hidden sm:table-cell">Batch</TableHead>
+            <TableHead className="hidden @xl/main:table-cell">Batch</TableHead>
             <TableHead className="text-right">Score</TableHead>
-            <TableHead className="hidden text-right sm:table-cell">%</TableHead>
-            <TableHead className="hidden md:table-cell">Submitted</TableHead>
-            <TableHead className="w-10 pr-4 print:hidden"><span className="sr-only">View</span></TableHead>
+            <TableHead className="hidden text-right @xl/main:table-cell">%</TableHead>
+            <TableHead className="hidden @3xl/main:table-cell">Submitted</TableHead>
+            <ActionsHead className="print:hidden" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -131,16 +132,16 @@ function RankList({ exam, batchId, batchCode, entries, loading, error, reload, p
             const failed = Number.isFinite(passPercent) && Number(e.percentage ?? 0) < passPercent;
             return <TableRow key={e.student_user_id} className="break-inside-avoid">
               <TableCell className="pl-4 font-semibold tabular-nums">{e.rank}</TableCell>
-              <TableCell className="max-w-[10rem] whitespace-normal sm:max-w-none">
+              <TableCell className="max-w-[10rem] whitespace-normal @xl/main:max-w-none">
                 <span className="font-medium break-words">{e.full_name}</span>
-                <span className="block text-xs text-muted-foreground sm:hidden">{batchCode.get(e.batch_id) ?? ""} · {formatMarks(e.percentage)}%</span>
+                <span className="block text-xs text-muted-foreground @xl/main:hidden">{batchCode.get(e.batch_id) ?? ""} · {formatMarks(e.percentage)}%</span>
               </TableCell>
-              <TableCell className="hidden font-mono text-xs sm:table-cell">{batchCode.get(e.batch_id) ?? e.batch_id}</TableCell>
+              <TableCell className="hidden font-mono text-xs @xl/main:table-cell">{batchCode.get(e.batch_id) ?? e.batch_id}</TableCell>
               <TableCell className={failed ? "text-right text-red-700 tabular-nums dark:text-red-300" : "text-right tabular-nums"}>{formatMarks(e.score)}<span className="text-muted-foreground">/{formatMarks(e.max_score)}</span></TableCell>
-              <TableCell className="hidden text-right tabular-nums sm:table-cell">{formatMarks(e.percentage)}</TableCell>
-              <TableCell className="hidden text-xs text-muted-foreground md:table-cell">{formatDateTime(e.submitted_at)}</TableCell>
-              <TableCell className="pr-4 print:hidden">
-                {e.attempt_id !== undefined && <Button size="icon" variant="ghost" className="size-8" onClick={() => onView(e.attempt_id!)} aria-label={`View ${e.full_name}'s answers`}><Eye /></Button>}
+              <TableCell className="hidden text-right tabular-nums @xl/main:table-cell">{formatMarks(e.percentage)}</TableCell>
+              <TableCell className="hidden text-xs text-muted-foreground @3xl/main:table-cell">{formatDateTime(e.submitted_at)}</TableCell>
+              <TableCell className="pr-4 text-right print:hidden">
+                {e.attempt_id !== undefined && <ActionMenu label={e.full_name} items={[{ label: "View answers", icon: Eye, onSelect: () => onView(e.attempt_id!) }]} />}
               </TableCell>
             </TableRow>;
           })}
@@ -162,7 +163,7 @@ function AttemptsList({ exam, batchId, batchCode, version, onView, onChanged }: 
   const statusLabel = (s: AttemptStatus) => s === "AUTO_SUBMITTED" ? "Auto-submitted" : s === "IN_PROGRESS" ? "In progress" : s[0] + s.slice(1).toLowerCase();
 
   return <Card className="gap-0 py-0 print:hidden">
-    <div className="flex flex-col gap-2 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 border-b p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <p className="text-sm text-muted-foreground">Every attempt, newest first. Invalidate an attempt (e.g. malpractice) to remove it from rankings and give the attempt back.</p>
       <Select value={status ?? ALL} onValueChange={v => { setStatus(v === ALL ? undefined : v as AttemptStatus); setPage(1); }}>
         <SelectTrigger className="w-full sm:w-44" aria-label="Filter by status"><SelectValue /></SelectTrigger>
@@ -177,16 +178,16 @@ function AttemptsList({ exam, batchId, batchCode, version, onView, onChanged }: 
       {!data && loading && <LoadingRows rows={4} />}
       {data && data.data.length === 0 && <EmptyState icon={Trophy} title="No attempts" description={status || batchId ? "None match these filters." : "Nobody has attempted this exam yet."} />}
       {data && data.data.length > 0 && <div className={loading ? "opacity-60" : undefined}>
-        <Table className="hidden md:table">
+        <Table className="hidden @2xl/main:table">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="pl-4">Student</TableHead>
               <TableHead>Batch</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Score</TableHead>
-              <TableHead className="hidden text-center lg:table-cell">✓ / ✗ / –</TableHead>
-              <TableHead className="hidden xl:table-cell">Time taken</TableHead>
-              <TableHead className="pr-4 text-right">Actions</TableHead>
+              <TableHead className="hidden text-center @3xl/main:table-cell">✓ / ✗ / –</TableHead>
+              <TableHead className="hidden @4xl/main:table-cell">Time taken</TableHead>
+              <ActionsHead />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -198,26 +199,28 @@ function AttemptsList({ exam, batchId, batchCode, version, onView, onChanged }: 
               <TableCell className="font-mono text-xs">{a.exam_batches.batches.code ?? batchCode.get(a.batch_id)}</TableCell>
               <TableCell><AttemptStatusPill status={a.status} /></TableCell>
               <TableCell className="text-right tabular-nums">{a.score === null ? "—" : <>{formatMarks(a.score)}<span className="text-muted-foreground">/{formatMarks(a.max_score)}</span></>}</TableCell>
-              <TableCell className="hidden text-center tabular-nums lg:table-cell">{a.correct_count} / {a.wrong_count} / {a.unanswered_count}</TableCell>
-              <TableCell className="hidden text-muted-foreground xl:table-cell">{formatDuration(a.started_at, a.submitted_at)}</TableCell>
-              <TableCell className="pr-4"><AttemptActions attempt={a} onView={onView} onInvalidate={setInvalidating} /></TableCell>
+              <TableCell className="hidden text-center tabular-nums @3xl/main:table-cell">{a.correct_count} / {a.wrong_count} / {a.unanswered_count}</TableCell>
+              <TableCell className="hidden text-muted-foreground @4xl/main:table-cell">{formatDuration(a.started_at, a.submitted_at)}</TableCell>
+              <TableCell className="pr-4 text-right"><AttemptActions attempt={a} onView={onView} onInvalidate={setInvalidating} /></TableCell>
             </TableRow>)}
           </TableBody>
         </Table>
-        <ul className="divide-y md:hidden">
+        <ul className="divide-y @2xl/main:hidden">
           {data.data.map(a => <li key={a.id} className="grid gap-2 p-4">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="font-medium break-words">{a.enrollments.student_profiles.users.full_name}</p>
                 <p className="text-xs text-muted-foreground">{a.exam_batches.batches.code} · attempt {a.attempt_number}</p>
               </div>
-              <AttemptStatusPill status={a.status} />
+              <div className="flex shrink-0 items-center gap-1">
+                <AttemptStatusPill status={a.status} />
+                <AttemptActions attempt={a} onView={onView} onInvalidate={setInvalidating} />
+              </div>
             </div>
             <p className="text-sm tabular-nums">
               {a.score === null ? "Not graded" : <>Score <strong>{formatMarks(a.score)}</strong>/{formatMarks(a.max_score)}</>}
               <span className="text-muted-foreground"> · ✓{a.correct_count} ✗{a.wrong_count} –{a.unanswered_count} · {formatDuration(a.started_at, a.submitted_at)}</span>
             </p>
-            <AttemptActions attempt={a} onView={onView} onInvalidate={setInvalidating} labels />
           </li>)}
         </ul>
       </div>}
@@ -227,15 +230,13 @@ function AttemptsList({ exam, batchId, batchCode, version, onView, onChanged }: 
   </Card>;
 }
 
-function AttemptActions({ attempt, onView, onInvalidate, labels }: { attempt: ExamAttempt; onView: (id: number) => void; onInvalidate: (a: ExamAttempt) => void; labels?: boolean }) {
+function AttemptActions({ attempt, onView, onInvalidate }: { attempt: ExamAttempt; onView: (id: number) => void; onInvalidate: (a: ExamAttempt) => void }) {
   const name = attempt.enrollments.student_profiles.users.full_name;
-  return <div className={labels ? "grid grid-cols-2 gap-2" : "flex justify-end gap-1"}>
-    <Button size={labels ? "sm" : "icon"} variant={labels ? "outline" : "ghost"} className={labels ? undefined : "size-8"} onClick={() => onView(attempt.id)} aria-label={`View ${name}'s answers`}><Eye />{labels && "Answers"}</Button>
-    <Button size={labels ? "sm" : "icon"} variant={labels ? "outline" : "ghost"} disabled={attempt.status === "INVALIDATED"} onClick={() => onInvalidate(attempt)}
-      className={labels ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : "size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"} aria-label={`Invalidate ${name}'s attempt`}>
-      <Ban />{labels && "Invalidate"}
-    </Button>
-  </div>;
+  return <ActionMenu label={`${name}, attempt ${attempt.attempt_number}`} items={[
+    { label: "View answers", icon: Eye, onSelect: () => onView(attempt.id) },
+    { label: "Invalidate attempt", icon: Ban, onSelect: () => onInvalidate(attempt), destructive: true,
+      disabled: attempt.status === "INVALIDATED", hint: attempt.status === "INVALIDATED" ? "Already invalidated" : undefined },
+  ]} />;
 }
 
 function InvalidateDialog({ attempt, onClose, onDone }: { attempt: ExamAttempt; onClose: () => void; onDone: () => void }) {

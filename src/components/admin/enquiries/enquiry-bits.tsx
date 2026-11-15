@@ -2,6 +2,7 @@
 
 import { MessageCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { RowAction } from "@/components/portal/row-actions";
 import { usersApi, type AdminUser } from "@/lib/admin-api";
 import { waDigits, type EnquiryStatus } from "@/lib/admin-ops-api";
 import { Pill, titleCase, type Tone } from "../ui";
@@ -33,6 +34,12 @@ export function SourcePill({ source }: { source: string | null }) {
   if (!source) return null;
   return <Pill value={source} tones={SOURCE_TONES} label={SOURCE_LABEL[source] ?? titleCase(source)} />;
 }
+
+/** Call and WhatsApp as ⋮ menu entries (enquiry rows); the enquiry sheet uses ContactButtons below. */
+export const contactActions = (mobile: string): RowAction[] => [
+  { label: "Call", icon: Phone, href: `tel:${mobile.replace(/[^\d+]/g, "")}`, hint: mobile },
+  { label: "WhatsApp", icon: MessageCircle, href: `https://wa.me/${waDigits(mobile)}`, external: true },
+];
 
 /** Click-to-call and WhatsApp buttons for a mobile number. */
 export function ContactButtons({ mobile, name, labels = false }: { mobile: string; name: string; labels?: boolean }) {

@@ -85,7 +85,7 @@ export default function StudentHome() {
             : <ul className="grid gap-3">
               {today.data.map(c => {
                 const live = isJoinable(c, now);
-                return <li key={c.id} className="grid gap-3 rounded-lg border p-3 sm:flex sm:items-center">
+                return <li key={c.id} className="grid gap-3 rounded-lg border p-3 sm:flex sm:flex-wrap sm:items-center">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className={cn("truncate font-medium", c.status === "CANCELLED" && "line-through opacity-70")}>{c.title}</p>

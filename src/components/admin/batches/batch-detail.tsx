@@ -1,16 +1,12 @@
 "use client";
 
-import { GradebookCard } from "@/components/staff/reports/gradebook";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, BookOpen, Building2, CalendarRange, ChevronDown, GraduationCap, Loader2, Pencil, Plus, Search, Trash2, UserPlus, Users, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Building2, CalendarRange, CheckCircle2, Clock, Eye, GraduationCap, PauseCircle, Pencil, Plus, Search, Trash2, UserMinus, UserPlus, Users, XCircle, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +17,8 @@ import {
   batchesApi, batchPickersApi, ENROLLMENT_STATUSES, enrollmentsApi, SEAT_STATUSES,
   type Batch, type BatchFaculty, type EnrollmentStatus, type RosterEntry, type SubjectRef,
 } from "@/lib/admin-batches-api";
+import { ActionsHead, RowActions } from "@/components/portal/row-actions";
+import { GradebookCard } from "@/components/staff/reports/gradebook";
 import { useAdminData } from "../use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, LoadingRows, Pill, titleCase, UserAvatar } from "../ui";
 import { BatchFormDialog, DeleteBatchDialog } from "./batch-dialogs";
@@ -45,7 +43,7 @@ export default function BatchDetail({ id }: { id: number }) {
     {back}
 
     <Card>
-      <CardContent className="flex flex-col gap-5 lg:flex-row lg:items-center">
+      <CardContent className="flex flex-col gap-5 lg:flex-row lg:flex-wrap lg:items-center">
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight">{batch.name}</h1>
@@ -54,9 +52,11 @@ export default function BatchDetail({ id }: { id: number }) {
           <p className="font-mono text-sm text-muted-foreground">{batch.code}</p>
           <p className="text-sm text-muted-foreground">{BATCH_STATUS_HELP[batch.status]}</p>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex">
-          <Button onClick={() => setEditing(true)}><Pencil /> Edit</Button>
-          <Button variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleting(true)}><Trash2 /> Delete</Button>
+        <div className="flex items-center gap-2">
+          <Button className="flex-1 sm:flex-none" onClick={() => setEditing(true)}><Pencil /> Edit batch</Button>
+          <RowActions label={`batch ${batch.name}`} title="More actions" items={[
+            { label: "Delete batch", icon: Trash2, onSelect: () => setDeleting(true), destructive: true, hint: "Only an unused batch; others can be cancelled" },
+          ]} />
         </div>
       </CardContent>
     </Card>
@@ -114,7 +114,7 @@ function FacultyCard({ batch, onChange, onReload }: { batch: Batch; onChange: (b
         {subjects.map(subject => {
           const teachers = batch.faculty.filter(f => f.subject.id === subject.id);
           const orphan = orphans.includes(subject);
-          return <li key={subject.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
+          return <li key={subject.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center">
             <div className="min-w-0 sm:w-48">
               <p className="truncate text-sm font-medium">{subject.name}</p>
               <p className="truncate text-xs text-muted-foreground"><span className="font-mono">{subject.code}</span>{orphan && " · no longer in the course"}</p>
@@ -123,16 +123,13 @@ function FacultyCard({ batch, onChange, onReload }: { batch: Batch; onChange: (b
               {teachers.length === 0 && <span className="text-sm text-muted-foreground">No one assigned</span>}
               {teachers.map(t => <span key={t.userId} className="inline-flex max-w-full items-center gap-2 rounded-full border bg-muted/40 py-0.5 pr-0.5 pl-0.5">
                 <UserAvatar name={t.fullName} className="size-6 text-[10px]" />
-                <Link href={`/admin/users/${t.userId}`} className="truncate text-sm hover:underline">{t.fullName}</Link>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-destructive" onClick={() => setRemoving(t)} aria-label={`Remove ${t.fullName} from ${subject.name}`}><X /></Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Remove from {subject.name}</TooltipContent>
-                </Tooltip>
+                <Link href={`/admin/users/${t.userId}`} className="truncate pr-2 text-sm hover:underline">{t.fullName}</Link>
               </span>)}
             </div>
-            {!orphan && <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setAssigning({ subjectId: subject.id })}><UserPlus /> Assign</Button>}
+            <RowActions label={`${subject.name} faculty`} className="self-end sm:self-auto" items={[
+              !orphan && { label: "Assign a teacher", icon: UserPlus, onSelect: () => setAssigning({ subjectId: subject.id }) },
+              ...teachers.map(t => ({ label: `Remove ${t.fullName}`, icon: UserMinus, onSelect: () => setRemoving(t), destructive: true })),
+            ]} />
           </li>;
         })}
       </ul>}
@@ -229,23 +226,19 @@ function RosterCard({ batch, onSeatsChanged }: { batch: Batch; onSeatsChanged: (
 
 type StatusChange = (entry: RosterEntry, status: EnrollmentStatus) => void;
 
-function StatusMenu({ entry, updating, onStatus, full = false }: { entry: RosterEntry; updating: number | null; onStatus: StatusChange; full?: boolean }) {
-  const busy = updating === entry.id;
-  return <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="outline" size="sm" disabled={busy || updating !== null} className={full ? "w-full" : undefined} aria-label={`Change status of ${entry.student_profiles.users.full_name}`}>
-        {busy ? <Loader2 className="animate-spin" /> : null}Status <ChevronDown />
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="w-72">
-      <DropdownMenuLabel>Change to</DropdownMenuLabel>
-      <DropdownMenuSeparator />
-      {ENROLLMENT_STATUSES.filter(s => s !== entry.status).map(s => <DropdownMenuItem key={s} onSelect={() => onStatus(entry, s)} className="flex-col items-start gap-0.5">
-        <span className="font-medium">{titleCase(s)}</span>
-        <span className="text-xs text-muted-foreground">{ENROLLMENT_STATUS_HELP[s]}</span>
-      </DropdownMenuItem>)}
-    </DropdownMenuContent>
-  </DropdownMenu>;
+const STATUS_ICONS: Record<EnrollmentStatus, LucideIcon> = {
+  ACTIVE: CheckCircle2, PENDING: Clock, PAUSED: PauseCircle, COMPLETED: GraduationCap, CANCELLED: XCircle,
+};
+
+/** View the student, or move the enrollment to another status (cancelling is shown as destructive). */
+function StudentActions({ entry, updating, onStatus }: { entry: RosterEntry; updating: number | null; onStatus: StatusChange }) {
+  return <RowActions label={entry.student_profiles.users.full_name} busy={updating === entry.id} items={[
+    { label: "View student", icon: Eye, href: `/admin/users/${entry.student_profiles.user_id}` },
+    ...ENROLLMENT_STATUSES.filter(s => s !== entry.status).map(s => ({
+      label: `Mark ${titleCase(s).toLowerCase()}`, icon: STATUS_ICONS[s], hint: ENROLLMENT_STATUS_HELP[s],
+      onSelect: () => onStatus(entry, s), disabled: updating !== null, destructive: s === "CANCELLED",
+    })),
+  ]} />;
 }
 
 function accessWindow(r: RosterEntry) {
@@ -254,16 +247,16 @@ function accessWindow(r: RosterEntry) {
 }
 
 function RosterTable({ rows, updating, onStatus }: { rows: RosterEntry[]; updating: number | null; onStatus: StatusChange }) {
-  return <Table className="hidden md:table">
+  return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-6">Student</TableHead>
-        <TableHead className="hidden lg:table-cell">Contact</TableHead>
-        <TableHead className="hidden xl:table-cell">Guardian</TableHead>
-        <TableHead className="hidden lg:table-cell">Enrolled</TableHead>
-        <TableHead className="hidden xl:table-cell">Access</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Contact</TableHead>
+        <TableHead className="hidden @4xl/main:table-cell">Guardian</TableHead>
+        <TableHead className="hidden @3xl/main:table-cell">Enrolled</TableHead>
+        <TableHead className="hidden @4xl/main:table-cell">Access</TableHead>
         <TableHead>Status</TableHead>
-        <TableHead className="pr-6 text-right">Actions</TableHead>
+        <ActionsHead className="pr-6" />
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -279,18 +272,18 @@ function RosterTable({ rows, updating, onStatus }: { rows: RosterEntry[]; updati
               </div>
             </div>
           </TableCell>
-          <TableCell className="hidden text-muted-foreground lg:table-cell">
+          <TableCell className="hidden text-muted-foreground @3xl/main:table-cell">
             <p className="max-w-[12rem] truncate">{p.users.mobile ?? "—"}</p>
             <p className="max-w-[12rem] truncate text-xs">{p.users.email}</p>
           </TableCell>
-          <TableCell className="hidden text-muted-foreground xl:table-cell">
+          <TableCell className="hidden text-muted-foreground @4xl/main:table-cell">
             <p className="max-w-[10rem] truncate">{p.guardian_name ?? "—"}</p>
             <p className="text-xs">{p.guardian_mobile}</p>
           </TableCell>
-          <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(r.enrolled_at)}</TableCell>
-          <TableCell className="hidden text-muted-foreground xl:table-cell">{accessWindow(r)}</TableCell>
+          <TableCell className="hidden text-muted-foreground @3xl/main:table-cell">{formatDate(r.enrolled_at)}</TableCell>
+          <TableCell className="hidden text-muted-foreground @4xl/main:table-cell">{accessWindow(r)}</TableCell>
           <TableCell><Pill value={r.status} tones={ENROLLMENT_TONES} /></TableCell>
-          <TableCell className="pr-6 text-right"><StatusMenu entry={r} updating={updating} onStatus={onStatus} /></TableCell>
+          <TableCell className="pr-6 text-right"><StudentActions entry={r} updating={updating} onStatus={onStatus} /></TableCell>
         </TableRow>;
       })}
     </TableBody>
@@ -298,7 +291,7 @@ function RosterTable({ rows, updating, onStatus }: { rows: RosterEntry[]; updati
 }
 
 function RosterCards({ rows, updating, onStatus }: { rows: RosterEntry[]; updating: number | null; onStatus: StatusChange }) {
-  return <ul className="divide-y md:hidden">
+  return <ul className="divide-y @2xl/main:hidden">
     {rows.map(r => {
       const p = r.student_profiles;
       return <li key={r.id} className="grid gap-3 px-4 py-4">
@@ -309,13 +302,15 @@ function RosterCards({ rows, updating, onStatus }: { rows: RosterEntry[]; updati
             <p className="truncate text-xs text-muted-foreground">{[p.admission_number && `Adm. ${p.admission_number}`, p.users.mobile].filter(Boolean).join(" · ") || p.users.email}</p>
             {p.guardian_name && <p className="truncate text-xs text-muted-foreground">Guardian: {p.guardian_name}{p.guardian_mobile && ` · ${p.guardian_mobile}`}</p>}
           </div>
-          <Pill value={r.status} tones={ENROLLMENT_TONES} className="shrink-0" />
+          <div className="flex shrink-0 items-center gap-1">
+            <Pill value={r.status} tones={ENROLLMENT_TONES} />
+            <StudentActions entry={r} updating={updating} onStatus={onStatus} />
+          </div>
         </div>
         <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
           <span>Enrolled {formatDate(r.enrolled_at)}</span>
           <span className="truncate text-right">Access: {accessWindow(r)}</span>
         </div>
-        <StatusMenu entry={r} updating={updating} onStatus={onStatus} full />
       </li>;
     })}
   </ul>;
