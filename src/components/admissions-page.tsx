@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, ClipboardList, GraduationCap, KeyRound, Loader2, MapPin, MessageCircle, PhoneCall, Send, Users, Wallet } from "lucide-react";
+import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, ChevronDown, ClipboardList, FileText, GraduationCap, KeyRound, Loader2, MapPin, MessageCircle, PhoneCall, Send, Sparkles, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandSelect } from "@/components/brand-select";
 import { PHONE_PATTERN } from "@/components/enquiry-form";
@@ -36,7 +36,8 @@ type FormProps = { courses: ApiCourse[]; batches: ApiBatch[] };
 /** Pre-selects the course from ?course=<catalogue slug> or ?program=<website program slug>. */
 function AdmissionFormFromUrl(props: FormProps) {
   const params = useSearchParams();
-  return <AdmissionForm {...props} course={params.get("course")} program={params.get("program")} />;
+  const course = params.get("course"), program = params.get("program");
+  return <AdmissionForm key={`${course}|${program}`} {...props} course={course} program={program} />;
 }
 
 function AdmissionForm({ courses, batches, course: courseSlug, program: programSlug }: FormProps & { course?: string | null; program?: string | null }) {
@@ -127,34 +128,103 @@ function AdmissionForm({ courses, batches, course: courseSlug, program: programS
   </form>;
 }
 
+const keepReady = [
+  "Student's latest report card or marksheet",
+  "Student's Aadhaar card (or birth certificate)",
+  "Two recent passport-size photographs",
+  "Parent / guardian's mobile number and Aadhaar",
+];
+
+const faqs = [
+  { q: "Is there any fee to apply?", a: "No. Submitting the application only asks our admissions team to call you. Fees are paid only after you choose a course and batch." },
+  { q: "We are not sure which course is right. Can we still apply?", a: `Yes. Choose "${NOT_SURE}" in the course list. On the counselling call we look at the student's class, goals and school, and suggest a course.` },
+  { q: "How are fees decided?", a: "Fees depend on the course and the batch. Our team shares the fee plan and payment options on the counselling call, before you commit to anything." },
+  { q: "What if no batch is open for our course?", a: "Apply anyway. New batches are scheduled through the year, and we call you as soon as the next batch for your course opens." },
+  { q: "Can we visit the academy before deciding?", a: `Of course. We are at ${contact.address}. Call or WhatsApp us to fix a convenient time.` },
+];
+
+function ProgramPicker({ active }: { active?: string | null }) {
+  return <ul className="admissions-programs" aria-label="Choose a program">
+    {programs.map(({ slug, title, detail, icon: Icon }) => <li key={slug}>
+      <Link href={`/admissions?program=${slug}#apply`} scroll={false} aria-current={active === slug ? "true" : undefined} className="admissions-program">
+        <span className="admissions-program-icon"><Icon size={18} /></span>
+        <span><strong>{title}</strong><small>{detail}</small></span>
+      </Link>
+    </li>)}
+  </ul>;
+}
+
+function ProgramPickerFromUrl() {
+  return <ProgramPicker active={useSearchParams().get("program")} />;
+}
+
 export default function AdmissionsPage({ courses, batches }: { courses: ApiCourse[]; batches: ApiBatch[] }) {
-  return <div className="course-page contact-page admissions-page">
-    <section className="course-hero contact-hero" aria-labelledby="admissions-title">
+  const seats = batches.reduce((sum, b) => sum + (b.seatsAvailable ?? 0), 0);
+  const phone = contact.phones[0];
+  return <div className="course-page admissions-page">
+    <section className="course-hero admissions-hero" aria-labelledby="admissions-title">
       <div className="course-hero-backdrop" aria-hidden="true"><span className="hero-blob hero-blob-a" /><span className="hero-blob hero-blob-b" /><span className="hero-grid" /></div>
-      <div className="page-container contact-hero-inner">
-        <div className="contact-hero-copy">
+      <div className="page-container admissions-hero-inner">
+        <div className="admissions-hero-copy">
           <nav className="course-breadcrumb" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span aria-current="page">Admissions</span></nav>
           <p className="course-kicker"><span className="course-kicker-icon"><GraduationCap size={17} /></span>ADMISSIONS OPEN</p>
-          <h1 id="admissions-title" className="hero-title course-title contact-title"><span>Apply for admission</span> <em>in a few minutes.</em></h1>
+          <h1 id="admissions-title" className="hero-title course-title admissions-title"><span>Apply for admission</span> <em>in a few minutes.</em></h1>
           <p className="course-intro">Tell us about the student and the course you are interested in. Our admissions team will call you to recommend the right batch and walk you through fees and timings.</p>
+          <div className="admissions-hero-actions">
+            <Button asChild size="lg"><a href="#apply">Start application <ArrowRight /></a></Button>
+            <Button asChild size="lg" variant="outline"><a href={`tel:${phone.tel}`}><PhoneCall /> Talk to admissions</a></Button>
+          </div>
         </div>
+
+        <aside className="admissions-pass" aria-label="Admissions at a glance">
+          <div className="admissions-pass-head">
+            <span className="admissions-pass-badge"><Sparkles size={14} /> Admissions open</span>
+            <span className="admissions-pass-place"><MapPin size={14} /> Aligarh</span>
+          </div>
+          <dl className="admissions-pass-stats">
+            <div><dt>Programs</dt><dd>{programs.length}</dd></div>
+            {/* With no batch scheduled yet, "0 batches" would read as closed; show the catalogue instead. */}
+            {batches.length ? <>
+              <div><dt>Open batches</dt><dd>{batches.length}</dd></div>
+              <div><dt>Seats left</dt><dd>{seats || "Open"}</dd></div>
+            </> : <>
+              <div><dt>Courses</dt><dd>{courses.length || programs.length}</dd></div>
+              <div><dt>Counselling</dt><dd>Free</dd></div>
+            </>}
+          </dl>
+          <ul className="admissions-pass-list">
+            <li><CheckCircle2 size={16} /> No fee to apply, free counselling call</li>
+            <li><CheckCircle2 size={16} /> Guidance on the right course and batch</li>
+            <li><CheckCircle2 size={16} /> Portal login for classes, material and tests</li>
+          </ul>
+          <Link href="/pamphlet" className="admissions-pass-link"><FileText size={18} /><span>Sainik School Admission 2027<small>View the pamphlet</small></span><ArrowRight size={16} /></Link>
+        </aside>
       </div>
     </section>
 
-    <section className="page-container contact-main" aria-label="Admission form and open batches">
-      <div className="contact-form-card">
-        <span className="contact-form-glow" aria-hidden="true" />
-        <p className="section-kicker">ADMISSION FORM</p>
+    <section className="page-container admissions-pick" aria-labelledby="pick-title">
+      <div className="admissions-pick-head">
+        <p className="section-kicker">STEP 1 · CHOOSE A PROGRAM</p>
+        <h2 id="pick-title">What is the student <span>preparing for?</span></h2>
+        <p>Pick a program to pre-fill the form below, or skip this and choose it in the form.</p>
+      </div>
+      <Suspense fallback={<ProgramPicker />}><ProgramPickerFromUrl /></Suspense>
+    </section>
+
+    <section id="apply" className="page-container admissions-main" aria-label="Admission form and open batches">
+      <div className="admissions-form-card">
+        <span className="admissions-form-glow" aria-hidden="true" />
+        <p className="section-kicker">STEP 2 · ADMISSION FORM</p>
         <h2>Student details.</h2>
-        <p className="contact-form-intro">Fields marked optional can be left empty. Everything else helps us place the student in the right batch.</p>
+        <p className="admissions-form-intro">Fields marked optional can be left empty. Everything else helps us place the student in the right batch.</p>
         {/* The prerendered HTML has the form without a pre-selected course; the URL is read once the page loads. */}
         <Suspense fallback={<AdmissionForm courses={courses} batches={batches} />}>
           <AdmissionFormFromUrl courses={courses} batches={batches} />
         </Suspense>
       </div>
 
-      <aside className="contact-visit admissions-batches" aria-labelledby="batches-title">
-        <div className="contact-visit-body">
+      <div className="admissions-side">
+        <aside className="admissions-card" aria-labelledby="batches-title">
           <p className="section-kicker">OPEN BATCHES</p>
           <h2 id="batches-title">Batches taking admissions</h2>
           {batches.length ? <ul className="admissions-batch-list">
@@ -167,30 +237,73 @@ export default function AdmissionsPage({ courses, batches }: { courses: ApiCours
                 {batch.seatsAvailable !== null && <span><Users size={14} aria-hidden="true" /> {batch.seatsAvailable > 0 ? `${batch.seatsAvailable} seats left` : "Waiting list"}</span>}
               </small>
             </li>)}
-          </ul> : <p className="admissions-empty"><ClipboardList size={18} aria-hidden="true" /> New batches are being scheduled. Apply now and we will call you as soon as the next batch for your course opens.</p>}
-          <div className="admissions-help">
-            <p>Questions before applying?</p>
-            {contact.phones.map(phone => <a key={phone.tel} href={`tel:${phone.tel}`}><PhoneCall size={15} /> {phone.display}</a>)}
-            <a href={whatsappLink("Hello EduPulse Academy, I have a question about admissions.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={15} /> WhatsApp us</a>
-          </div>
-        </div>
-      </aside>
+          </ul> : <div className="admissions-empty">
+            <span className="admissions-empty-icon"><ClipboardList size={22} aria-hidden="true" /></span>
+            <p><strong>New batches are being scheduled.</strong> Apply now and we will call you as soon as the next batch for your course opens.</p>
+          </div>}
+        </aside>
+
+        <aside className="admissions-card" aria-labelledby="ready-title">
+          <p className="section-kicker">FOR THE ADMISSION VISIT</p>
+          <h2 id="ready-title">Keep these ready</h2>
+          <ul className="admissions-ready">
+            {keepReady.map(item => <li key={item}><FileText size={16} aria-hidden="true" /> {item}</li>)}
+          </ul>
+          <p className="admissions-note">Not needed to apply online, only when you confirm the admission.</p>
+        </aside>
+
+        <aside className="admissions-card admissions-help" aria-label="Questions before applying">
+          <p>Questions before applying?</p>
+          {contact.phones.map(p => <a key={p.tel} href={`tel:${p.tel}`}><PhoneCall size={15} /> {p.display}</a>)}
+          <a href={whatsappLink("Hello EduPulse Academy, I have a question about admissions.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={15} /> WhatsApp us</a>
+        </aside>
+      </div>
     </section>
 
-    <section className="course-band contact-steps-band" aria-labelledby="steps-title">
+    <section className="course-band admissions-steps-band" aria-labelledby="steps-title">
       <div className="page-container">
         <div className="course-section-head">
           <p className="section-kicker">HOW ADMISSION WORKS</p>
           <h2 id="steps-title">From application to <span>your first class.</span></h2>
         </div>
-        <ul className="courses-steps-list">
+        <ol className="admissions-timeline">
           {steps.map(({ title, text, icon: StepIcon }, i) => <li key={title}>
             <span className="courses-step-icon"><StepIcon size={22} /><span>{i + 1}</span></span>
             <h3>{title}</h3>
             <p>{text}</p>
           </li>)}
-        </ul>
+        </ol>
+      </div>
+    </section>
+
+    <section className="page-container admissions-faq" aria-labelledby="faq-title">
+      <div className="admissions-faq-head">
+        <p className="section-kicker">ADMISSION FAQ</p>
+        <h2 id="faq-title">Questions parents <span>often ask.</span></h2>
+        <p>Can&apos;t find your answer? Call us on <a href={`tel:${phone.tel}`}>{phone.display}</a>.</p>
+      </div>
+      <div className="admissions-faq-list">
+        {faqs.map(({ q, a }) => <details key={q}>
+          <summary>{q}<ChevronDown size={18} aria-hidden="true" /></summary>
+          <p>{a}</p>
+        </details>)}
+      </div>
+    </section>
+
+    <section className="page-container course-cta-wrap admissions-cta" aria-labelledby="admissions-cta-title">
+      <div className="course-cta">
+        <span className="course-cta-glow" aria-hidden="true" />
+        <div>
+          <p className="course-cta-kicker">PREFER TO TALK FIRST?</p>
+          <h2 id="admissions-cta-title">Speak to our admissions team today.</h2>
+          <p>Call or WhatsApp us and we will help you pick the right course and batch for the student.</p>
+        </div>
+        <div className="course-cta-actions">
+          <Button asChild size="lg" className="course-cta-primary"><a href={`tel:${phone.tel}`}><PhoneCall size={16} /> Call {phone.display}</a></Button>
+          <Button asChild size="lg" className="admissions-cta-wa"><a href={whatsappLink("Hello EduPulse Academy, I would like to know about admissions.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} /> WhatsApp</a></Button>
+        </div>
       </div>
     </section>
   </div>;
 }
+
