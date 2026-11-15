@@ -30,6 +30,30 @@ export const KNOWN_KEYS: KnownKey[] = [
     },
     lines: true,
   },
+  {
+    key: "home.results",
+    name: "Results & achievements",
+    where: "The “Results & achievements” section on the home page. Hidden until this is published with at least one line.",
+    title: "Optional. Replaces the heading “Our students, their milestones.”",
+    body: "One achievement per line: Student name | What they achieved | Exam & year (the last part is optional). Up to 12 are shown. Only publish results you have the student's (or parent's) permission to share.",
+    starter: {
+      title: null,
+      body: ["Student name | What they achieved | Exam & year", "Student name | What they achieved | Exam & year"].join("\n"),
+    },
+    lines: true,
+  },
+  {
+    key: "home.highlights",
+    name: "Results headline numbers",
+    where: "Up to four big numbers shown above the achievements on the home page.",
+    title: "Not used.",
+    body: "One per line: Number | What it counts, e.g. “120+ | Sainik School selections”.",
+    starter: {
+      title: null,
+      body: ["Number | What it counts", "Number | What it counts"].join("\n"),
+    },
+    lines: true,
+  },
 ];
 
 export const knownKey = (key: string) => KNOWN_KEYS.find(k => k.key === key);

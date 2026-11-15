@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import PromoTicker from "@/components/promo-ticker";
 import HeroSlider from "@/components/hero-slider";
 import { contact, courseHref, programs, socials, whatsappLink } from "@/lib/site";
+import type { ApiFaculty } from "@/lib/api";
+import type { HomeResults } from "@/lib/home-content";
+import { FacultySection, ResultsSection } from "@/components/home-sections";
 
 const links = [["Home", "home"], ["About Us", "about"], ["Courses", "courses"], ["Admissions", "admissions"], ["Faculty", "faculty"], ["Gallery", "gallery"], ["Contact", "contact"]] as const;
 const features = [
@@ -35,7 +38,10 @@ function Brand({ priority = false }: { priority?: boolean }) {
   </Link>;
 }
 
-export default function AcademySite({ children }: { children?: React.ReactNode }) {
+/** Data for the home page sections (only the home page passes it). */
+export type HomeData = { results: HomeResults; teachers: ApiFaculty[] };
+
+export default function AcademySite({ children, home }: { children?: React.ReactNode; home?: HomeData }) {
   const pathname = usePathname();
   const { user, status, logout } = useAuth();
   const [dark, setDark] = useState(false);
@@ -126,6 +132,9 @@ export default function AcademySite({ children }: { children?: React.ReactNode }
         <p className="section-intro">From strong foundations to ambitious futures, find the right path for you.</p>
         <div className="program-grid">{programs.map(program => <Link className="program-card" key={program.slug} href={courseHref(program.slug)}><span className="program-icon"><program.icon size={23} /></span><span><strong>{program.title}</strong><small>{program.detail}</small></span><ChevronRight className="program-arrow" size={18} /></Link>)}</div>
       </section>
+
+      {home && <ResultsSection results={home.results} />}
+      {home && <FacultySection teachers={home.teachers} />}
 
       <div className="page-container upcoming-grid">
         <section id="gallery" className="upcoming-card gallery-teaser" aria-labelledby="gallery-teaser-title">

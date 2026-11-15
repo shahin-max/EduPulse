@@ -55,12 +55,12 @@ export type FacultyMember = {
 };
 
 export const faculty: FacultyMember[] = [
-  { department: "Mathematics", icon: Calculator, subjects: ["Algebra", "Geometry", "Calculus", "Arithmetic"], programs: ["foundation-classes", "sainik-school-entrance", "jee-main-advanced", "amu-jmi-entrance"] },
+  { department: "Mathematics", icon: Calculator, subjects: ["Algebra", "Geometry", "Calculus", "Arithmetic"], programs: ["foundation-classes", "aissee-class-6", "aissee-class-9", "jee-main-advanced", "amu-jmi-entrance"] },
   { department: "Physics", icon: Atom, subjects: ["Mechanics", "Electricity", "Optics", "Modern Physics"], programs: ["foundation-classes", "jee-main-advanced", "neet"] },
   { department: "Chemistry", icon: FlaskConical, subjects: ["Physical", "Organic", "Inorganic"], programs: ["foundation-classes", "jee-main-advanced", "neet"] },
   { department: "Biology", icon: Leaf, subjects: ["Botany", "Zoology", "Human Physiology"], programs: ["foundation-classes", "neet"] },
   { department: "English & Communication", icon: BookOpen, subjects: ["Grammar", "Spoken English", "IELTS"], programs: ["foundation-classes", "spoken-english-abroad", "cuet-clat-gate"] },
-  { department: "Reasoning & General Awareness", icon: Brain, subjects: ["Logical Reasoning", "Aptitude", "General Knowledge"], programs: ["sainik-school-entrance", "cuet-clat-gate", "amu-jmi-entrance"] },
+  { department: "Reasoning & General Awareness", icon: Brain, subjects: ["Logical Reasoning", "Aptitude", "General Knowledge"], programs: ["aissee-class-6", "aissee-class-9", "cuet-clat-gate", "amu-jmi-entrance"] },
 ];
 
 export const departments = faculty.map(f => f.department);

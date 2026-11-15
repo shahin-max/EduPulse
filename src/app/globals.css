@@ -203,7 +203,9 @@ h2 > span { color: var(--primary); }
 /* Two rows on desktop: four cards, then three centred (8-column track, each card spans 2). */
 .program-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 18px; margin-top: 43px; }
 .program-grid > * { grid-column: span 2; }
-.program-grid > :nth-child(5) { grid-column: 2 / span 2; }
+.program-grid > :nth-child(4n+1):nth-last-child(3) { grid-column: 2 / span 2; }
+.program-grid > :nth-child(4n+1):nth-last-child(2) { grid-column: 3 / span 2; }
+.program-grid > :nth-child(4n+1):last-child { grid-column: 4 / span 2; }
 .program-card { display: flex; text-align: left; align-items: center; gap: 15px; padding: 23px 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); box-shadow: 0 2px 4px #10271603; transition: border-color .2s, transform .2s, box-shadow .2s; }
 .program-card:hover { transform: translateY(-3px); border-color: var(--leaf); box-shadow: 0 10px 25px #1027160f; }
 .program-card:hover .program-arrow { transform: translateX(3px); }
@@ -226,6 +228,50 @@ h2 > span { color: var(--primary); }
 .upcoming-card > svg { color: var(--primary); margin-bottom: 18px; }
 .upcoming-card h2 { font-size: 24px; font-weight: 600; letter-spacing: -.5px; }
 .upcoming-card > p:not(.section-kicker) { color: var(--muted-foreground); font-size: 15px; line-height: 1.8; margin-top: 12px; }
+
+/* Home: Results & achievements, and Faculty (see components/home-sections.tsx). */
+.home-section { padding-block: 10px 80px; }
+.home-section > .section-kicker, .home-section > h2 { text-align: center; }
+.home-section > h2 { font-size: clamp(28px, 3vw, 38px); line-height: 1.2; font-weight: 650; letter-spacing: -1.1px; }
+.home-section > h2 span { color: var(--primary); }
+.results-highlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 18px; margin: 40px auto 0; max-width: 900px; }
+.results-highlights > div { display: flex; flex-direction: column-reverse; align-items: center; gap: 6px; padding: 22px 16px; border-radius: 14px; background: var(--accent); text-align: center; }
+.results-highlights dd { font-size: clamp(28px, 3.2vw, 38px); font-weight: 700; color: var(--primary); letter-spacing: -1px; line-height: 1; }
+.results-highlights dt { font-size: 13px; color: var(--muted-foreground); }
+.achievements-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 36px; }
+.achievement-card { display: flex; gap: 14px; align-items: flex-start; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: 0 2px 4px #10271603; }
+.achievement-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 10px; background: #f5b40122; color: #b07d00; flex-shrink: 0; }
+.dark .achievement-icon { color: #f5c542; }
+.achievement-text { display: grid; gap: 4px; min-width: 0; }
+.achievement-text strong { font-size: 15px; font-weight: 600; }
+.achievement-text > span { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.achievement-text small { justify-self: start; margin-top: 4px; padding: 2px 9px; border-radius: 999px; background: var(--accent); color: var(--primary); font-size: 12px; font-weight: 600; }
+/* Cards stay card-sized and centred whether there are 1 or 4 teachers. */
+.home-faculty-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 260px)); justify-content: center; gap: 18px; margin-top: 36px; }
+.home-teacher { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 18px 22px; border: 1px solid var(--border); border-radius: 14px; background: var(--card); text-align: center; box-shadow: 0 2px 4px #10271603; }
+.home-teacher-photo { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 88px; height: 88px; margin-bottom: 8px; overflow: hidden; border-radius: 999px; background: var(--accent); color: var(--primary); box-shadow: 0 0 0 4px var(--card), 0 0 0 5px var(--border); }
+.home-teacher-photo img { object-fit: cover; }
+.home-teacher strong { font-size: 15px; font-weight: 600; }
+.home-teacher small { font-size: 13px; color: var(--muted-foreground); }
+.home-teacher-subjects { margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--primary); }
+.home-departments { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 36px; }
+.home-departments a { display: flex; align-items: center; gap: 14px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); transition: border-color .2s, transform .2s; }
+.home-departments a:hover { border-color: var(--leaf); transform: translateY(-2px); }
+.home-departments svg { color: var(--primary); flex-shrink: 0; }
+.home-departments span { display: grid; gap: 3px; font-weight: 600; font-size: 15px; min-width: 0; }
+.home-departments small { font-weight: 400; font-size: 12.5px; color: var(--muted-foreground); }
+.home-section-link { text-align: center; }
+@media (max-width: 1000px) {
+  .achievements-grid, .home-departments { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .home-section { padding-block: 0 56px; }
+  .achievements-grid, .home-departments { grid-template-columns: 1fr; gap: 12px; }
+  .home-faculty-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .home-teacher { padding: 20px 12px 18px; }
+  .home-teacher-photo { width: 72px; height: 72px; }
+  .results-highlights { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
 .gallery-teaser-image { position: relative; aspect-ratio: 4 / 3; margin: -12px -12px 26px; border-radius: 10px; overflow: hidden; background: var(--muted); }
 .gallery-teaser-image img { object-fit: cover; object-position: center 30%; transition: transform .4s; }
 .gallery-teaser:hover .gallery-teaser-image img { transform: scale(1.03); }
@@ -347,7 +393,7 @@ h2 > span { color: var(--primary); }
   .mobile-nav a[aria-current] { color: var(--primary); font-weight: 700; }
   .mobile-auth { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
   .program-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .program-grid > *, .program-grid > :nth-child(5) { grid-column: auto; }
+  .program-grid > *, .program-grid > :nth-child(4n+1):nth-last-child(-n+3) { grid-column: auto; }
   .program-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
   .upcoming-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 40px; }

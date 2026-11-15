@@ -101,7 +101,7 @@ export default function CoursesIndex({ moreCourses = [] }: { moreCourses?: ApiCo
         <section id="all-programs" className="page-container courses-browse" aria-labelledby="browse-title">
           <Reveal className="course-section-head">
             <motion.p variants={rise} className="section-kicker">BROWSE BY PATHWAY</motion.p>
-            <motion.h2 variants={rise} id="browse-title">Seven programs, <span>one clear direction.</span></motion.h2>
+            <motion.h2 variants={rise} id="browse-title">{courses.length} programs, <span>one clear direction.</span></motion.h2>
           </Reveal>
 
           <div className="courses-toolbar">
