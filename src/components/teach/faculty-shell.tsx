@@ -3,13 +3,16 @@
 import { CalendarDays, ClipboardList, FileText, Inbox, LayoutDashboard, Layers, Megaphone, NotebookPen, UserRound } from "lucide-react";
 import PortalShell, { type PortalConfig } from "@/components/portal/portal-shell";
 
-/** The faculty portal. Admins may open it too (e.g. an admin who also teaches). */
+/**
+ * The faculty portal, for accounts with the Faculty role only. An admin who also teaches gets the
+ * Faculty role added (Admin → Users → Roles); admins already have every teaching screen in /admin.
+ */
 const config: PortalConfig = {
   base: "/teach",
   label: "Faculty",
   subtitle: "Faculty portal",
-  roles: ["FACULTY", "ADMIN"],
-  denied: { title: "Faculty only", text: "The faculty portal is for EduPulse teachers. Ask the academy if you should have access." },
+  roles: ["FACULTY"],
+  denied: { title: "Faculty only", text: "The faculty portal is for accounts with the Faculty role. Admins: add the Faculty role to your account under Users if you also teach." },
   accountHref: () => "/teach/account",
   nav: [
     { group: "General", items: [

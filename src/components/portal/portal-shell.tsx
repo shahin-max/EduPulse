@@ -158,7 +158,7 @@ function UserMenu({ config }: { config: PortalConfig }) {
   // People with more than one role (e.g. an admin who also teaches) can switch portals here.
   const switches = [
     { roles: ["ADMIN"], base: "/admin", label: "Admin portal" },
-    { roles: ["FACULTY", "ADMIN"], base: "/teach", label: "Faculty portal" },
+    { roles: ["FACULTY"], base: "/teach", label: "Faculty portal" },
     { roles: ["STUDENT"], base: "/student", label: "Student portal" },
   ].filter(s => s.base !== config.base && s.roles.some(r => user.roles.includes(r as RoleCode)));
   return <DropdownMenu>
