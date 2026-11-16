@@ -358,6 +358,17 @@ h2 > span { color: var(--primary); }
 .info-dialog-wide { width: min(600px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
 .info-dialog-wide .dialog-body { margin-top: 10px; color: var(--muted-foreground); line-height: 1.7; white-space: pre-line; }
 .info-dialog-wide .scholarship-form { margin-top: 22px; }
+.scholarship-loading { display: flex; align-items: center; gap: 8px; }
+.scholarship-facts { display: grid; gap: 8px; margin-top: 18px; padding: 0; list-style: none; font-size: 14px; }
+.scholarship-facts li { display: flex; align-items: flex-start; gap: 9px; }
+.scholarship-facts svg { margin-top: 3px; color: var(--primary); flex-shrink: 0; }
+.scholarship-slabs { width: 100%; margin-top: 18px; border-collapse: collapse; font-size: 14px; }
+.scholarship-slabs caption { text-align: left; font-weight: 600; margin-bottom: 8px; }
+.scholarship-slabs th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted-foreground); padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.scholarship-slabs td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.scholarship-slabs td:last-child { font-weight: 600; color: var(--primary); }
+.scholarship-note { margin-top: 18px; font-size: 14px; color: var(--muted-foreground); }
+.scholarship-note a, .enquiry-error a { color: var(--primary); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 600px) { .info-dialog-wide .dialog-content { padding: 28px 20px; } }
 .info-dialog::backdrop { background: #071c13a8; backdrop-filter: blur(4px); }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }

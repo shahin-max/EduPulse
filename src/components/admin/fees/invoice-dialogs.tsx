@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Award, Loader2 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth";
 import {
   feeLookupsApi, feePlansApi, fromPaise, invoicesApi, isMoney, MONEY_PATTERN, toPaise, type Invoice, type UpdateInvoiceInput,
 } from "@/lib/admin-fees-api";
+import { scholarshipsApi, type AvailableAward } from "@/lib/scholarships-api";
 import { useAdminData } from "../use-admin-data";
 import { ErrorAlert, errorText, Field, formatMoney, Optional, titleCase } from "../ui";
 import { dateOnly } from "./shared";
@@ -70,6 +71,8 @@ function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
   const [issue, setIssue] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // Undefined = the best available scholarship (pre-selected); "none" = apply none.
+  const [awardChoice, setAwardChoice] = useState<number | "none" | undefined>();
 
   const batches = useAdminData(token => feeLookupsApi.batches(token), "batches");
   const batch = batches.data?.data.find(b => b.id === batchId);
@@ -78,11 +81,17 @@ function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
   const plans = useAdminData(token => batch ? feePlansApi.list(token, { courseId: batch.course_id, activeOnly: true }) : Promise.resolve(null), `plans:${batch?.course_id ?? ""}`);
   const applicable = (plans.data ?? []).filter(p => batch && (p.batch_id === null || p.batch_id === batch.id) && (p.branch_id === null || p.branch_id === batch.branch_id));
   const plan = applicable.find(p => p.id === planId);
+  const studentId = roster.data?.find(r => r.id === enrollmentId)?.student_profiles.user_id;
+  // Scholarships this student won and can still use (best first).
+  const awards = useAdminData(token => studentId ? scholarshipsApi.availableAwards(token, studentId) : Promise.resolve([] as AvailableAward[]), `awards:${studentId ?? ""}`);
+  const awardId = awardChoice === "none" ? undefined : awardChoice ?? awards.data?.[0]?.id;
+  const award = awards.data?.find(a => a.id === awardId);
 
   function chooseBatch(value: string) {
     setBatchId(Number(value));
     setEnrollmentId(undefined);
     setPlanId(undefined);
+    setAwardChoice(undefined);
   }
 
   // With a plan, an empty fee field means "use the plan's amount" (shown as the placeholder).
@@ -95,7 +104,8 @@ function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
     if (gross.trim() && !isMoney(gross)) return setError("Enter the fee in rupees, e.g. 3500 or 3500.50.");
     if (discount.trim() && !isMoney(discount)) return setError("Enter the discount in rupees, e.g. 500.");
     const grossPaise = toPaise(gross.trim() || plan!.amount);
-    if (discount.trim() && toPaise(discount.trim()) > grossPaise) return setError("The discount cannot be more than the fee.");
+    const scholarshipPaise = award ? Math.round(grossPaise * Number(award.discount_percent) / 100) : 0;
+    if (toPaise(discount.trim() || "0") + scholarshipPaise > grossPaise) return setError("The discount and scholarship together cannot be more than the fee.");
     setBusy(true);
     setError("");
     try {
@@ -107,6 +117,7 @@ function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
         dueDate: dueDate || undefined,
         description: description.trim() || undefined,
         issue: issue || undefined,
+        scholarshipAwardId: award?.id,
       }));
       toast.success(`Invoice ${created.invoice_number} ${issue ? "issued" : "saved as draft"}`);
       onClose();
@@ -133,7 +144,7 @@ function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
     {batches.error && <ErrorAlert message={batches.error} onRetry={batches.reload} />}
 
     <Field id="inv-student" label="Student" hint={batchId && roster.data?.length === 0 ? "No students are enrolled in this batch." : undefined}>
-      <Select value={enrollmentId ? String(enrollmentId) : undefined} onValueChange={v => setEnrollmentId(Number(v))} disabled={!batchId || !roster.data?.length}>
+      <Select value={enrollmentId ? String(enrollmentId) : undefined} onValueChange={v => { setEnrollmentId(Number(v)); setAwardChoice(undefined); }} disabled={!batchId || !roster.data?.length}>
         <SelectTrigger id="inv-student" className="w-full"><SelectValue placeholder={!batchId ? "Choose a batch first" : roster.loading ? "Loading students…" : "Choose a student"} /></SelectTrigger>
         <SelectContent>{roster.data?.map(r => <SelectItem key={r.id} value={String(r.id)}>
           {r.student_profiles.users.full_name}{r.student_profiles.admission_number ? ` · ${r.student_profiles.admission_number}` : ""}{r.status !== "ACTIVE" ? ` (${titleCase(r.status)})` : ""}
@@ -153,6 +164,9 @@ function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
     </Field>
 
     <AmountFields gross={gross} discount={discount} setGross={setGross} setDiscount={setDiscount} grossPlaceholder={plan?.amount} grossRequired={!plan} />
+
+    {awards.data && awards.data.length > 0 && <ScholarshipBox awards={awards.data} selected={award?.id} grossPaise={toPaise(gross.trim() || plan?.amount || "0")}
+      onSelect={id => setAwardChoice(id ?? "none")} />}
 
     <div className="grid gap-4 sm:grid-cols-2">
       <Field id="inv-due" label={<>Due date <Optional /></>}>
@@ -177,6 +191,34 @@ function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
       <Button type="submit" disabled={busy}>{busy && <Loader2 className="animate-spin" />}{issue ? "Create and issue" : "Save draft"}</Button>
     </DialogFooter>
   </form>;
+}
+
+/**
+ * Scholarships the student won (Scholarship Tests): one can be applied. Its % of the fee is added to the
+ * discount by the API, and the award is used up (released if the invoice is voided).
+ */
+function ScholarshipBox({ awards, selected, grossPaise, onSelect }: {
+  awards: AvailableAward[]; selected: number | undefined; grossPaise: number; onSelect: (id: number | undefined) => void;
+}) {
+  return <div className="grid gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
+    <p className="flex items-center gap-2 text-sm font-medium"><Award className="size-4 text-amber-600 dark:text-amber-400" /> Scholarship available</p>
+    {awards.map(a => {
+      const pct = Number(a.discount_percent);
+      const off = Math.round(grossPaise * pct / 100);
+      const id = `award-${a.id}`;
+      return <div key={a.id} className="flex items-start gap-2">
+        <Checkbox id={id} checked={selected === a.id} onCheckedChange={v => onSelect(v === true ? a.id : undefined)} className="mt-0.5" />
+        <Label htmlFor={id} className="grid gap-0.5 font-normal">
+          <span>{pct}% off · {a.scholarship_tests.title}{a.rank ? ` (rank ${a.rank})` : ""}</span>
+          <span className="text-xs text-muted-foreground">
+            {grossPaise > 0 ? `${pct}% of ${formatMoney(fromPaise(grossPaise))} = ${formatMoney(fromPaise(off))} off, on top of any discount above.` : "Enter the fee to see the amount."}
+            {a.scholarship_tests.valid_until ? ` Valid until ${a.scholarship_tests.valid_until.slice(0, 10)}.` : ""}
+          </span>
+        </Label>
+      </div>;
+    })}
+    <p className="text-xs text-muted-foreground">Only one scholarship can be applied, once. Voiding this invoice makes it available again.</p>
+  </div>;
 }
 
 // ------------------------------------------------------------------ edit (DRAFT only)

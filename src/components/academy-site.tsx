@@ -14,7 +14,7 @@ import { contact, courseHref, programs, socials, whatsappLink } from "@/lib/site
 import type { ApiFaculty } from "@/lib/api";
 import type { HomeResults } from "@/lib/home-content";
 import { FacultySection, ResultsSection } from "@/components/home-sections";
-import ScholarshipForm from "@/components/scholarship-form";
+import { ScholarshipPanel } from "@/components/scholarship-form";
 import { useSiteContent } from "@/lib/site-content";
 
 const links = [["Home", "home"], ["About Us", "about"], ["Courses", "courses"], ["Admissions", "admissions"], ["Faculty", "faculty"], ["Gallery", "gallery"], ["Contact", "contact"]] as const;
@@ -184,9 +184,8 @@ export default function AcademySite({ children, home }: { children?: React.React
         <Button variant="ghost" size="icon" className="dialog-close" aria-label="Close dialog" onClick={() => dialog.current?.close()}><X /></Button>
         <span className="program-icon"><GraduationCap size={27} /></span>
         <p className="section-kicker">EDUPULSE ACADEMY</p>
-        <h2 id="dialog-title">{scholarship?.title ?? "Scholarship Test"}</h2>
-        <p className="dialog-body">{scholarship?.body ?? "Students can win a scholarship on their EduPulse course fees through our Scholarship Test. Register below and our team will call you with the test date, syllabus and how scholarships are awarded."}</p>
-        <ScholarshipForm />
+        {/* The open test (details + registration) when there is one; otherwise the editable text and interest form. */}
+        <ScholarshipPanel fallbackTitle={scholarship?.title} fallbackBody={scholarship?.body} />
         <p className="dialog-email">Questions? Call {contact.phones.map((phone, i) => <span key={phone.tel}>{i > 0 && " / "}<a href={`tel:${phone.tel}`}>{phone.display}</a></span>)} or <a href={`mailto:${contact.email}?subject=${encodeURIComponent("Scholarship Test")}`}>email us</a>.</p>
       </div>}
     </dialog>

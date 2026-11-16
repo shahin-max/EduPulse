@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, CalendarCheck, CalendarDays, ClipboardList, IndianRupee, Megaphone, NotebookPen, Trophy, Video } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CalendarCheck, CalendarDays, ClipboardList, IndianRupee, Megaphone, NotebookPen, Trophy, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,7 @@ import { useAdminData } from "@/components/admin/use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, PageHeader, Pill } from "@/components/admin/ui";
 import { isJoinable, relative, timeOf, useNow } from "./shared";
 import { RecordingButton } from "@/components/portal/video-player";
+import { scholarshipsApi } from "@/lib/scholarships-api";
 
 function loadToday(token: string) {
   const start = new Date();
@@ -33,9 +34,13 @@ export default function StudentHome() {
   const attendance = useAdminData(studentApi.attendance, "student-attendance");
   const invoices = useAdminData(studentApi.invoices, "student-invoices");
   const feed = useAdminData(token => studentApi.feed(token, 3), "student-feed");
+  const scholarships = useAdminData(scholarshipsApi.mine, "student-scholarships");
   const attempts = useAdminData(token => studentApi.myAttempts(token), "student-attempts");
 
-  const notEnrolled = courses.data?.length === 0;
+  // A registered Scholarship Test that can be started or resumed, or whose result is out.
+  const scholarship = scholarships.data?.find(s => s.can_start || s.attempt?.status === "IN_PROGRESS" || s.result);
+  // A scholarship candidate isn't in a course batch yet, so the "not in a batch" note would confuse them.
+  const notEnrolled = courses.data?.length === 0 && !scholarships.data?.length;
   const toDo = (assignments.data ?? []).filter(a => a.current && a.status === "PUBLISHED" && (a.state === "MISSING" || a.state === "NOT_DUE"));
   const openTests = (exams.data ?? []).filter(e => e.window === "OPEN" && (e.in_progress_attempt_id || e.attempts_remaining > 0));
   const att = (attendance.data ?? []).reduce((s, b) => ({ attended: s.attended + b.summary.present + b.summary.late, counted: s.counted + b.summary.present + b.summary.late + b.summary.absent }), { attended: 0, counted: 0 });
@@ -57,6 +62,20 @@ export default function StudentHome() {
     {notEnrolled && <Card><EmptyState icon={BookOpen} title="You are not in a batch yet"
       description="Once the academy enrols you in a batch, your classes, study materials, assignments and tests appear here. Call or visit the office if you have already paid."
       action={<Button asChild variant="outline"><Link href="/courses">Browse courses</Link></Button>} /></Card>}
+
+    {scholarship && <Card className="border-amber-500/40 bg-amber-500/5">
+      <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Award className="size-8 shrink-0 text-amber-500" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">{scholarship.title}</p>
+          <p className="text-sm text-muted-foreground">{scholarship.result
+            ? Number(scholarship.result.discount_percent) > 0 ? `Results are out: you won ${Number(scholarship.result.discount_percent)}% off your course fees.` : "Results are out. See your rank and score."
+            : scholarship.attempt?.status === "IN_PROGRESS" ? "Your test is in progress. Resume before the timer runs out."
+            : "Your Scholarship Test is open now. Start it whenever you are ready."}</p>
+        </div>
+        <Button asChild><Link href={`/student/scholarships?test=${scholarship.id}`}>{scholarship.result ? "See result" : scholarship.attempt ? "Resume" : "Start test"} <ArrowRight /></Link></Button>
+      </CardContent>
+    </Card>}
 
     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       {stats.map(({ label, value, icon: Icon, href, alert }) => <Link key={label} href={href} className="group rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none">

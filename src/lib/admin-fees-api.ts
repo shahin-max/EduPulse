@@ -205,6 +205,8 @@ export type CreateInvoiceInput = {
   /** YYYY-MM-DD */
   dueDate?: string;
   issue?: boolean;
+  /** A Scholarship Test award of the student; its % of the gross is added to the discount and the award is used up. */
+  scholarshipAwardId?: number;
 };
 /** Only DRAFT invoices can be edited. */
 export type UpdateInvoiceInput = { description?: string; grossAmount?: string; discountAmount?: string; dueDate?: string | null };

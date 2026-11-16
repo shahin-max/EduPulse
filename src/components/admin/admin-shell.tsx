@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Building2, CalendarDays, ClipboardList, FileText, Globe, History, IndianRupee, Inbox, LayoutDashboard, Layers, Megaphone, NotebookPen, Users } from "lucide-react";
+import { BookOpen, Building2, CalendarDays, ClipboardList, FileText, Globe, History, IndianRupee, Inbox, LayoutDashboard, Layers, Megaphone, NotebookPen, Trophy, Users } from "lucide-react";
 import PortalShell, { type PortalConfig } from "@/components/portal/portal-shell";
 
 const config: PortalConfig = {
@@ -27,6 +27,7 @@ const config: PortalConfig = {
     { group: "Operations", items: [
       { label: "Fees", href: "/admin/fees", icon: IndianRupee },
       { label: "Announcements", href: "/admin/announcements", icon: Megaphone },
+      { label: "Scholarship tests", href: "/admin/scholarships", icon: Trophy },
     ] },
     { group: "Settings", items: [
       { label: "Branches", href: "/admin/branches", icon: Building2 },

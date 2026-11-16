@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, CalendarCheck, CalendarDays, ClipboardList, FileText, IndianRupee, LayoutDashboard, Megaphone, NotebookPen, Trophy, UserRound } from "lucide-react";
+import { Award, BookOpen, CalendarCheck, CalendarDays, ClipboardList, FileText, IndianRupee, LayoutDashboard, Megaphone, NotebookPen, Trophy, UserRound } from "lucide-react";
 import PortalShell, { type PortalConfig } from "@/components/portal/portal-shell";
 
 /** The student portal: everything for the batches the student is actively enrolled in. */
@@ -22,6 +22,7 @@ const config: PortalConfig = {
       { label: "Study materials", href: "/student/materials", icon: FileText },
       { label: "Assignments", href: "/student/assignments", icon: NotebookPen },
       { label: "Tests", href: "/student/tests", icon: ClipboardList },
+      { label: "Scholarship tests", href: "/student/scholarships", icon: Award },
     ] },
     { group: "My progress", items: [
       { label: "Results", href: "/student/results", icon: Trophy },
