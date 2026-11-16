@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import type { Tone } from "@/components/admin/ui";
 import type { AttendanceStatus, ClassSession, ClassStatus } from "@/lib/staff-classes-api";
 
-export const CLASS_TONES: Record<ClassStatus, Tone> = { SCHEDULED: "blue", COMPLETED: "green", CANCELLED: "red" };
+/** ENDED is shown, not stored: a SCHEDULED class whose end time has passed (see shownStatus). */
+export const CLASS_TONES: Record<ClassStatus | "ENDED", Tone> = { SCHEDULED: "blue", COMPLETED: "green", CANCELLED: "red", ENDED: "gray" };
 
 export const CLASS_STATUS_HELP: Record<ClassStatus, string> = {
   SCHEDULED: "Planned. Students see it in their timetable.",
@@ -51,6 +52,12 @@ export function duration(session: Pick<ClassSession, "starts_at" | "ends_at">) {
   return h && m ? `${h} h ${m} min` : h ? `${h} h` : `${m} min`;
 }
 
+/** The class end time has passed. */
+export const isOver = (session: Pick<ClassSession, "ends_at">) => new Date(session.ends_at).getTime() <= Date.now();
+/** The status to show: a scheduled class that has finished reads "Ended" until it is marked taken. */
+export const shownStatus = (session: Pick<ClassSession, "status" | "ends_at">) =>
+  session.status === "SCHEDULED" && isOver(session) ? "ENDED" : session.status;
+
 export const hasStarted = (session: Pick<ClassSession, "starts_at">) => new Date(session.starts_at).getTime() <= Date.now();
 export const isLive = (session: Pick<ClassSession, "starts_at" | "ends_at" | "status">) =>
   session.status === "SCHEDULED" && hasStarted(session) && new Date(session.ends_at).getTime() > Date.now();
@@ -64,7 +71,7 @@ export function useTeacherName() {
 
 /** Join (meeting) and Recording buttons; nothing when neither link applies. */
 export function ClassLinks({ session, size = "sm", className, compact }: { session: ClassSession; size?: "sm" | "default"; className?: string; compact?: boolean }) {
-  const join = session.meeting_url && session.status !== "CANCELLED";
+  const join = session.meeting_url && session.status !== "CANCELLED" && !isOver(session);
   if (!join && !session.recording_url) return null;
   return <div className={cn("flex flex-wrap gap-2", className)}>
     {join && <Button asChild size={size} variant={isLive(session) ? "default" : "outline"}>

@@ -5,7 +5,7 @@ import { AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 import type { AdminSummary } from "@/lib/admin-ops-api";
 
 /**
@@ -90,7 +90,7 @@ export function AdminCharts({ data, error }: { data: AdminSummary | null; error?
           columns={months.map((m, i) => ({ key: m, value: data.collections[i], tip: `${monthLong(m)}: ${rupees(data.collections[i])}` }))} />}
       </ChartCard>
 
-      <ChartCard title="New enrollments" description={data ? `${totalEnrolled} students enrolled, ${range}` : "Last 6 months"}>
+      <ChartCard title="New enrollments" description={data ? `${plural(totalEnrolled, "student")} enrolled, ${range}` : "Last 6 months"}>
         {!data ? <ChartSkeleton /> : <Columns short={n => String(n)}
           label={`New enrollments by month: ${months.map((m, i) => `${monthShort(m)} ${data.enrollments[i]}`).join(", ")}`}
           columns={months.map((m, i) => ({ key: m, value: data.enrollments[i], tip: `${monthLong(m)}: ${data.enrollments[i]} enrolled` }))} />}

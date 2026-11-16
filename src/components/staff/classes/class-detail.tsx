@@ -16,7 +16,7 @@ import { useAdminData } from "@/components/admin/use-admin-data";
 import { ErrorAlert, errorText, Pill } from "@/components/admin/ui";
 import AttendanceSheet from "./attendance-sheet";
 import { CancelClassDialog, ClassFormDialog } from "./class-dialogs";
-import { CLASS_STATUS_HELP, CLASS_TONES, ClassLinks, dayLabel, duration, hasStarted, isLive, timeRange, useTeacherName } from "./class-shared";
+import { CLASS_STATUS_HELP, CLASS_TONES, ClassLinks, dayLabel, duration, hasStarted, isLive, shownStatus, timeRange, useTeacherName } from "./class-shared";
 
 export default function ClassDetail({ id }: { id: number }) {
   const { base } = usePortal();
@@ -69,10 +69,10 @@ export default function ClassDetail({ id }: { id: number }) {
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className={session.status === "CANCELLED" ? "min-w-0 text-2xl font-semibold tracking-tight break-words text-muted-foreground line-through" : "min-w-0 text-2xl font-semibold tracking-tight break-words"}>{session.title}</h1>
-            {isLive(session) ? <Pill value="LIVE" tones={{ LIVE: "green" }} label="Live now" /> : <Pill value={session.status} tones={CLASS_TONES} />}
+            {isLive(session) ? <Pill value="LIVE" tones={{ LIVE: "green" }} label="Live now" /> : <Pill value={shownStatus(session)} tones={CLASS_TONES} />}
           </div>
           <p className="flex items-center gap-2 text-sm font-medium"><CalendarClock className="size-4 text-muted-foreground" />{dayLabel(session.starts_at)}, {timeRange(session)} <span className="font-normal text-muted-foreground">· {duration(session)}</span></p>
-          <p className="text-sm text-muted-foreground">{CLASS_STATUS_HELP[session.status]}</p>
+          <p className="text-sm text-muted-foreground">{shownStatus(session) === "ENDED" ? "Finished. Mark attendance and add the recording link." : CLASS_STATUS_HELP[session.status]}</p>
           <ClassLinks session={session} size="default" className="pt-1" />
         </div>
         {/* One primary action stays visible; the rest live in the actions menu. */}

@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAuth } from "@/lib/auth";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 import { downloadCsv, num } from "@/lib/teaching-api";
 import { scholarshipsApi, type ScholarshipCandidate, type ScholarshipResults, type ScholarshipTest } from "@/lib/scholarships-api";
 import { useAdminData } from "../use-admin-data";
@@ -166,7 +166,7 @@ export default function ScholarshipDetail({ id }: { id: number }) {
             <AlertDialogTitle>{confirm === "open" ? "Open registration?" : "Publish results?"}</AlertDialogTitle>
             <AlertDialogDescription>{confirm === "open"
               ? `The paper (${questions} questions) is published and the website starts taking registrations. Students can take it ${testWindow(test)}.`
-              : `${ranked.length} students took the test. Their awards are saved as shown, results become visible in their portal, and each is notified. Awards can still be adjusted afterwards until they are used on an invoice.`}
+              : `${plural(ranked.length, "student")} took the test. Their awards are saved as shown, results become visible in their portal, and each is notified. Awards can still be adjusted afterwards until they are used on an invoice.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

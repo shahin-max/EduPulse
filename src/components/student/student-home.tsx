@@ -105,16 +105,18 @@ export default function StudentHome() {
             : <ul className="grid gap-3">
               {today.data.map(c => {
                 const live = isJoinable(c, now);
+                const over = new Date(c.ends_at).getTime() < now;
                 return <li key={c.id} className="grid gap-3 rounded-lg border p-3 sm:flex sm:flex-wrap sm:items-center">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className={cn("truncate font-medium", c.status === "CANCELLED" && "line-through opacity-70")}>{c.title}</p>
                       {c.status === "CANCELLED" ? <Pill value="CANCELLED" label="Cancelled" tones={{ CANCELLED: "red" }} />
-                        : live ? <Pill value="LIVE" label="Live now" tones={{ LIVE: "green" }} /> : null}
+                        : live ? <Pill value="LIVE" label="Live now" tones={{ LIVE: "green" }} />
+                        : over ? <Pill value="ENDED" label="Ended" tones={{ ENDED: "gray" }} /> : null}
                     </div>
                     <p className="text-sm text-muted-foreground">{timeOf(c.starts_at)}–{timeOf(c.ends_at)}{c.subjects ? ` · ${c.subjects.name}` : ""}{c.faculty_profiles ? ` · ${c.faculty_profiles.users.full_name}` : ""}</p>
                   </div>
-                  {c.status !== "CANCELLED" && c.meeting_url && <Button asChild size="sm" variant={live ? "default" : "outline"} className="sm:w-auto">
+                  {c.status !== "CANCELLED" && !over && c.meeting_url && <Button asChild size="sm" variant={live ? "default" : "outline"} className="sm:w-auto">
                     <a href={c.meeting_url} target="_blank" rel="noopener noreferrer"><Video /> {live ? "Join now" : "Class link"}</a>
                   </Button>}
                   {c.recording_url && <RecordingButton url={c.recording_url} title={c.title} />}

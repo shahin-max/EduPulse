@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { healthApi, query, usersApi, type Paginated } from "@/lib/admin-api";
 import { adminSummaryApi } from "@/lib/admin-ops-api";
 import { useAdminData } from "./use-admin-data";
+import { useNow } from "@/components/student/shared";
 import { AdminCharts } from "./charts/admin-charts";
 import { ErrorAlert, formatDate, PageHeader, RoleBadges, StatusBadge, UserAvatar } from "./ui";
 
@@ -47,6 +48,7 @@ const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: 
 export default function AdminOverview() {
   const { user } = useAuth();
   const { data, error, reload } = useAdminData(loadOverview, "overview");
+  const now = useNow();
   // Loaded on its own so a slow summary never holds up the rest of the home page.
   const summary = useAdminData(adminSummaryApi.get, "admin-summary");
 
@@ -116,7 +118,7 @@ export default function AdminOverview() {
               {data.today.map(s => <li key={s.id} className="grid gap-0.5 rounded-lg border p-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="truncate text-sm font-medium">{s.title}</p>
-                  {s.meeting_url && s.status !== "CANCELLED" && <a href={s.meeting_url} target="_blank" rel="noopener noreferrer" className="text-primary" aria-label={`Join ${s.title}`}><Video className="size-4" /></a>}
+                  {s.meeting_url && s.status !== "CANCELLED" && new Date(s.ends_at).getTime() > now && <a href={s.meeting_url} target="_blank" rel="noopener noreferrer" className="text-primary" aria-label={`Join ${s.title}`}><Video className="size-4" /></a>}
                 </div>
                 <p className="text-xs text-muted-foreground">{time(s.starts_at)}–{time(s.ends_at)} · {s.batches.name}{s.subjects ? ` · ${s.subjects.name}` : ""}</p>
                 {s.status === "CANCELLED" ? <p className="text-xs font-medium text-destructive">Cancelled</p>

@@ -19,7 +19,7 @@ import { EmptyState, ErrorAlert, LoadingRows, PageHeader, Pager, Pill, titleCase
 import { batchLabel, useIsAdmin, useStaffBatches } from "../use-staff";
 import { CancelClassDialog, ClassFormDialog } from "./class-dialogs";
 import { WeekGrid } from "./week-grid";
-import { CLASS_TONES, ClassLinks, dayLabel, hasStarted, isLive, timeRange, useTeacherName } from "./class-shared";
+import { CLASS_TONES, ClassLinks, dayLabel, hasStarted, isLive, shownStatus, timeRange, useTeacherName } from "./class-shared";
 
 const ALL = "all";
 const PAGE_SIZE = 50;
@@ -170,7 +170,7 @@ function When({ session }: { session: ClassSession }) {
 function StatusCell({ session }: { session: ClassSession }) {
   return isLive(session)
     ? <Pill value="LIVE" tones={{ LIVE: "green" }} label="Live now" />
-    : <Pill value={session.status} tones={CLASS_TONES} />;
+    : <Pill value={shownStatus(session)} tones={CLASS_TONES} />;
 }
 
 /** md and up: a table. Lower-priority columns appear as the screen widens. */

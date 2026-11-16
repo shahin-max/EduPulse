@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { query } from "@/lib/admin-api";
 import { teachingApi } from "@/lib/teaching-api";
 import { RowActions as ActionMenu } from "@/components/portal/row-actions";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, PageHeader, Pill, UserAvatar } from "@/components/admin/ui";
 import { useStaffBatches, type StaffBatch } from "@/components/staff/use-staff";
@@ -32,7 +32,7 @@ function useNow(stepMs = 60_000) {
 }
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
-const CLASS_TONES = { SCHEDULED: "blue", COMPLETED: "green", CANCELLED: "red" } as const;
+const CLASS_TONES = { SCHEDULED: "blue", COMPLETED: "green", CANCELLED: "red", ENDED: "gray" } as const;
 
 /** Subjects this teacher teaches in a batch (from batch_faculty). */
 export const mySubjects = (batch: StaffBatch, userId: number | undefined) =>
@@ -74,7 +74,7 @@ export default function FacultyOverview() {
 
   return <>
     <PageHeader title={`Good to see you, ${user?.full_name.split(" ")[0] ?? "Teacher"}`}
-      description={staff.data ? `${active.length} ${active.length === 1 ? "batch" : "batches"} · ${students} students. Here is what needs you today.` : "Your classes, batches and teaching tools in one place."} />
+      description={staff.data ? `${plural(active.length, "batch", "batches")} · ${plural(students, "student")}. Here is what needs you today.` : "Your classes, batches and teaching tools in one place."} />
     {staff.error && <ErrorAlert message={staff.error} onRetry={staff.reload} />}
     {work.error && <ErrorAlert message={work.error} onRetry={work.reload} />}
 
@@ -106,21 +106,22 @@ export default function FacultyOverview() {
             : <ul className="grid gap-3">
               {today.data.map(c => {
                 const live = c.status !== "CANCELLED" && new Date(c.starts_at).getTime() - 15 * 60_000 <= now && new Date(c.ends_at).getTime() >= now;
+                const over = new Date(c.ends_at).getTime() < now;
                 return <li key={c.id} className="grid gap-3 rounded-lg border p-3 sm:flex sm:flex-wrap sm:items-center">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-medium">{c.title}</p>
-                      {live ? <Pill value="LIVE" label="Live now" tones={{ LIVE: "green" }} /> : <Pill value={c.status} tones={CLASS_TONES} />}
+                      {live ? <Pill value="LIVE" label="Live now" tones={{ LIVE: "green" }} /> : <Pill value={c.status === "SCHEDULED" && over ? "ENDED" : c.status} tones={CLASS_TONES} />}
                     </div>
                     <p className="text-sm text-muted-foreground">{time(c.starts_at)}–{time(c.ends_at)} · {c.batches.name}{c.subjects ? ` · ${c.subjects.name}` : ""}</p>
                   </div>
                   {/* Joining is the one action that stays visible; the rest are in the actions menu. */}
                   {c.status !== "CANCELLED" && <div className="flex items-center gap-2">
-                    {c.meeting_url && <Button asChild size="sm" variant={live ? "default" : "outline"} className="flex-1 sm:flex-none"><a href={c.meeting_url} target="_blank" rel="noopener noreferrer"><Video /> Join</a></Button>}
+                    {c.meeting_url && !over && <Button asChild size="sm" variant={live ? "default" : "outline"} className="flex-1 sm:flex-none"><a href={c.meeting_url} target="_blank" rel="noopener noreferrer"><Video /> Join</a></Button>}
                     <ActionMenu label={c.title} items={[
                       { label: "Mark attendance", icon: ClipboardCheck, href: `/teach/classes/${c.id}#attendance` },
                       { label: "View class", icon: CalendarDays, href: `/teach/classes/${c.id}` },
-                    ]} className={c.meeting_url ? undefined : "ml-auto"} />
+                    ]} className={c.meeting_url && !over ? undefined : "ml-auto"} />
                   </div>}
                 </li>;
               })}

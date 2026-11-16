@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 import {
   downloadCsv, LOW_ATTENDANCE, num, SUBMISSION_LABEL, teachingApi,
   type Gradebook, type GradebookStudent, type SubmissionState,
@@ -55,7 +55,7 @@ export function GradebookCard({ batchId }: { batchId: number }) {
     <CardHeader className="border-b py-4 [.border-b]:pb-4">
       <CardTitle>Gradebook</CardTitle>
       <CardDescription>{data
-        ? `${data.students.length} students · ${data.sessions_held} classes held · ${data.assignments.length} assignments · ${data.exams.length} tests`
+        ? `${plural(data.students.length, "student")} · ${plural(data.sessions_held, "class", "classes")} held · ${plural(data.assignments.length, "assignment")} · ${plural(data.exams.length, "test")}`
         : "Attendance, assignments, tests and study materials for every student."}</CardDescription>
       <CardAction>
         <Button variant="outline" size="sm" disabled={!data?.students.length} onClick={() => data && exportCsv(data)}><Download /> CSV</Button>
