@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { AttemptQuestion } from "@/lib/student-api";
+import { MathText } from "@/components/portal/math-text";
+import { AssetImage } from "@/components/portal/asset-image";
 
 const n = (value: string | number) => String(Number(value));
 
@@ -52,11 +54,15 @@ export function OmrLayout({ questions, selected, disabled, onSelect }: {
                 <p className="font-semibold tabular-nums">Q{i + 1}.</p>
                 <span className="text-xs text-muted-foreground">+{n(q.marks)}{Number(q.negative_marks) > 0 ? ` / −${n(q.negative_marks)}` : ""}</span>
               </div>
-              <p className="mt-1 leading-relaxed break-words whitespace-pre-wrap">{q.question_text}</p>
+              <p className="mt-1 leading-relaxed"><MathText text={q.question_text} /></p>
+              {q.image_asset_id && <AssetImage assetId={q.image_asset_id} alt={`Figure for question ${i + 1}`} size="lg" className="mt-2" />}
               <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
                 {q.options.map(o => <li key={o.id} className="flex gap-2 text-sm">
                   <span className="font-semibold">{o.option_label}.</span>
-                  <span className="min-w-0 break-words whitespace-pre-wrap">{o.option_text}</span>
+                  <span className="grid min-w-0 gap-1">
+                    {o.option_text && <MathText text={o.option_text} />}
+                    {o.image_asset_id && <AssetImage assetId={o.image_asset_id} alt={`Question ${i + 1}, option ${o.option_label}`} size="md" />}
+                  </span>
                 </li>)}
               </ul>
             </li>)}

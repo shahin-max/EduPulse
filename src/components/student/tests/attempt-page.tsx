@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { KIND_LABEL, studentApi, type Attempt, type AttemptQuestion } from "@/lib/student-api";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { ErrorAlert, errorText, formatDate, Pill } from "@/components/admin/ui";
+import { MathText } from "@/components/portal/math-text";
+import { AssetImage } from "@/components/portal/asset-image";
 import { LeaderboardButton } from "./leaderboard";
 import { OmrLayout } from "./omr-sheet";
 
@@ -169,7 +171,10 @@ function TestRunner({ attempt, onFinished }: { attempt: Attempt; onFinished: (at
           </div>
         </CardHeader>
         <CardContent className="grid gap-5">
-          <p className="text-base leading-relaxed break-words whitespace-pre-wrap">{q.question_text}</p>
+          <div className="grid gap-3">
+            <p className="text-base leading-relaxed"><MathText text={q.question_text} /></p>
+            {q.image_asset_id && <AssetImage assetId={q.image_asset_id} alt={`Figure for question ${index + 1}`} size="lg" />}
+          </div>
           <div role="radiogroup" aria-label={`Answers for question ${index + 1}`} className="grid gap-2">
             {q.options.map(o => {
               const chosen = answer.selected === o.id;
@@ -178,7 +183,10 @@ function TestRunner({ attempt, onFinished }: { attempt: Attempt; onFinished: (at
                 className={cn("flex items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:p-4",
                   chosen && "border-primary bg-primary/10 hover:bg-primary/10")}>
                 <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-full border text-sm font-semibold", chosen && "border-primary bg-primary text-primary-foreground")}>{o.option_label}</span>
-                <span className="min-w-0 flex-1 pt-0.5 break-words whitespace-pre-wrap">{o.option_text}</span>
+                <span className="grid min-w-0 flex-1 gap-2 pt-0.5">
+                  {o.option_text && <MathText text={o.option_text} />}
+                  {o.image_asset_id && <AssetImage assetId={o.image_asset_id} alt={`Option ${o.option_label}`} size="md" zoom={false} />}
+                </span>
               </button>;
             })}
           </div>
@@ -335,7 +343,8 @@ function ReviewQuestion({ question: q, number }: { question: AttemptQuestion; nu
         </div>
       </CardHeader>
       <CardContent className="grid gap-3">
-        <p className="break-words whitespace-pre-wrap">{q.question_text}</p>
+        <p><MathText text={q.question_text} /></p>
+        {q.image_asset_id && <AssetImage assetId={q.image_asset_id} alt="Figure for this question" size="lg" />}
         <ul className="grid gap-2">
           {q.options.map(o => {
             const chosen = q.selected_option_id === o.id;
@@ -343,13 +352,16 @@ function ReviewQuestion({ question: q, number }: { question: AttemptQuestion; nu
               o.is_correct && "border-emerald-500/60 bg-emerald-500/10",
               chosen && !o.is_correct && "border-red-500/60 bg-red-500/10")}>
               <span className="flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold">{o.option_label}</span>
-              <span className="min-w-0 flex-1 break-words whitespace-pre-wrap">{o.option_text}</span>
+              <span className="grid min-w-0 flex-1 gap-2">
+                {o.option_text && <MathText text={o.option_text} />}
+                {o.image_asset_id && <AssetImage assetId={o.image_asset_id} alt={`Option ${o.option_label}`} size="md" />}
+              </span>
               {o.is_correct && <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400"><Check className="size-3.5" /> {chosen ? "Your answer · Correct" : "Correct"}</span>}
               {chosen && !o.is_correct && <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-red-700 dark:text-red-400"><X className="size-3.5" /> Your answer</span>}
             </li>;
           })}
         </ul>
-        {q.explanation && <div className="rounded-lg bg-muted/50 p-3 text-sm"><p className="mb-1 text-xs font-medium text-muted-foreground">Explanation</p><p className="break-words whitespace-pre-wrap">{q.explanation}</p></div>}
+        {q.explanation && <div className="rounded-lg bg-muted/50 p-3 text-sm"><p className="mb-1 text-xs font-medium text-muted-foreground">Explanation</p><p><MathText text={q.explanation} /></p></div>}
       </CardContent>
     </Card>
   </li>;

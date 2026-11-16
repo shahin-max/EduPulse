@@ -24,13 +24,17 @@ export const ATTEMPT_STATUSES: AttemptStatus[] = ["IN_PROGRESS", "SUBMITTED", "A
 
 // ---- Question bank ----
 
-export type QuestionOption = { id: number; question_id: number; option_label: string; option_text: string; is_correct: boolean; sort_order: number };
+/** `option_text` may be empty when the option is a picture (`image_asset_id`). */
+export type QuestionOption = { id: number; question_id: number; option_label: string; option_text: string; image_asset_id: number | null; is_correct: boolean; sort_order: number };
 
 export type Question = {
   id: number;
   course_subject_id: number;
   chapter_id: number | null;
+  /** May contain $...$ maths (shown with MathText). */
   question_text: string;
+  /** Optional private picture (figure, diagram). */
+  image_asset_id: number | null;
   explanation: string | null;
   difficulty: Difficulty;
   kind: "SINGLE_CHOICE";
@@ -52,13 +56,15 @@ export type ListQuestionsQuery = {
   difficulty?: Difficulty; isActive?: boolean; search?: string;
 };
 
-/** SINGLE_CHOICE: 2-8 options, unique labels (1-8 letters/digits), exactly one with isCorrect. */
-export type QuestionOptionInput = { optionLabel: string; optionText: string; isCorrect: boolean; sortOrder?: number };
+/** SINGLE_CHOICE: 2-8 options, unique labels (1-8 letters/digits), exactly one with isCorrect; each needs text, a picture or both. */
+export type QuestionOptionInput = { optionLabel: string; optionText: string; imageAssetId?: number | null; isCorrect: boolean; sortOrder?: number };
 
 export type CreateQuestionInput = {
   courseSubjectId: number;
   chapterId?: number | null;
   questionText: string;
+  /** A PNG/JPEG/GIF/WebP file uploaded with POST /files; null removes it on update. */
+  imageAssetId?: number | null;
   explanation?: string | null;
   difficulty?: Difficulty;
   marksDefault?: number;
@@ -206,9 +212,10 @@ export type AttemptQuestion = {
   question_id: number;
   display_order: number;
   question_text: string;
+  image_asset_id: number | null;
   marks: string;
   negative_marks: string;
-  options: { id: number; option_label: string; option_text: string; is_correct?: boolean }[];
+  options: { id: number; option_label: string; option_text: string; image_asset_id: number | null; is_correct?: boolean }[];
   selected_option_id: number | null;
   is_marked_for_review: boolean;
   answered_at: string | null;

@@ -105,10 +105,10 @@ export type AvailableExam = {
   my_batches: Ref[];
 };
 
-export type AttemptOption = { id: number; option_label: string; option_text: string; is_correct?: boolean };
+export type AttemptOption = { id: number; option_label: string; option_text: string; image_asset_id: number | null; is_correct?: boolean };
 
 export type AttemptQuestion = {
-  question_id: number; display_order: number; question_text: string; marks: string; negative_marks: string;
+  question_id: number; display_order: number; question_text: string; image_asset_id: number | null; marks: string; negative_marks: string;
   options: AttemptOption[];
   selected_option_id: number | null; is_marked_for_review: boolean; answered_at: string | null;
   /** Only when the answer review is released. */

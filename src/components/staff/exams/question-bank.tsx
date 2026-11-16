@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { DIFFICULTIES, questionsApi, type Difficulty, type Question } from "@/lib/staff-exams-api";
+import { MathText } from "@/components/portal/math-text";
+import { AssetImage } from "@/components/portal/asset-image";
 import { EmptyState, ErrorAlert, errorText, LoadingRows, Pager, titleCase } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { useIsAdmin } from "@/components/staff/use-staff";
@@ -168,11 +170,15 @@ function QuestionRow({ question: q, actions }: { question: Question; actions: Ro
         <span>·</span>
         <span className="truncate">{q.course_subjects.courses.code} · {q.course_subjects.subjects.name}{q.chapters && ` · ${q.chapters.title}`}</span>
       </div>
-      <p className="font-medium break-words whitespace-pre-line">{q.question_text}</p>
+      <p className="font-medium"><MathText text={q.question_text} /></p>
+      {q.image_asset_id && <AssetImage assetId={q.image_asset_id} alt={`Figure for question ${q.id}`} size="sm" className="mt-2" />}
       <ol className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
         {q.question_options.map(o => <li key={o.id} className={o.is_correct ? "flex gap-1.5 font-medium text-emerald-700 dark:text-emerald-300" : "flex gap-1.5 text-muted-foreground"}>
           <span className="shrink-0">{o.option_label}.</span>
-          <span className="min-w-0 break-words">{o.option_text}</span>
+          <span className="grid min-w-0 gap-1">
+            {o.option_text && <MathText text={o.option_text} />}
+            {o.image_asset_id && <AssetImage assetId={o.image_asset_id} alt={`Option ${o.option_label} of question ${q.id}`} size="sm" />}
+          </span>
           {o.is_correct && <CircleCheck className="mt-0.5 size-3.5 shrink-0" aria-label="Correct" />}
         </li>)}
       </ol>

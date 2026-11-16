@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { DIFFICULTIES, examsApi, questionsApi, type Difficulty, type ExamDetail, type ExamQuestion } from "@/lib/staff-exams-api";
+import { MathText } from "@/components/portal/math-text";
+import { AssetImage } from "@/components/portal/asset-image";
 import { EmptyState, ErrorAlert, errorText, LoadingRows, Pager, titleCase } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { ALL, DifficultyPill, formatMarks, MARKS_PATTERN, sumMarks, useCurriculum } from "./exam-shared";
@@ -98,9 +100,10 @@ function QuestionLine({ q, index, count, locked, busy, onMove, onRemove, onMarks
   return <li className="grid gap-3 p-4 lg:grid-cols-[auto_1fr_auto] lg:items-start">
     <span className="flex size-7 items-center justify-center rounded-full bg-muted text-sm font-semibold tabular-nums">{index + 1}</span>
     <div className="min-w-0">
-      <p className="break-words whitespace-pre-line">{q.questions.question_text}</p>
+      <p><MathText text={q.questions.question_text} /></p>
+      {q.questions.image_asset_id && <AssetImage assetId={q.questions.image_asset_id} alt={`Figure for question ${index + 1}`} size="sm" className="mt-2" />}
       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        {correct && <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300"><CircleCheck className="size-3.5" /> {correct.option_label}. <span className="max-w-[16rem] truncate">{correct.option_text}</span></span>}
+        {correct && <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300"><CircleCheck className="size-3.5" /> {correct.option_label}. <span className="max-w-[16rem] truncate">{correct.option_text || (correct.image_asset_id ? "(picture)" : "")}</span></span>}
         <DifficultyPill value={q.questions.difficulty} />
         {!q.questions.is_active && <Badge variant="outline" className="text-muted-foreground">Inactive in bank</Badge>}
       </div>
@@ -237,7 +240,8 @@ function QuestionPicker({ exam, onClose, onExam }: { exam: ExamDetail; onClose: 
               <label className={already ? "flex cursor-not-allowed gap-3 py-3 opacity-60" : "flex cursor-pointer gap-3 py-3"}>
                 <Checkbox checked={already || selected.has(q.id)} disabled={already} onCheckedChange={() => toggle(q.id, q.marks_default)} className="mt-0.5" aria-label={`Select question ${q.id}`} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm break-words">{q.question_text}</span>
+                  <span className="block text-sm"><MathText text={q.question_text} /></span>
+                  {q.image_asset_id && <AssetImage assetId={q.image_asset_id} alt={`Figure for question ${q.id}`} size="sm" zoom={false} className="mt-1" />}
                   <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>{q.course_subjects.subjects.name}{q.chapters && ` · ${q.chapters.title}`}</span>
                     <DifficultyPill value={q.difficulty} />

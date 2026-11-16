@@ -19,6 +19,8 @@ import { useAuth } from "@/lib/auth";
 import {
   ATTEMPT_STATUSES, attemptsApi, examsApi, type AttemptStatus, type ExamAttempt, type ExamDetail, type LeaderboardEntry,
 } from "@/lib/staff-exams-api";
+import { MathText } from "@/components/portal/math-text";
+import { AssetImage } from "@/components/portal/asset-image";
 import { EmptyState, ErrorAlert, errorText, LoadingRows, Pager } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { ALL, AttemptStatusPill, formatDateTime, formatDuration, formatMarks, POLICY_HELP, SegmentedTabs, Stat } from "./exam-shared";
@@ -301,17 +303,21 @@ function AttemptDialog({ attemptId, onClose }: { attemptId: number; onClose: () 
         <ol className="grid gap-3">
           {a.questions.map((q, i) => <li key={q.question_id} className="rounded-lg border p-3">
             <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-medium break-words whitespace-pre-line"><span className="text-muted-foreground">{i + 1}. </span>{q.question_text}</p>
+              <p className="text-sm font-medium"><span className="text-muted-foreground">{i + 1}. </span><MathText text={q.question_text} /></p>
               <span className={q.is_correct === true ? "shrink-0 text-sm font-medium text-emerald-700 tabular-nums dark:text-emerald-300" : q.is_correct === false ? "shrink-0 text-sm font-medium text-red-700 tabular-nums dark:text-red-300" : "shrink-0 text-sm text-muted-foreground tabular-nums"}>
                 {q.marks_awarded !== undefined && q.marks_awarded !== null ? formatMarks(q.marks_awarded) : q.selected_option_id === null ? "0" : "—"}
               </span>
             </div>
+            {q.image_asset_id && <AssetImage assetId={q.image_asset_id} alt={`Figure for question ${i + 1}`} size="md" className="mt-2" />}
             <ul className="mt-2 grid gap-1 text-sm">
               {q.options.map(o => {
                 const chosen = o.id === q.selected_option_id;
                 return <li key={o.id} className={o.is_correct ? "flex gap-1.5 text-emerald-700 dark:text-emerald-300" : chosen ? "flex gap-1.5 text-red-700 dark:text-red-300" : "flex gap-1.5 text-muted-foreground"}>
                   <span className="shrink-0">{o.option_label}.</span>
-                  <span className="min-w-0 break-words">{o.option_text}</span>
+                  <span className="grid min-w-0 gap-1">
+                    {o.option_text && <MathText text={o.option_text} />}
+                    {o.image_asset_id && <AssetImage assetId={o.image_asset_id} alt={`Option ${o.option_label} of question ${i + 1}`} size="sm" />}
+                  </span>
                   {chosen && (o.is_correct ? <CircleCheck className="mt-0.5 size-3.5 shrink-0" aria-label="Chosen, correct" /> : <CircleX className="mt-0.5 size-3.5 shrink-0" aria-label="Chosen, wrong" />)}
                   {chosen && <span className="shrink-0 text-xs">(chosen)</span>}
                 </li>;
