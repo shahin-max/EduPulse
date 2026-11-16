@@ -354,6 +354,11 @@ h2 > span { color: var(--primary); }
 /* Dialog */
 .info-dialog { position: fixed; margin: auto; width: min(480px, calc(100% - 32px)); border: 1px solid var(--border); padding: 0; border-radius: 18px; background: var(--card); color: var(--foreground); box-shadow: 0 30px 100px #0005; }
 .info-dialog[open] { animation: dialog-in .2s ease-out; }
+/* The Scholarship Test dialog holds a form, so it is wider and scrolls on short screens. */
+.info-dialog-wide { width: min(600px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.info-dialog-wide .dialog-body { margin-top: 10px; color: var(--muted-foreground); line-height: 1.7; white-space: pre-line; }
+.info-dialog-wide .scholarship-form { margin-top: 22px; }
+@media (max-width: 600px) { .info-dialog-wide .dialog-content { padding: 28px 20px; } }
 .info-dialog::backdrop { background: #071c13a8; backdrop-filter: blur(4px); }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
 .dialog-content { padding: 38px; }

@@ -47,6 +47,8 @@ export type FacultyMember = {
   subjects: string[];
   /** Course slugs from src/lib/site.ts this faculty teaches for. */
   programs: string[];
+  /** How the department teaches; shown on the card until a named teacher is added. */
+  summary: string;
   name?: string;
   qualification?: string;
   experience?: string;
@@ -55,12 +57,12 @@ export type FacultyMember = {
 };
 
 export const faculty: FacultyMember[] = [
-  { department: "Mathematics", icon: Calculator, subjects: ["Algebra", "Geometry", "Calculus", "Arithmetic"], programs: ["foundation-classes", "aissee-class-6", "aissee-class-9", "jee-main-advanced", "amu-jmi-entrance"] },
-  { department: "Physics", icon: Atom, subjects: ["Mechanics", "Electricity", "Optics", "Modern Physics"], programs: ["foundation-classes", "jee-main-advanced", "neet"] },
-  { department: "Chemistry", icon: FlaskConical, subjects: ["Physical", "Organic", "Inorganic"], programs: ["foundation-classes", "jee-main-advanced", "neet"] },
-  { department: "Biology", icon: Leaf, subjects: ["Botany", "Zoology", "Human Physiology"], programs: ["foundation-classes", "neet"] },
-  { department: "English & Communication", icon: BookOpen, subjects: ["Grammar", "Spoken English", "IELTS"], programs: ["foundation-classes", "spoken-english-abroad", "cuet-clat-gate"] },
-  { department: "Reasoning & General Awareness", icon: Brain, subjects: ["Logical Reasoning", "Aptitude", "General Knowledge"], programs: ["aissee-class-6", "aissee-class-9", "cuet-clat-gate", "amu-jmi-entrance"] },
+  { department: "Mathematics", icon: Calculator, summary: "Step-by-step problem solving with daily practice, from arithmetic basics to calculus.", subjects: ["Algebra", "Geometry", "Calculus", "Arithmetic"], programs: ["foundation-classes", "aissee-class-6", "aissee-class-9", "jee-main-advanced", "amu-jmi-entrance"] },
+  { department: "Physics", icon: Atom, summary: "Concepts first, then numericals: every topic linked to real-world examples and exam questions.", subjects: ["Mechanics", "Electricity", "Optics", "Modern Physics"], programs: ["foundation-classes", "jee-main-advanced", "neet"] },
+  { department: "Chemistry", icon: FlaskConical, summary: "Clear reaction logic and formula practice, with NCERT-based revision for board and entrance exams.", subjects: ["Physical", "Organic", "Inorganic"], programs: ["foundation-classes", "jee-main-advanced", "neet"] },
+  { department: "Biology", icon: Leaf, summary: "Diagram-led lessons and chapter tests built around the NCERT syllabus.", subjects: ["Botany", "Zoology", "Human Physiology"], programs: ["foundation-classes", "neet"] },
+  { department: "English & Communication", icon: BookOpen, summary: "Grammar, reading and speaking practice that builds confidence for exams and interviews.", subjects: ["Grammar", "Spoken English", "IELTS"], programs: ["foundation-classes", "spoken-english-abroad", "cuet-clat-gate"] },
+  { department: "Reasoning & General Awareness", icon: Brain, summary: "Verbal and non-verbal reasoning drills with regular GK and current-affairs updates.", subjects: ["Logical Reasoning", "Aptitude", "General Knowledge"], programs: ["aissee-class-6", "aissee-class-9", "cuet-clat-gate", "amu-jmi-entrance"] },
 ];
 
 export const departments = faculty.map(f => f.department);

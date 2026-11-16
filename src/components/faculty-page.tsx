@@ -39,7 +39,7 @@ function FacultyCard({ member }: { member: FacultyMember }) {
         <h3>{member.name ?? `${member.department} Faculty`}</h3>
         {published
           ? <p className="faculty-meta">{[member.qualification, member.experience].filter(Boolean).join(" · ")}</p>
-          : <p className="faculty-pending"><span aria-hidden="true" />Full profile coming soon</p>}
+          : <p className="faculty-meta">{member.summary}</p>}
         {member.bio && <p className="faculty-bio">{member.bio}</p>}
         <div className="faculty-block">
           <span className="faculty-block-label">Subjects</span>

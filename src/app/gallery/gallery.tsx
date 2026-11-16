@@ -1,5 +1,6 @@
 "use client";
 
+import { socials } from "@/lib/site";
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -67,7 +68,7 @@ export default function Gallery() {
       <span className="gallery-image"><Media item={item} /><span className="gallery-badges"><span className="gallery-category">{item.category}</span></span><span className={item.type === "video" ? "gallery-expand gallery-play" : "gallery-expand"}>{item.type === "video" ? <Play size={20} aria-hidden="true" /> : <Expand size={18} aria-hidden="true" />}</span></span>
       <span className="gallery-caption"><span><strong>{item.title}</strong><span>{item.description}</span></span><ArrowRight size={19} aria-hidden="true" /></span>
     </button>)}</div>
-    <div className="gallery-end"><span>More stories. More discoveries. Coming soon.</span><Link href="/aboutus">Get to know EduPulse <ArrowRight size={16} /></Link></div>
+    <div className="gallery-end"><span>New moments every week on our <a href={socials.instagram} target="_blank" rel="noopener noreferrer">Instagram</a> and <a href={socials.youtube} target="_blank" rel="noopener noreferrer">YouTube</a>.</span><Link href="/aboutus">Get to know EduPulse <ArrowRight size={16} /></Link></div>
     <dialog className="gallery-lightbox" ref={dialog} aria-labelledby="photo-title" onClose={() => setSelected(null)} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }} onKeyDown={event => { if ((event.target as HTMLElement).tagName === "VIDEO") return; if (event.key === "ArrowRight") { event.preventDefault(); change(1); } if (event.key === "ArrowLeft") { event.preventDefault(); change(-1); } }}>
       {current && <div className="gallery-preview">
         <div className="gallery-preview-top"><span>GALLERY / {current.category.toUpperCase()}</span><Button autoFocus variant="ghost" size="icon" aria-label="Close preview" onClick={() => dialog.current?.close()}><X /></Button></div>

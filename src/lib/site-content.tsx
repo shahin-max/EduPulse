@@ -10,6 +10,8 @@ import { createContext, useContext } from "react";
 export type SiteContent = {
   /** `site.ticker`: one announcement per line of the body; the title (optional) is the badge. */
   ticker?: { badge: string | null; items: string[] };
+  /** `site.scholarship`: heading (title) and details (body) of the Scholarship Test dialog. */
+  scholarship?: { title?: string; body?: string };
 };
 
 const SiteContentContext = createContext<SiteContent>({});

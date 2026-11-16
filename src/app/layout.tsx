@@ -34,7 +34,11 @@ async function loadSiteContent(): Promise<SiteContent> {
   const entries = await publicData.content("site.");
   const ticker = entries.find(e => e.content_key === "site.ticker");
   const items = ticker?.body?.split(/\r?\n/).map(line => line.trim()).filter(Boolean) ?? [];
-  return { ticker: items.length ? { badge: ticker?.title?.trim() || null, items } : undefined };
+  const scholarship = entries.find(e => e.content_key === "site.scholarship");
+  return {
+    ticker: items.length ? { badge: ticker?.title?.trim() || null, items } : undefined,
+    scholarship: scholarship ? { title: scholarship.title?.trim() || undefined, body: scholarship.body?.trim() || undefined } : undefined,
+  };
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

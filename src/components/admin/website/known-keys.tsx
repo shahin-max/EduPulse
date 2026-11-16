@@ -31,6 +31,17 @@ export const KNOWN_KEYS: KnownKey[] = [
     lines: true,
   },
   {
+    key: "site.scholarship",
+    name: "Scholarship Test",
+    where: "The dialog that opens from the “Scholarship Test” button in the website header, above the registration form. Registrations arrive in Enquiries as “Scholarship test”.",
+    title: "Optional. Replaces the heading “Scholarship Test”, e.g. “EduPulse Scholarship Test 2027”.",
+    body: "Optional. The details: date, syllabus, who can apply and what students can win. Leave empty to keep the built-in text.",
+    starter: {
+      title: null,
+      body: "Students can win a scholarship on their EduPulse course fees through our Scholarship Test. Register below and our team will call you with the test date, syllabus and how scholarships are awarded.",
+    },
+  },
+  {
     key: "home.results",
     name: "Results & achievements",
     where: "The “Results & achievements” section on the home page. Hidden until this is published with at least one line.",

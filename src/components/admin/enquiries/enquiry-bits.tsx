@@ -23,8 +23,8 @@ export const STATUS_HELP: Record<EnquiryStatus, string> = {
   CLOSED: "Not interested / no response",
 };
 
-const SOURCE_LABEL: Record<string, string> = { WEBSITE: "Callback form", WEBSITE_ADMISSION: "Admission form" };
-const SOURCE_TONES: Record<string, Tone> = { WEBSITE: "blue", WEBSITE_ADMISSION: "violet" };
+const SOURCE_LABEL: Record<string, string> = { WEBSITE: "Callback form", WEBSITE_ADMISSION: "Admission form", SCHOLARSHIP_TEST: "Scholarship test" };
+const SOURCE_TONES: Record<string, Tone> = { WEBSITE: "blue", WEBSITE_ADMISSION: "violet", SCHOLARSHIP_TEST: "amber" };
 
 export function StatusPill({ status }: { status: EnquiryStatus }) {
   return <Pill value={status} tones={STATUS_TONES} />;

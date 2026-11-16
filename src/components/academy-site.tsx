@@ -14,6 +14,8 @@ import { contact, courseHref, programs, socials, whatsappLink } from "@/lib/site
 import type { ApiFaculty } from "@/lib/api";
 import type { HomeResults } from "@/lib/home-content";
 import { FacultySection, ResultsSection } from "@/components/home-sections";
+import ScholarshipForm from "@/components/scholarship-form";
+import { useSiteContent } from "@/lib/site-content";
 
 const links = [["Home", "home"], ["About Us", "about"], ["Courses", "courses"], ["Admissions", "admissions"], ["Faculty", "faculty"], ["Gallery", "gallery"], ["Contact", "contact"]] as const;
 const features = [
@@ -22,10 +24,8 @@ const features = [
   { title: "Exam Oriented", detail: "Focused preparation for your next big milestone.", icon: Target },
   { title: "Your Growth First", detail: "Guidance that keeps your learning moving forward.", icon: GraduationCap },
 ];
-const infoModals = {
-  "Scholarship Test": "Scholarship test dates and registration details will be announced soon. Message our team to be notified first.",
-};
-type Modal = { kind: "info"; title: keyof typeof infoModals } | null;
+/** The header dialog: Scholarship Test registration (text editable in Website content, site.scholarship). */
+type Modal = "scholarship" | null;
 
 function navHref(id: string) {
   return id === "about" ? "/aboutus" : id === "gallery" ? "/gallery" : id === "courses" ? "/courses" : id === "contact" ? "/contact" : id === "faculty" ? "/faculty" : id === "admissions" ? "/admissions" : `/#${id}`;
@@ -89,9 +89,8 @@ export default function AcademySite({ children, home }: { children?: React.React
     setMobile(false);
     if (!dialog.current?.open) dialog.current?.showModal();
   }
-  const openInfo = (title: keyof typeof infoModals) => open({ kind: "info", title });
 
-  const modalTitle = modal?.title ?? "";
+  const scholarship = useSiteContent().scholarship;
 
   return <>
     <a className="skip-link" href="#main">Skip to content</a>
@@ -104,7 +103,7 @@ export default function AcademySite({ children, home }: { children?: React.React
         </nav>
         <div className="nav-actions">
           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Light mode" : "Dark mode"} className="theme-button"><Sun className="dark-sun" /><Moon className="light-moon" /></Button>
-          <Button className="scholarship-button" onClick={() => openInfo("Scholarship Test")}><Star className="fill-current" /> <span>Scholarship Test</span></Button>
+          <Button className="scholarship-button" onClick={() => open("scholarship")}><Star className="fill-current" /> <span>Scholarship Test</span></Button>
           {status === "authenticated" ? <Button asChild className="desktop-auth signup-button"><Link href={homeFor(user)}><UserRound /> {user?.full_name.split(" ")[0] ?? "My account"}</Link></Button> : <>
             <Button asChild variant="ghost" className="desktop-auth login-button"><Link href="/login">Login</Link></Button>
             <Button asChild className="desktop-auth signup-button"><Link href="/register">Sign Up <ArrowRight /></Link></Button>
@@ -180,18 +179,15 @@ export default function AcademySite({ children, home }: { children?: React.React
 
     <a className="whatsapp-fab" href={whatsappLink("Hello EduPulse Academy, I would like to know more about your programs.")} target="_blank" rel="noopener noreferrer" aria-label="Chat with EduPulse on WhatsApp (opens in a new tab)"><MessageCircle aria-hidden="true" /><span>Chat with us</span></a>
 
-    <dialog ref={dialog} aria-labelledby="dialog-title" className="info-dialog" onClose={() => setModal(null)} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }}>
+    <dialog ref={dialog} aria-labelledby="dialog-title" className="info-dialog info-dialog-wide" onClose={() => setModal(null)} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }}>
       {modal && <div className="dialog-content">
         <Button variant="ghost" size="icon" className="dialog-close" aria-label="Close dialog" onClick={() => dialog.current?.close()}><X /></Button>
         <span className="program-icon"><GraduationCap size={27} /></span>
         <p className="section-kicker">EDUPULSE ACADEMY</p>
-        <h2 id="dialog-title">{modalTitle}</h2>
-        <p>{infoModals[modal.title]}</p>
-        <div className="dialog-actions">
-          <Button asChild><a href={whatsappLink(`Hello EduPulse Academy, I would like to know more about: ${modalTitle}`)} target="_blank" rel="noopener noreferrer">Enquire on WhatsApp <ArrowRight /></a></Button>
-          {contact.phones.map(phone => <Button key={phone.tel} asChild variant="outline"><a href={`tel:${phone.tel}`}><Phone /> Call {phone.display}</a></Button>)}
-        </div>
-        <a className="dialog-email" href={`mailto:${contact.email}?subject=${encodeURIComponent(modalTitle + " enquiry")}`}>Or email {contact.email}</a>
+        <h2 id="dialog-title">{scholarship?.title ?? "Scholarship Test"}</h2>
+        <p className="dialog-body">{scholarship?.body ?? "Students can win a scholarship on their EduPulse course fees through our Scholarship Test. Register below and our team will call you with the test date, syllabus and how scholarships are awarded."}</p>
+        <ScholarshipForm />
+        <p className="dialog-email">Questions? Call {contact.phones.map((phone, i) => <span key={phone.tel}>{i > 0 && " / "}<a href={`tel:${phone.tel}`}>{phone.display}</a></span>)} or <a href={`mailto:${contact.email}?subject=${encodeURIComponent("Scholarship Test")}`}>email us</a>.</p>
       </div>}
     </dialog>
   </>;
