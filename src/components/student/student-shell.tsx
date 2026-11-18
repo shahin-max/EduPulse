@@ -10,6 +10,7 @@ const config: PortalConfig = {
   subtitle: "Student portal",
   roles: ["STUDENT"],
   denied: { title: "Students only", text: "The student portal is for enrolled EduPulse students." },
+  staged: true,
   accountHref: () => "/student/account",
   nav: [
     { group: "General", items: [

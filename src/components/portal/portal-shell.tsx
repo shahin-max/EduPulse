@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useContext, useEffect } from "react";
-import { ChevronsUpDown, ExternalLink, Loader2, LogOut, Moon, ShieldAlert, Sun, UserRound, type LucideIcon } from "lucide-react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { ChevronsUpDown, ExternalLink, Hourglass, Loader2, LogOut, Moon, ShieldAlert, Sun, UserRound, type LucideIcon } from "lucide-react";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { homeFor, type RoleCode, type User } from "@/lib/api";
+import { homeFor, request, type RoleCode, type User } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { setDarkMode, useDarkMode } from "@/lib/theme";
 import { UserAvatar } from "@/components/admin/ui";
@@ -39,7 +39,26 @@ export type PortalConfig = {
   denied: { title: string; text: string };
   /** "My account" link in the user menu; omitted when the portal has no account page. */
   accountHref?: (user: User) => string;
+  /**
+   * Closed to non-admins while the API runs with PORTALS_OPEN=admin (staged launch): they can
+   * sign in but see "opening soon" instead of the portal.
+   */
+  staged?: boolean;
 };
+
+/** Which portals the API has open; null while loading. Fails open: the API enforces it anyway. */
+function usePortalsOpen(enabled: boolean) {
+  const [open, setOpen] = useState<"all" | "admin" | null>(enabled ? null : "all");
+  useEffect(() => {
+    if (!enabled) return;
+    let live = true;
+    request<{ open: "all" | "admin" }>("/portals")
+      .then(r => { if (live) setOpen(r.open === "admin" ? "admin" : "all"); })
+      .catch(() => { if (live) setOpen("all"); });
+    return () => { live = false; };
+  }, [enabled]);
+  return open;
+}
 
 const PortalContext = createContext<PortalConfig | null>(null);
 
@@ -55,8 +74,10 @@ function FullScreen({ children }: { children: React.ReactNode }) {
 }
 
 export default function PortalShell({ config, children }: { config: PortalConfig; children: React.ReactNode }) {
-  const { user, status } = useAuth();
+  const { user, status, logout } = useAuth();
   const router = useRouter();
+  const gated = !!config.staged && !!user && !user.roles.includes("ADMIN");
+  const portalsOpen = usePortalsOpen(gated);
 
   useEffect(() => { if (status === "anonymous") router.replace("/login"); }, [status, router]);
 
@@ -72,6 +93,29 @@ export default function PortalShell({ config, children }: { config: PortalConfig
         <CardDescription>{config.denied.text}</CardDescription>
       </CardHeader>
       <CardFooter className="justify-center"><Button asChild><Link href={homeFor(user)}>Go to my home page</Link></Button></CardFooter>
+    </Card>
+  </FullScreen>;
+
+  if (gated && portalsOpen === null) return <FullScreen>
+    <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Checking your access…</p>
+  </FullScreen>;
+
+  if (gated && portalsOpen === "admin") return <FullScreen>
+    <Card className="w-full max-w-md text-center">
+      <CardHeader className="items-center gap-3">
+        <span className="mx-auto overflow-hidden rounded-xl bg-white p-1 ring-1 ring-border">
+          <Image src="/logo-mark.png" alt="EduPulse Academy" width={56} height={56} />
+        </span>
+        <Hourglass className="mx-auto size-8 text-primary" />
+        <CardTitle className="text-xl">Your {config.label.toLowerCase()} portal is opening soon</CardTitle>
+        <CardDescription className="text-sm leading-relaxed">
+          Hi {user.full_name.split(" ")[0]}, your EduPulse account is ready. We are setting up the {config.label.toLowerCase()} portal and will let you know as soon as it opens.
+        </CardDescription>
+      </CardHeader>
+      <CardFooter className="flex-wrap justify-center gap-2">
+        <Button asChild><Link href="/">Visit the website</Link></Button>
+        <Button variant="outline" onClick={async () => { await logout(); router.replace("/login"); }}><LogOut /> Log out</Button>
+      </CardFooter>
     </Card>
   </FullScreen>;
 

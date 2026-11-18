@@ -13,6 +13,7 @@ const config: PortalConfig = {
   subtitle: "Faculty portal",
   roles: ["FACULTY"],
   denied: { title: "Faculty only", text: "The faculty portal is for accounts with the Faculty role. Admins: add the Faculty role to your account under Users if you also teach." },
+  staged: true,
   accountHref: () => "/teach/account",
   nav: [
     { group: "General", items: [
