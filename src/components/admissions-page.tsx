@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { BrandSelect } from "@/components/brand-select";
 import { PHONE_PATTERN } from "@/components/enquiry-form";
 import { publicApi, type ApiBatch, type ApiCourse } from "@/lib/api";
-import { contact, programs, whatsappLink } from "@/lib/site";
+import { programs } from "@/lib/site";
+import { useContactInfo, whatsappHref } from "@/lib/site-content";
 
 const NOT_SURE = "Not sure yet - need guidance";
 const ANY_BATCH = "Any batch / help me choose";
@@ -41,6 +42,7 @@ function AdmissionFormFromUrl(props: FormProps) {
 }
 
 function AdmissionForm({ courses, batches, course: courseSlug, program: programSlug }: FormProps & { course?: string | null; program?: string | null }) {
+  const contact = useContactInfo();
   // Course choices come from the LMS catalogue; if the API is unreachable, from the website programs.
   const options = courses.length ? courses.map(c => c.title) : programs.map(p => p.title);
   const preselected = courses.find(c => c.slug === courseSlug)?.title
@@ -86,7 +88,7 @@ function AdmissionForm({ courses, batches, course: courseSlug, program: programS
       setResult({
         kind: "failed",
         message: e instanceof Error ? e.message : "Could not submit the application.",
-        whatsapp: whatsappLink(`Hello EduPulse Academy, I would like to apply for admission.\nStudent: ${get("student")}\nMobile: ${get("mobile")}\n${message}`),
+        whatsapp: whatsappHref(contact, `Hello EduPulse Academy, I would like to apply for admission.\nStudent: ${get("student")}\nMobile: ${get("mobile")}\n${message}`),
       });
     } finally {
       setBusy(false);
@@ -135,12 +137,12 @@ const keepReady = [
   "Parent / guardian's mobile number and Aadhaar",
 ];
 
-const faqs = [
+const faqsFor = (address: string) => [
   { q: "Is there any fee to apply?", a: "No. Submitting the application only asks our admissions team to call you. Fees are paid only after you choose a course and batch." },
   { q: "We are not sure which course is right. Can we still apply?", a: `Yes. Choose "${NOT_SURE}" in the course list. On the counselling call we look at the student's class, goals and school, and suggest a course.` },
   { q: "How are fees decided?", a: "Fees depend on the course and the batch. Our team shares the fee plan and payment options on the counselling call, before you commit to anything." },
   { q: "What if no batch is open for our course?", a: "Apply anyway. New batches are scheduled through the year, and we call you as soon as the next batch for your course opens." },
-  { q: "Can we visit the academy before deciding?", a: `Of course. We are at ${contact.address}. Call or WhatsApp us to fix a convenient time.` },
+  { q: "Can we visit the academy before deciding?", a: `Of course. We are at ${address}. Call or WhatsApp us to fix a convenient time.` },
 ];
 
 function ProgramPicker({ active }: { active?: string | null }) {
@@ -159,6 +161,7 @@ function ProgramPickerFromUrl() {
 }
 
 export default function AdmissionsPage({ courses, batches }: { courses: ApiCourse[]; batches: ApiBatch[] }) {
+  const contact = useContactInfo();
   const seats = batches.reduce((sum, b) => sum + (b.seatsAvailable ?? 0), 0);
   const phone = contact.phones[0];
   return <div className="course-page admissions-page">
@@ -255,7 +258,7 @@ export default function AdmissionsPage({ courses, batches }: { courses: ApiCours
         <aside className="admissions-card admissions-help" aria-label="Questions before applying">
           <p>Questions before applying?</p>
           {contact.phones.map(p => <a key={p.tel} href={`tel:${p.tel}`}><PhoneCall size={15} /> {p.display}</a>)}
-          <a href={whatsappLink("Hello EduPulse Academy, I have a question about admissions.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={15} /> WhatsApp us</a>
+          <a href={whatsappHref(contact, "Hello EduPulse Academy, I have a question about admissions.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={15} /> WhatsApp us</a>
         </aside>
       </div>
     </section>
@@ -283,7 +286,7 @@ export default function AdmissionsPage({ courses, batches }: { courses: ApiCours
         <p>Can&apos;t find your answer? Call us on <a href={`tel:${phone.tel}`}>{phone.display}</a>.</p>
       </div>
       <div className="admissions-faq-list">
-        {faqs.map(({ q, a }) => <details key={q}>
+        {faqsFor(contact.address).map(({ q, a }) => <details key={q}>
           <summary>{q}<ChevronDown size={18} aria-hidden="true" /></summary>
           <p>{a}</p>
         </details>)}
@@ -300,7 +303,7 @@ export default function AdmissionsPage({ courses, batches }: { courses: ApiCours
         </div>
         <div className="course-cta-actions">
           <Button asChild size="lg" className="course-cta-primary"><a href={`tel:${phone.tel}`}><PhoneCall size={16} /> Call {phone.display}</a></Button>
-          <Button asChild size="lg" className="admissions-cta-wa"><a href={whatsappLink("Hello EduPulse Academy, I would like to know about admissions.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} /> WhatsApp</a></Button>
+          <Button asChild size="lg" className="admissions-cta-wa"><a href={whatsappHref(contact, "Hello EduPulse Academy, I would like to know about admissions.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} /> WhatsApp</a></Button>
         </div>
       </div>
     </section>

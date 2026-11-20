@@ -22,7 +22,8 @@ const PUBLISHED_TONES = { yes: "green", no: "gray" } as const;
 const PublishedPill = ({ published }: { published: boolean }) =>
   <Pill value={published ? "yes" : "no"} tones={PUBLISHED_TONES} label={published ? "Published" : "Unpublished"} />;
 
-export default function WebsiteContent() {
+/** All website_content blocks. `embedded`: shown inside the Website editor, under its own page header. */
+export default function WebsiteContent({ embedded = false }: { embedded?: boolean }) {
   const { withToken } = useAuth();
   const [prefixText, setPrefixText] = useState("");
   const [prefix, setPrefix] = useState("");
@@ -91,7 +92,9 @@ export default function WebsiteContent() {
   const actions: RowHandlers = { edit, toggle: b => void togglePublished(b), remove: setDeleting, busy };
 
   return <>
-    <PageHeader title="Website" description="Editable text on the public website." actions={<Button onClick={openCreate}><Plus /> New block</Button>} />
+    {embedded
+      ? <div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">Ticker, scholarship &amp; all blocks</h2><p className="text-sm text-muted-foreground">The admissions ticker, the Scholarship Test text, and every stored block (advanced).</p></div><Button onClick={openCreate}><Plus /> New block</Button></div>
+      : <PageHeader title="Website" description="Editable text on the public website." actions={<Button onClick={openCreate}><Plus /> New block</Button>} />}
 
     <Card>
       <CardHeader>

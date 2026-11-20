@@ -5,7 +5,8 @@ import { AlertCircle, CheckCircle2, Loader2, MessageCircle, Send } from "lucide-
 import { Button } from "@/components/ui/button";
 import { BrandSelect } from "@/components/brand-select";
 import { publicApi, request, type ApiCourse } from "@/lib/api";
-import { contact, programs, whatsappLink } from "@/lib/site";
+import { programs } from "@/lib/site";
+import { useContactInfo, whatsappHref } from "@/lib/site-content";
 
 const NOT_SURE = "Not sure yet - need guidance";
 const programOptions = [...programs.map(p => p.title), NOT_SURE];
@@ -21,6 +22,7 @@ type Sent = { kind: "saved"; id: number; whatsapp: string } | { kind: "failed"; 
  * `defaultProgram` is a program slug (e.g. from /contact?program=neet) to pre-select.
  */
 export default function EnquiryForm({ defaultProgram }: { defaultProgram?: string | null }) {
+  const contact = useContactInfo();
   const preselected = programs.find(p => p.slug === defaultProgram)?.title;
   const [courses, setCourses] = useState<ApiCourse[]>([]);
   const [busy, setBusy] = useState(false);
@@ -38,7 +40,7 @@ export default function EnquiryForm({ defaultProgram }: { defaultProgram?: strin
     const programTitle = get("program");
     const program = programs.find(p => p.title === programTitle);
     const course = courses.find(c => program?.courseSlugs.includes(c.slug));
-    const whatsapp = whatsappLink([
+    const whatsapp = whatsappHref(contact, [
       "Hello EduPulse Academy, I would like to know more.",
       `Name: ${get("name")}`,
       `Phone: ${get("phone")}`,
@@ -87,6 +89,6 @@ export default function EnquiryForm({ defaultProgram }: { defaultProgram?: strin
       <span>{sent.message} You can send the same details on WhatsApp instead: <a href={sent.whatsapp} target="_blank" rel="noopener noreferrer">open WhatsApp</a>.</span>
     </div>}
     <Button type="submit" size="lg" className="enquiry-submit" disabled={busy}>{busy ? <><Loader2 className="animate-spin" /> Sending...</> : <>Request a callback <Send /></>}</Button>
-    <p className="enquiry-hint">Prefer to talk now? {contact.phones.map((phone, i) => <span key={phone.tel}>{i > 0 && " / "}<a href={`tel:${phone.tel}`}>{phone.display}</a></span>)} or <a href={whatsappLink("Hello EduPulse Academy, I would like to know more about your programs.")} target="_blank" rel="noopener noreferrer">WhatsApp us</a></p>
+    <p className="enquiry-hint">Prefer to talk now? {contact.phones.map((phone, i) => <span key={phone.tel}>{i > 0 && " / "}<a href={`tel:${phone.tel}`}>{phone.display}</a></span>)} or <a href={whatsappHref(contact, "Hello EduPulse Academy, I would like to know more about your programs.")} target="_blank" rel="noopener noreferrer">WhatsApp us</a></p>
   </form>;
 }

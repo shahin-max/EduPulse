@@ -11,7 +11,8 @@ import { EASE, Reveal, TiltCard, Words, rise, stagger } from "@/components/motio
 import { formatDate } from "@/components/admissions-page";
 import type { ApiBatch } from "@/lib/api";
 import { courseDetails } from "@/lib/courses";
-import { contact, courseHref, programs, whatsappLink } from "@/lib/site";
+import { courseHref, programs } from "@/lib/site";
+import { useContactInfo, whatsappHref } from "@/lib/site-content";
 
 const HeroScene3D = dynamic(() => import("@/components/hero-scene-3d"), { ssr: false });
 
@@ -37,12 +38,13 @@ function Faq({ q, a, open, onToggle, id }: { q: string; a: string; open: boolean
 
 /** `batches` are the open batches (from the LMS) of the catalogue courses this program covers. */
 export default function CourseDetail({ slug, batches = [] }: { slug: string; batches?: ApiBatch[] }) {
+  const contact = useContactInfo();
   const course = courseDetails[slug];
   const program = programs.find(p => p.slug === slug)!;
   const others = programs.filter(p => p.slug !== slug);
   const Icon = program.icon;
   const [openFaq, setOpenFaq] = useState(0);
-  const enquire = whatsappLink(`Hello EduPulse Academy, I would like to know more about: ${program.title}`);
+  const enquire = whatsappHref(contact, `Hello EduPulse Academy, I would like to know more about: ${program.title}`);
 
   // Page reading progress
   const { scrollYProgress } = useScroll();

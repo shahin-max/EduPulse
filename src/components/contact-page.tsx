@@ -9,16 +9,20 @@ import { ArrowRight, Clock, Facebook, Instagram, Mail, MapPin, MessageCircle, Me
 import { Button } from "@/components/ui/button";
 import EnquiryForm from "@/components/enquiry-form";
 import { EASE, Reveal, TiltCard, Words, rise, stagger } from "@/components/motion-kit";
-import { contact, mapsQuery, socials, whatsappLink } from "@/lib/site";
+import { useContactInfo, whatsappHref } from "@/lib/site-content";
+import type { ContactInfo } from "@/lib/site-sections";
 
 const HeroScene3D = dynamic(() => import("@/components/hero-scene-3d"), { ssr: false });
 
-const quick = [
-  { title: "Call us", icon: Phone, lines: contact.phones.map(p => ({ label: p.display, href: `tel:${p.tel}` })) },
-  { title: "WhatsApp", icon: MessageCircle, lines: [{ label: "Chat with our team", href: whatsappLink("Hello EduPulse Academy, I would like to know more about your programs."), external: true }] },
-  { title: "Email", icon: Mail, lines: [{ label: contact.email, href: `mailto:${contact.email}` }] },
-  { title: "Visit", icon: MapPin, lines: [{ label: contact.address, href: `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`, external: true }] },
-];
+const quickLinks = (contact: ContactInfo) => {
+  const mapsQuery = encodeURIComponent(contact.address);
+  return [
+    { title: "Call us", icon: Phone, lines: contact.phones.map(p => ({ label: p.display, href: `tel:${p.tel}` })) },
+    { title: "WhatsApp", icon: MessageCircle, lines: [{ label: "Chat with our team", href: whatsappHref(contact, "Hello EduPulse Academy, I would like to know more about your programs."), external: true }] },
+    { title: "Email", icon: Mail, lines: [{ label: contact.email, href: `mailto:${contact.email}` }] },
+    { title: "Visit", icon: MapPin, lines: [{ label: contact.address, href: `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`, external: true }] },
+  ];
+};
 
 const nextSteps = [
   { title: "Share your details", text: "Fill in the form with your name, number and the program you're interested in.", icon: Send },
@@ -33,6 +37,9 @@ function FormWithProgram() {
 }
 
 export default function ContactPage() {
+  const contact = useContactInfo();
+  const quick = quickLinks(contact);
+  const mapsQuery = encodeURIComponent(contact.address);
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 30 });
 
@@ -90,14 +97,14 @@ export default function ContactPage() {
               <h2 id="visit-title">EduPulse Academy, Aligarh</h2>
               <ul className="contact-visit-list">
                 <li><MapPin size={17} /><span>{contact.address}</span></li>
-                <li><Clock size={17} /><span>Visit us or call during academy hours</span></li>
+                {contact.hours && <li><Clock size={17} /><span>{contact.hours}</span></li>}
               </ul>
               <Button asChild variant="outline" className="contact-directions"><a href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`} target="_blank" rel="noopener noreferrer"><Navigation size={16} /> Get directions</a></Button>
               <div className="contact-socials">
                 <span>Follow us</span>
-                <a href={socials.instagram} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on Instagram (opens in a new tab)"><Instagram size={18} /></a>
-                <a href={socials.facebook} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on Facebook (opens in a new tab)"><Facebook size={18} /></a>
-                <a href={socials.youtube} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on YouTube (opens in a new tab)"><Youtube size={18} /></a>
+                {contact.instagram && <a href={contact.instagram} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on Instagram (opens in a new tab)"><Instagram size={18} /></a>}
+                {contact.facebook && <a href={contact.facebook} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on Facebook (opens in a new tab)"><Facebook size={18} /></a>}
+                {contact.youtube && <a href={contact.youtube} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on YouTube (opens in a new tab)"><Youtube size={18} /></a>}
               </div>
             </div>
           </motion.aside>

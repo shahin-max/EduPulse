@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Counter, EASE, Reveal, Words, rise, stagger } from "@/components/motion-kit";
 import type { ApiCourse } from "@/lib/api";
 import { courseCategories, courseDetails, type CourseCategory } from "@/lib/courses";
-import { courseHref, programs, whatsappLink } from "@/lib/site";
+import { courseHref, programs } from "@/lib/site";
+import { useContactInfo, whatsappHref } from "@/lib/site-content";
 
 const HeroScene3D = dynamic(() => import("@/components/hero-scene-3d"), { ssr: false });
 
@@ -26,6 +27,7 @@ const steps = [
 
 /** `moreCourses`: LMS catalogue courses that no program page covers (e.g. NDA / CDS, IMU-CET). */
 export default function CoursesIndex({ moreCourses = [] }: { moreCourses?: ApiCourse[] }) {
+  const contact = useContactInfo();
   const [category, setCategory] = useState<CourseCategory | "all">("all");
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -226,7 +228,7 @@ export default function CoursesIndex({ moreCourses = [] }: { moreCourses?: ApiCo
               <p>Tell us your goal and our team will help you choose the right program and batch.</p>
             </div>
             <div className="course-cta-actions">
-              <Button asChild size="lg" className="course-cta-primary"><a href={whatsappLink("Hello EduPulse Academy, I need help choosing the right program.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={17} /> Ask on WhatsApp</a></Button>
+              <Button asChild size="lg" className="course-cta-primary"><a href={whatsappHref(contact, "Hello EduPulse Academy, I need help choosing the right program.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={17} /> Ask on WhatsApp</a></Button>
               <Button asChild size="lg" variant="outline" className="course-cta-secondary"><Link href="/admissions">Apply for admission <ArrowRight size={16} /></Link></Button>
             </div>
           </motion.div>

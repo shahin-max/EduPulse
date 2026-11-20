@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import WebsiteContent from "@/components/admin/website/website-content";
+import WebsiteEditor from "@/components/admin/website/website-editor";
 
 export const metadata: Metadata = { title: "Website" };
 
 export default function Page() {
-  return <WebsiteContent />;
+  return <WebsiteEditor />;
 }

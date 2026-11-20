@@ -261,6 +261,30 @@ h2 > span { color: var(--primary); }
 .home-departments span { display: grid; gap: 3px; font-weight: 600; font-size: 15px; min-width: 0; }
 .home-departments small { font-weight: 400; font-size: 12.5px; color: var(--muted-foreground); }
 .home-section-link { text-align: center; }
+
+/* Home: Latest updates, and the /updates page (see components/home-sections.tsx). */
+.updates-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 370px)); justify-content: center; gap: 20px; margin-top: 36px; }
+.update-card { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: 0 2px 4px #10271603; scroll-margin-top: 140px; }
+.update-image { position: relative; display: block; aspect-ratio: 4 / 3; background: var(--muted); }
+.update-image img { object-fit: cover; }
+.update-icon { display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; margin: 22px 22px 0; border-radius: 12px; background: #f5b40122; color: #b07d00; }
+.update-body { display: flex; flex: 1; flex-direction: column; gap: 8px; padding: 20px 22px 22px; min-width: 0; }
+.update-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 12.5px; color: var(--muted-foreground); }
+.update-meta time { display: inline-flex; align-items: center; gap: 5px; }
+.update-badge { padding: 2px 10px; border-radius: 999px; background: var(--accent); color: var(--primary); font-weight: 600; }
+.update-title { font-size: 17px; font-weight: 650; line-height: 1.35; letter-spacing: -.2px; overflow-wrap: anywhere; }
+.update-summary { font-size: 14px; line-height: 1.7; color: var(--muted-foreground); white-space: pre-line; overflow-wrap: anywhere; }
+.update-body .text-link { margin-top: auto; padding-top: 6px; }
+.updates-page { padding-top: 48px; }
+.updates-page > h1 { text-align: center; font-size: clamp(30px, 3.4vw, 42px); line-height: 1.2; font-weight: 650; letter-spacing: -1.1px; }
+.updates-page > h1 span { color: var(--primary); }
+.updates-page > .section-kicker { text-align: center; }
+.updates-empty { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 36px; color: var(--muted-foreground); }
+.upcoming-grid-single { grid-template-columns: 1fr; max-width: 760px; }
+@media (max-width: 600px) {
+  .updates-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .updates-page { padding-top: 28px; }
+}
 @media (max-width: 1000px) {
   .achievements-grid, .home-departments { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

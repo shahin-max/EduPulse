@@ -3,6 +3,7 @@ import { publicData } from "@/lib/api";
 import { AuthProvider } from "@/lib/auth";
 import { SITE_URL } from "@/lib/seo";
 import { SiteContentProvider, type SiteContent } from "@/lib/site-content";
+import { parseContactInfo, parsePrograms, readJson, SECTION_KEYS } from "@/lib/site-sections";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,7 +30,7 @@ export const viewport: Viewport = {
 
 const themeScript = `(function(){var d=document.documentElement,m=matchMedia('(prefers-color-scheme: dark)').matches;try{var t=localStorage.getItem('edupulse-theme');d.classList.toggle('dark',t==='dark'||(!t&&m));}catch(e){d.classList.toggle('dark',m);}})();`;
 
-/** Editable content shared by every page, from the LMS (cached, refreshed every 5 minutes). */
+/** Editable content shared by every page, from the LMS (cached; refreshed when an admin saves, or every 5 minutes). */
 async function loadSiteContent(): Promise<SiteContent> {
   const entries = await publicData.content("site.");
   const ticker = entries.find(e => e.content_key === "site.ticker");
@@ -38,6 +39,8 @@ async function loadSiteContent(): Promise<SiteContent> {
   return {
     ticker: items.length ? { badge: ticker?.title?.trim() || null, items } : undefined,
     scholarship: scholarship ? { title: scholarship.title?.trim() || undefined, body: scholarship.body?.trim() || undefined } : undefined,
+    contact: parseContactInfo(readJson(entries, SECTION_KEYS.contactInfo)),
+    programs: parsePrograms(readJson(entries, SECTION_KEYS.programs)),
   };
 }
 

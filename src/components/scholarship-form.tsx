@@ -8,7 +8,7 @@ import { BrandSelect } from "@/components/brand-select";
 import { PHONE_PATTERN } from "@/components/enquiry-form";
 import { ApiError, publicApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { whatsappLink } from "@/lib/site";
+import { useContactInfo, whatsappHref } from "@/lib/site-content";
 import {
   istDateTime, SCHOLARSHIP_GRADES, scholarshipsApi, slabRows, testWindow, type OpenScholarshipTest,
 } from "@/lib/scholarships-api";
@@ -158,6 +158,7 @@ type Sent = { kind: "saved"; id: number; whatsapp: string } | { kind: "failed"; 
  * WhatsApp is the fallback when the API can't be reached.
  */
 export default function ScholarshipForm() {
+  const contact = useContactInfo();
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<Sent | null>(null);
 
@@ -165,7 +166,7 @@ export default function ScholarshipForm() {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const get = (key: string) => String(data.get(key) ?? "").trim();
-    const whatsapp = whatsappLink([
+    const whatsapp = whatsappHref(contact, [
       "Hello EduPulse Academy, I would like to register for the Scholarship Test.",
       `Name: ${get("name")}`,
       `Phone: ${get("phone")}`,

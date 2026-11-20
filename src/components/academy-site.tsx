@@ -4,26 +4,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Award, Camera, ChevronRight, Clock, Facebook, GraduationCap, Instagram, Mail, MapPin, Menu, MessageCircle, Moon, Phone, Star, Sun, Target, UserRound, Users, X, Youtube } from "lucide-react";
+import { ArrowRight, Camera, ChevronRight, Clock, Facebook, GraduationCap, Instagram, Mail, MapPin, Menu, MessageCircle, Moon, Phone, Star, Sun, UserRound, X, Youtube } from "lucide-react";
 import { homeFor } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import PromoTicker from "@/components/promo-ticker";
 import HeroSlider from "@/components/hero-slider";
-import { contact, courseHref, programs, socials, whatsappLink } from "@/lib/site";
+import { courseHref } from "@/lib/site";
 import type { ApiFaculty } from "@/lib/api";
 import type { HomeResults } from "@/lib/home-content";
-import { FacultySection, ResultsSection } from "@/components/home-sections";
+import { FacultySection, ResultsSection, UpdatesSection } from "@/components/home-sections";
 import { ScholarshipPanel } from "@/components/scholarship-form";
-import { useSiteContent } from "@/lib/site-content";
+import { useContactInfo, usePrograms, useProgramsSection, useSiteContent, whatsappHref } from "@/lib/site-content";
+import { siteIcon } from "@/lib/site-icons";
+import { DEFAULT_SECTIONS, type HomeSectionId, type HomeSections } from "@/lib/site-sections";
 
 const links = [["Home", "home"], ["About Us", "about"], ["Courses", "courses"], ["Admissions", "admissions"], ["Faculty", "faculty"], ["Gallery", "gallery"], ["Contact", "contact"]] as const;
-const features = [
-  { title: "Expert Faculty", detail: "Learn from highly qualified and experienced teachers.", icon: Users },
-  { title: "Smart Learning", detail: "Build understanding with technology-assisted learning.", icon: Award },
-  { title: "Exam Oriented", detail: "Focused preparation for your next big milestone.", icon: Target },
-  { title: "Your Growth First", detail: "Guidance that keeps your learning moving forward.", icon: GraduationCap },
-];
 /** The header dialog: Scholarship Test registration (text editable in Website content, site.scholarship). */
 type Modal = "scholarship" | null;
 
@@ -39,7 +35,9 @@ function Brand({ priority = false }: { priority?: boolean }) {
 }
 
 /** Data for the home page sections (only the home page passes it). */
-export type HomeData = { results: HomeResults; teachers: ApiFaculty[] };
+export type HomeData = { results: HomeResults; teachers: ApiFaculty[]; sections?: HomeSections };
+
+const WHATSAPP_HELLO = "Hello EduPulse Academy, I would like to know more about your programs.";
 
 export default function AcademySite({ children, home }: { children?: React.ReactNode; home?: HomeData }) {
   const pathname = usePathname();
@@ -91,6 +89,56 @@ export default function AcademySite({ children, home }: { children?: React.React
   }
 
   const scholarship = useSiteContent().scholarship;
+  const contact = useContactInfo();
+  const programs = usePrograms();
+  const programsText = useProgramsSection();
+  const sections = home?.sections ?? DEFAULT_SECTIONS;
+  const hidden = new Set<HomeSectionId>(sections.layout.hidden);
+  const shown = sections.layout.order.filter(id => !hidden.has(id) && id !== "features");
+  const { gallery, contact: talk } = sections;
+
+  // The gallery and callback cards share one row, placed where the first of them is in the order.
+  const cardsRow = shown.filter(id => id === "gallery" || id === "contact");
+  function renderSection(id: HomeSectionId) {
+    if (!home) return null;
+    switch (id) {
+      case "programs": return <section key={id} id="courses" className="programs-section page-container" aria-labelledby="courses-title">
+        {programsText.kicker && <p className="section-kicker">{programsText.kicker}</p>}
+        <h2 id="courses-title">{programsText.title}{programsText.titleAccent && <><br /><span>{programsText.titleAccent}</span></>}</h2>
+        {programsText.intro && <p className="section-intro">{programsText.intro}</p>}
+        <div className="program-grid">{programs.map(program => <Link className="program-card" key={program.slug} href={courseHref(program.slug)}><span className="program-icon"><program.icon size={23} /></span><span><strong>{program.title}</strong><small>{program.detail}</small></span><ChevronRight className="program-arrow" size={18} /></Link>)}</div>
+      </section>;
+      case "updates": return <UpdatesSection key={id} updates={sections.updates} />;
+      case "results": return <ResultsSection key={id} results={home.results} header={sections.resultsHeader} />;
+      case "faculty": return <FacultySection key={id} teachers={home.teachers} text={sections.faculty} />;
+      case "gallery":
+      case "contact":
+        if (id !== cardsRow[0]) return null;
+        return <div key="cards" className={`page-container upcoming-grid${cardsRow.length === 1 ? " upcoming-grid-single" : ""}`}>
+          {cardsRow.map(card => card === "gallery"
+            ? <section key={card} id="gallery" className="upcoming-card gallery-teaser" aria-labelledby="gallery-teaser-title">
+              {gallery.image && <div className="gallery-teaser-image"><Image src={gallery.image} alt={gallery.imageAlt} fill sizes="(max-width: 640px) 90vw, 40vw" /></div>}
+              <Camera size={25} />{gallery.kicker && <p className="section-kicker">{gallery.kicker}</p>}<h2 id="gallery-teaser-title">{gallery.title}</h2>
+              {gallery.text && <p>{gallery.text}</p>}
+              <Link className="text-link" href="/gallery">{gallery.linkLabel} <ArrowRight size={17} /></Link>
+            </section>
+            : <section key={card} id="talk" className="upcoming-card home-contact-card" aria-labelledby="talk-title">
+              <MessageCircle size={25} />{talk.kicker && <p className="section-kicker">{talk.kicker}</p>}<h2 id="talk-title">{talk.title}</h2>
+              {talk.text && <p>{talk.text}</p>}
+              <div className="home-contact-list">
+                {contact.phones.map(phone => <a key={phone.tel} href={`tel:${phone.tel}`}><Phone size={18} /><span>{phone.display}<small>Call the academy</small></span><ChevronRight size={16} /></a>)}
+                <a href={whatsappHref(contact, WHATSAPP_HELLO)} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} /><span>Chat on WhatsApp<small>Quick replies from our team</small></span><ChevronRight size={16} /></a>
+                <a href={`mailto:${contact.email}`}><Mail size={18} /><span>{contact.email}<small>Email us anytime</small></span><ChevronRight size={16} /></a>
+              </div>
+              <div className="home-contact-actions">
+                <Button asChild size="lg"><Link href="/admissions">{talk.primaryLabel} <ArrowRight size={16} /></Link></Button>
+                <Button asChild size="lg" variant="outline"><Link href="/contact">{talk.secondaryLabel}</Link></Button>
+              </div>
+            </section>)}
+        </div>;
+      default: return null;
+    }
+  }
 
   return <>
     <a className="skip-link" href="#main">Skip to content</a>
@@ -121,49 +169,22 @@ export default function AcademySite({ children, home }: { children?: React.React
 
     <main id="main">{children ?? <>
       <section id="home" className="hero" aria-labelledby="hero-title">
-        <HeroSlider />
-        <div className="hero-benefits"><div className="page-container feature-grid">{features.map(({ title, detail, icon: Icon }) => <div className="feature-card" key={title}><Icon size={23} strokeWidth={1.5} /><div><h3>{title}</h3><p>{detail}</p></div></div>)}</div></div>
+        <HeroSlider hero={sections.hero} />
+        {!hidden.has("features") && sections.features.items.length > 0 && <div className="hero-benefits"><div className="page-container feature-grid">{sections.features.items.map(({ title, detail, icon }, i) => {
+          const Icon = siteIcon(icon, Star);
+          return <div className="feature-card" key={`${title}-${i}`}><Icon size={23} strokeWidth={1.5} /><div><h3>{title}</h3>{detail && <p>{detail}</p>}</div></div>;
+        })}</div></div>}
       </section>
 
-      <section id="courses" className="programs-section page-container" aria-labelledby="courses-title">
-        <p className="section-kicker">FIND YOUR NEXT CHAPTER</p>
-        <h2 id="courses-title">Explore top programs.<br /><span>Designed for your success.</span></h2>
-        <p className="section-intro">From strong foundations to ambitious futures, find the right path for you.</p>
-        <div className="program-grid">{programs.map(program => <Link className="program-card" key={program.slug} href={courseHref(program.slug)}><span className="program-icon"><program.icon size={23} /></span><span><strong>{program.title}</strong><small>{program.detail}</small></span><ChevronRight className="program-arrow" size={18} /></Link>)}</div>
-      </section>
-
-      {home && <ResultsSection results={home.results} />}
-      {home && <FacultySection teachers={home.teachers} />}
-
-      <div className="page-container upcoming-grid">
-        <section id="gallery" className="upcoming-card gallery-teaser" aria-labelledby="gallery-teaser-title">
-          <div className="gallery-teaser-image"><Image src="/gallery/award-2024.jpg" alt="A member of the EduPulse team holding Brand Icon of the Year 2024 awards" fill sizes="(max-width: 640px) 90vw, 40vw" /></div>
-          <Camera size={25} /><p className="section-kicker">LIFE AT EDUPULSE</p><h2 id="gallery-teaser-title">Moments that inspire us.</h2>
-          <p>Explore campus life, classroom discoveries, achievements, and student experiences.</p>
-          <Link className="text-link" href="/gallery">Explore the gallery <ArrowRight size={17} /></Link>
-        </section>
-        <section id="talk" className="upcoming-card home-contact-card" aria-labelledby="talk-title">
-          <MessageCircle size={25} /><p className="section-kicker">TALK TO OUR TEAM</p><h2 id="talk-title">Request a callback.</h2>
-          <p>Share a few details and our counsellors will help you choose the right program and batch.</p>
-          <div className="home-contact-list">
-            {contact.phones.map(phone => <a key={phone.tel} href={`tel:${phone.tel}`}><Phone size={18} /><span>{phone.display}<small>Call the academy</small></span><ChevronRight size={16} /></a>)}
-            <a href={whatsappLink("Hello EduPulse Academy, I would like to know more about your programs.")} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} /><span>Chat on WhatsApp<small>Quick replies from our team</small></span><ChevronRight size={16} /></a>
-            <a href={`mailto:${contact.email}`}><Mail size={18} /><span>{contact.email}<small>Email us anytime</small></span><ChevronRight size={16} /></a>
-          </div>
-          <div className="home-contact-actions">
-            <Button asChild size="lg"><Link href="/admissions">Apply for admission <ArrowRight size={16} /></Link></Button>
-            <Button asChild size="lg" variant="outline"><Link href="/contact">Open the enquiry form</Link></Button>
-          </div>
-        </section>
-      </div>
+      {shown.map(renderSection)}
     </>}</main>
 
     <footer id="contact" className="site-footer"><div className="page-container"><div className="footer-grid">
-      <div><Brand /><p className="footer-motto">Learn Today. Lead Tomorrow.</p><p>Empowering students through<br />quality education and guidance.</p>
+      <div><Brand />{contact.motto && <p className="footer-motto">{contact.motto}</p>}{contact.tagline && <p className="footer-tagline">{contact.tagline}</p>}
         <nav className="footer-socials" aria-label="Social media">
-          <a href={socials.instagram} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on Instagram (opens in a new tab)" title="Instagram"><Instagram size={19} aria-hidden="true" /></a>
-          <a href={socials.facebook} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on Facebook (opens in a new tab)" title="Facebook"><Facebook size={19} aria-hidden="true" /></a>
-          <a href={socials.youtube} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on YouTube (opens in a new tab)" title="YouTube"><Youtube size={19} aria-hidden="true" /></a>
+          {contact.instagram && <a href={contact.instagram} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on Instagram (opens in a new tab)" title="Instagram"><Instagram size={19} aria-hidden="true" /></a>}
+          {contact.facebook && <a href={contact.facebook} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on Facebook (opens in a new tab)" title="Facebook"><Facebook size={19} aria-hidden="true" /></a>}
+          {contact.youtube && <a href={contact.youtube} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on YouTube (opens in a new tab)" title="YouTube"><Youtube size={19} aria-hidden="true" /></a>}
         </nav>
       </div>
       <div><h2>Quick Links</h2><ul>{links.map(([label, id]) => <li key={id}><Link href={navHref(id)}>{label}</Link></li>)}</ul></div>
@@ -171,13 +192,13 @@ export default function AcademySite({ children, home }: { children?: React.React
       <div><h2>Contact Us</h2><ul className="contact-list">
         <li><MapPin size={17} /><span>{contact.address}</span></li>
         <li><Phone size={17} /><span>{contact.phones.map((phone, i) => <span key={phone.tel}>{i > 0 && " / "}<a href={`tel:${phone.tel}`}>{phone.display}</a></span>)}</span></li>
-        <li><MessageCircle size={17} /><a href={whatsappLink("Hello EduPulse Academy, I would like to know more about your programs.")} target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a></li>
+        <li><MessageCircle size={17} /><a href={whatsappHref(contact, WHATSAPP_HELLO)} target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a></li>
         <li><Mail size={17} /><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
-        <li><Clock size={17} /><span>Visit us or call during academy hours</span></li>
+        {contact.hours && <li><Clock size={17} /><span>{contact.hours}</span></li>}
       </ul></div>
-    </div><div className="footer-bottom"><p>&copy; {new Date().getFullYear()} EduPulse Academy, Aligarh. All rights reserved.</p><span>Built for brighter futures.</span></div></div></footer>
+    </div><div className="footer-bottom"><p>&copy; {new Date().getFullYear()} EduPulse Academy, Aligarh. All rights reserved.</p>{contact.footerNote && <span>{contact.footerNote}</span>}</div></div></footer>
 
-    <a className="whatsapp-fab" href={whatsappLink("Hello EduPulse Academy, I would like to know more about your programs.")} target="_blank" rel="noopener noreferrer" aria-label="Chat with EduPulse on WhatsApp (opens in a new tab)"><MessageCircle aria-hidden="true" /><span>Chat with us</span></a>
+    <a className="whatsapp-fab" href={whatsappHref(contact, WHATSAPP_HELLO)} target="_blank" rel="noopener noreferrer" aria-label="Chat with EduPulse on WhatsApp (opens in a new tab)"><MessageCircle aria-hidden="true" /><span>Chat with us</span></a>
 
     <dialog ref={dialog} aria-labelledby="dialog-title" className="info-dialog info-dialog-wide" onClose={() => setModal(null)} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }}>
       {modal && <div className="dialog-content">

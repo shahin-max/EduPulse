@@ -191,3 +191,26 @@ export type ListAuditLogsQuery = { page?: number; limit?: number; actorUserId?: 
 export const auditApi = {
   list: (token: string, params: ListAuditLogsQuery = {}) => request<Paginated<AuditLog>>(`/audit-logs${query(params)}`, { token }),
 };
+
+/** Public website images (hero slides, update posters, gallery card), stored on Cloudinary. */
+export const websiteMediaApi = {
+  uploadImage: (token: string, file: File) => {
+    const body = new FormData();
+    body.append("image", file);
+    return request<{ url: string; width: number; height: number }>("/website-content/images", { token, method: "POST", body });
+  },
+};
+
+/**
+ * Asks the website to rebuild its cached pages so a saved change shows on the next visit
+ * (POST /api/revalidate on this Next.js app, admins only). Best effort: the cache also expires
+ * on its own within 5 minutes.
+ */
+export async function refreshPublicSite(token: string): Promise<boolean> {
+  try {
+    const response = await fetch("/api/revalidate", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}

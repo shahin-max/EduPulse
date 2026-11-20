@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Profile photos are served by Cloudinary.
-  images: { remotePatterns: [{ protocol: "https", hostname: "res.cloudinary.com" }] },
+  // Profile photos and website images are served by Cloudinary; YouTube thumbnails cover gallery videos.
+  images: { remotePatterns: [{ protocol: "https", hostname: "res.cloudinary.com" }, { protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" }] },
   // Browser protections for every page: no framing by other sites, no MIME sniffing, and only
   // the origin sent as referrer. HSTS applies once the site is served over HTTPS.
   async headers() {

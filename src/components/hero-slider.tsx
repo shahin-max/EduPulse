@@ -7,81 +7,11 @@ import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties 
 import { AnimatePresence, MotionConfig, motion, useMotionValue, useSpring, useTransform, type Variants } from "motion/react";
 import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Pause, Play, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { courseHref, programs } from "@/lib/site";
+import { courseHref } from "@/lib/site";
+import { usePrograms } from "@/lib/site-content";
+import { DEFAULT_HERO, type HeroSection } from "@/lib/site-sections";
 
 const HeroScene3D = dynamic(() => import("@/components/hero-scene-3d"), { ssr: false });
-
-type Slide = {
-  eyebrow: string;
-  title: [lead: string, emphasis: string];
-  subtitle: string;
-  cta: { label: string; href: string };
-  image: string;
-  alt: string;
-  position: string;
-  badge: string;
-  /** Indexes into `programs` that this slide is about; highlighted in the dock. */
-  programs: number[];
-};
-
-// Photos: Unsplash License (free for commercial use, attribution not required). Credits kept for reference.
-const slides: Slide[] = [
-  {
-    eyebrow: "FOUNDATION CLASSES · GRADES 6–10",
-    title: ["Strong roots today,", "brighter results tomorrow."],
-    subtitle: "Concept-first classes in Mathematics, Science and English that turn everyday doubts into lasting understanding.",
-    cta: { label: "Explore programs", href: "/courses" },
-    image: "/hero/foundation.jpg", // Raj Rana — unsplash.com/photos/nWpTGnP_jWE
-    alt: "A schoolgirl in uniform standing confidently in front of her classmates",
-    position: "center 30%",
-    badge: "CBSE · ICSE · State Boards",
-    programs: [0],
-  },
-  {
-    eyebrow: "ENGINEERING & MEDICAL ENTRANCE",
-    title: ["Crack the concepts,", "clear the entrance."],
-    subtitle: "Structured Physics, Chemistry, Mathematics and Biology preparation with chapter tests and full-length mock papers.",
-    cta: { label: "View JEE & NEET", href: "/courses" },
-    image: "/hero/entrance.jpg", // Tra Nguyen — unsplash.com/photos/TVSRWmnW8Us
-    alt: "A teacher writing physics equations on a green chalkboard",
-    position: "center 35%",
-    badge: "JEE Main · Advanced · NEET",
-    programs: [2, 3],
-  },
-  {
-    eyebrow: "RMS & SAINIK SCHOOL ENTRANCE",
-    title: ["Discipline that builds", "future leaders."],
-    subtitle: "Focused preparation for Rashtriya Military School and Sainik School entrance exams, with timed practice tests.",
-    cta: { label: "See AISSEE 2027 details", href: "/pamphlet" },
-    image: "/hero/sainik.jpg", // CIMT HOOGHLY — unsplash.com/photos/I4lLt9g8i3k
-    alt: "Students in uniform writing at their desks while a teacher checks their work",
-    position: "center 45%",
-    badge: "AISSEE 2027 preparation",
-    programs: [1],
-  },
-  {
-    eyebrow: "CUET · CLAT · AMU · JMI",
-    title: ["Your university,", "your direction."],
-    subtitle: "Guided preparation for CUET, CLAT, GATE and the AMU & JMI entrance tests, including previous-year paper practice.",
-    cta: { label: "View university programs", href: "/courses" },
-    image: "/hero/university.jpg", // Fotos — unsplash.com/photos/Xdh_J4xW1QE
-    alt: "Two students with backpacks reading a book together",
-    position: "center 35%",
-    badge: "Previous-year paper practice",
-    programs: [4, 5],
-  },
-  {
-    eyebrow: "SPOKEN ENGLISH & STUDY ABROAD",
-    title: ["Speak with confidence,", "go global."],
-    subtitle: "Build fluent spoken English and prepare for IELTS and study-abroad applications with practical speaking sessions.",
-    cta: { label: "Enquire now", href: "/contact" },
-    image: "/hero/spoken-english.jpg", // Muhammad Rizwan — unsplash.com/photos/VnydpKiCDaY
-    alt: "A smiling graduate in a cap and gown",
-    position: "center 30%",
-    badge: "IELTS & study-abroad guidance",
-    programs: [6],
-  },
-];
 
 const INTERVAL_MS = 7000;
 const SWIPE_PX = 50;
@@ -121,7 +51,10 @@ function Words({ text }: { text: string }) {
   ));
 }
 
-export default function HeroSlider() {
+/** The hero carousel; slides and texts come from Admin → Website (home.hero), defaulting to the built-in ones. */
+export default function HeroSlider({ hero = DEFAULT_HERO }: { hero?: HeroSection }) {
+  const slides = hero.slides;
+  const programs = usePrograms();
   const [{ index, previous }, setSlide] = useState({ index: 0, previous: -1 });
   const [userPaused, setUserPaused] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -200,7 +133,7 @@ export default function HeroSlider() {
                 const Title = active ? motion.h1 : motion.p;
                 return (
                   <motion.div
-                    key={s.image}
+                    key={i}
                     id={`hero-slide-${i}`}
                     className={`hero-slide-copy${active ? " is-active" : ""}`}
                     role="group"
@@ -212,16 +145,16 @@ export default function HeroSlider() {
                     initial={i === 0 ? "hide" : false}
                     animate={active ? "show" : "hide"}
                   >
-                    <motion.div variants={lineVariants} className="hero-eyebrow"><span aria-hidden="true" /> {s.eyebrow}</motion.div>
+                    {s.eyebrow && <motion.div variants={lineVariants} className="hero-eyebrow"><span aria-hidden="true" /> {s.eyebrow}</motion.div>}
                     <Title variants={titleVariants} id={active ? "hero-title" : undefined} className="hero-title">
-                      <span className="hero-title-lead"><Words text={s.title[0]} /></span>{" "}
-                      <em><Words text={s.title[1]} /></em>
+                      <span className="hero-title-lead"><Words text={s.titleLead} /></span>{" "}
+                      {s.titleEmphasis && <em><Words text={s.titleEmphasis} /></em>}
                     </Title>
-                    <motion.p variants={lineVariants} className="hero-subtitle">{s.subtitle}</motion.p>
+                    {s.subtitle && <motion.p variants={lineVariants} className="hero-subtitle">{s.subtitle}</motion.p>}
                     <motion.div variants={lineVariants} className="hero-actions">
-                      <Button asChild size="lg" className="hero-primary">
-                        {s.cta.href.startsWith("#") ? <a href={s.cta.href}>{s.cta.label} <ArrowRight size={17} /></a> : <Link href={s.cta.href}>{s.cta.label} <ArrowRight size={17} /></Link>}
-                      </Button>
+                      {s.ctaLabel && <Button asChild size="lg" className="hero-primary">
+                        {/^(#|https?:|mailto:|tel:)/.test(s.ctaHref) ? <a href={s.ctaHref} {...(/^https?:/.test(s.ctaHref) ? { target: "_blank", rel: "noopener noreferrer" } : {})}>{s.ctaLabel} <ArrowRight size={17} /></a> : <Link href={s.ctaHref}>{s.ctaLabel} <ArrowRight size={17} /></Link>}
+                      </Button>}
                       <Link href="/contact" className="hero-secondary">Talk to our team <ArrowRight size={16} /></Link>
                     </motion.div>
                   </motion.div>
@@ -239,13 +172,13 @@ export default function HeroSlider() {
               <div className="hero-tabs" role="tablist" aria-label="Choose a slide">
                 {slides.map((s, i) => (
                   <button
-                    key={s.image}
+                    key={i}
                     ref={el => { tabRefs.current[i] = el; }}
                     type="button"
                     role="tab"
                     aria-selected={i === index}
                     aria-controls={`hero-slide-${i}`}
-                    aria-label={`Slide ${i + 1}: ${s.title.join(" ")}`}
+                    aria-label={`Slide ${i + 1}: ${s.titleLead} ${s.titleEmphasis}`.trim()}
                     tabIndex={i === index ? 0 : -1}
                     className="hero-tab"
                     onClick={() => go(i)}
@@ -284,9 +217,9 @@ export default function HeroSlider() {
                 {slides.map((s, i) => {
                   const state = i === index ? "active" : i === previous ? "previous" : "idle";
                   return (
-                    <motion.div key={s.image} className="hero-photo" variants={photoVariants} initial={i === 0 ? "active" : "idle"} animate={state} aria-hidden={i !== index}>
+                    <motion.div key={i} className="hero-photo" variants={photoVariants} initial={i === 0 ? "active" : "idle"} animate={state} aria-hidden={i !== index}>
                       <motion.div className="hero-photo-inner" variants={kenBurnsVariants}>
-                        <Image src={s.image} alt={i === index ? s.alt : ""} fill sizes="(max-width: 1000px) 100vw, 50vw" priority={i === 0} style={{ objectPosition: s.position }} />
+                        <Image src={s.image} alt={i === index ? s.imageAlt : ""} fill sizes="(max-width: 1000px) 100vw, 50vw" priority={i === 0} style={{ objectPosition: s.imagePosition }} />
                       </motion.div>
                     </motion.div>
                   );
@@ -294,16 +227,16 @@ export default function HeroSlider() {
                 <motion.span className="hero-shine" style={{ background: shine }} aria-hidden="true" />
               </div>
 
-              <div className="hero-badge hero-badge-top" aria-hidden="true">
+              {slide.badge && <div className="hero-badge hero-badge-top" aria-hidden="true">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.span key={index} className="hero-badge-inner" initial={{ opacity: 0, y: 12, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.35 }}>
                     <span className="hero-badge-icon"><Sparkles size={15} /></span>{slide.badge}
                   </motion.span>
                 </AnimatePresence>
-              </div>
-              <div className="hero-badge hero-badge-bottom" aria-hidden="true">
-                <span className="hero-badge-inner"><span className="hero-badge-icon"><MapPin size={15} /></span><span><strong>Proudly based in Aligarh</strong><small>Lal Diggi, Civil Lines</small></span></span>
-              </div>
+              </div>}
+              {hero.locationTitle && <div className="hero-badge hero-badge-bottom" aria-hidden="true">
+                <span className="hero-badge-inner"><span className="hero-badge-icon"><MapPin size={15} /></span><span><strong>{hero.locationTitle}</strong>{hero.locationSubtitle && <small>{hero.locationSubtitle}</small>}</span></span>
+              </div>}
             </motion.div>
           </motion.div>
         </div>
@@ -311,12 +244,12 @@ export default function HeroSlider() {
         <div className="page-container">
           <motion.aside className="hero-dock" aria-labelledby="hero-programs-title" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: EASE, delay: 0.35 }}>
             <div className="hero-dock-head">
-              <p className="hero-programs-kicker">FIND YOUR DIRECTION</p>
-              <h2 id="hero-programs-title">Our programs</h2>
+              {hero.dockKicker && <p className="hero-programs-kicker">{hero.dockKicker}</p>}
+              <h2 id="hero-programs-title">{hero.dockTitle}</h2>
             </div>
             <ul className="hero-dock-list">
-              {programs.map((program, i) => {
-                const current = slide.programs.includes(i);
+              {programs.map(program => {
+                const current = slide.programSlugs.includes(program.slug);
                 return (
                   <li key={program.title}>
                     <Link href={courseHref(program.slug)} className={`hero-dock-item${current ? " is-current" : ""}`}>
