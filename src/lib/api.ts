@@ -96,6 +96,41 @@ export async function request<T>(path: string, init: RequestInit & { token?: str
   return response.json() as Promise<T>;
 }
 
+/** The file name from a Content-Disposition header (`filename*=UTF-8''...` preferred), or null. */
+function dispositionFilename(header: string | null): string | null {
+  if (!header) return null;
+  const encoded = /filename\*\s*=\s*(?:UTF-8|utf-8)''([^;]+)/.exec(header);
+  if (encoded) {
+    try { return decodeURIComponent(encoded[1].trim().replace(/^"|"$/g, "")); } catch {}
+  }
+  const plain = /filename\s*=\s*("([^"]*)"|[^;]+)/i.exec(header);
+  const name = (plain?.[2] ?? plain?.[1])?.trim();
+  // Never let a server-sent name point outside the downloads folder.
+  return name ? name.replace(/[\\/]/g, "_") : null;
+}
+
+/**
+ * Downloads an authenticated file (e.g. a CSV export) and saves it in the browser under the name from
+ * Content-Disposition, or `fallbackName`. Resolves to the saved file name; API errors throw ApiError.
+ */
+export async function downloadFile(path: string, token: string, fallbackName: string): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  } catch {
+    throw new ApiError(0, "Cannot reach the server. Please check your connection and try again.");
+  }
+  if (!response.ok) throw await toError(response);
+  const filename = dispositionFilename(response.headers.get("content-disposition")) ?? fallbackName;
+  const url = URL.createObjectURL(await response.blob());
+  const link = Object.assign(document.createElement("a"), { href: url, download: filename });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return filename;
+}
+
 export const authApi = {
   register: (input: RegisterInput) => request<AuthTokens>("/auth/register", { method: "POST", body: JSON.stringify(input) }),
   login: (input: LoginInput) => request<AuthTokens>("/auth/login", { method: "POST", body: JSON.stringify(input) }),

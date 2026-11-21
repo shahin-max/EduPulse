@@ -14,6 +14,8 @@ import { PAYMENT_METHODS, paymentsApi, type PaymentListItem, type PaymentMethod,
 import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAdminData } from "../use-admin-data";
 import { useBranchPage, useBranchScope } from "../branch-scope";
+import { ExportCsvButton } from "../export-csv-button";
+import { query as toQuery } from "@/lib/admin-api";
 import { EmptyState, ErrorAlert, formatDate, formatMoney, LoadingRows, Pager, Pill } from "../ui";
 import { methodLabel, PAYMENT_TONES, todayIso } from "./shared";
 
@@ -63,6 +65,8 @@ export default function CollectionsList() {
   };
   const { data, error, loading, reload } = useAdminData(token => paymentsApi.list(token, query), JSON.stringify(query));
 
+  // Same filters as the register (period, branch, method, search), without paging.
+  const exportPath = `/payments/export${toQuery({ ...query, page: undefined, limit: undefined })}`;
   const setRange = (from: string, to: string) => { setFromDay(from); setToDay(to); setPage(1); };
   const period = fromDay === toDay ? dayLabel(fromDay) : `${dayLabel(fromDay)} – ${dayLabel(toDay)}`;
   const branchName = branch?.name;
@@ -75,6 +79,7 @@ export default function CollectionsList() {
           const active = from === fromDay && to === toDay;
           return <Button key={p.label} size="sm" variant={active ? "default" : "outline"} onClick={() => setRange(from, to)}>{p.label}</Button>;
         })}
+        <ExportCsvButton path={exportPath} filename="payments.csv" size="sm" className="ml-auto" disabled={!validRange || !data?.data.length} />
       </div>
       <div className="grid grid-cols-2 gap-3 lg:flex lg:flex-wrap lg:items-end">
         <div className="grid gap-1.5">

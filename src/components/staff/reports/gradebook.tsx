@@ -2,19 +2,19 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Download, Search, TableProperties } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search, TableProperties } from "lucide-react";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn, plural } from "@/lib/utils";
 import {
-  downloadCsv, LOW_ATTENDANCE, num, SUBMISSION_LABEL, teachingApi,
+  LOW_ATTENDANCE, num, SUBMISSION_LABEL, teachingApi,
   type Gradebook, type GradebookStudent, type SubmissionState,
 } from "@/lib/teaching-api";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { EmptyState, ErrorAlert, formatDate, LoadingRows, UserAvatar } from "@/components/admin/ui";
 import { usePortal } from "@/components/portal/portal-shell";
+import { ExportCsvButton } from "@/components/admin/export-csv-button";
 
 const STATE_STYLE: Record<SubmissionState, string> = {
   REVIEWED: "text-emerald-700 dark:text-emerald-400",
@@ -58,7 +58,7 @@ export function GradebookCard({ batchId }: { batchId: number }) {
         ? `${plural(data.students.length, "student")} · ${plural(data.sessions_held, "class", "classes")} held · ${plural(data.assignments.length, "assignment")} · ${plural(data.exams.length, "test")}`
         : "Attendance, assignments, tests and study materials for every student."}</CardDescription>
       <CardAction>
-        <Button variant="outline" size="sm" disabled={!data?.students.length} onClick={() => data && exportCsv(data)}><Download /> CSV</Button>
+        <ExportCsvButton path={`/batches/${batchId}/gradebook/export`} filename={`gradebook-${data?.batch.code ?? batchId}.csv`} size="sm" disabled={!data?.students.length} />
       </CardAction>
     </CardHeader>
     {data && data.students.length > 0 && <div className="border-b p-4">
@@ -122,21 +122,4 @@ function GradebookRow({ student: s, data, href }: { student: GradebookStudent; d
     })}
     <td className="px-3 py-2 tabular-nums text-muted-foreground">{s.materials_completed}/{data.materials_total}</td>
   </tr>;
-}
-
-function exportCsv(data: Gradebook) {
-  const header = [
-    "Student", "Admission no.", "Enrollment", "Attendance %", "Present", "Late", "Absent", "Excused",
-    ...data.assignments.flatMap(a => [`${a.title} (status)`, `${a.title} (marks${a.max_marks ? ` / ${num(a.max_marks)}` : ""})`]),
-    ...data.exams.flatMap(e => [`${e.title} (score / ${num(e.total_marks)})`, `${e.title} (%)`, `${e.title} (attempts)`]),
-    `Materials completed (of ${data.materials_total})`,
-  ];
-  const rows = data.students.map(s => [
-    s.full_name, s.admission_number, s.enrollment_status, s.attendance.percentage, s.attendance.present, s.attendance.late, s.attendance.absent, s.attendance.excused,
-    ...data.assignments.flatMap(a => [SUBMISSION_LABEL[s.assignments[a.id].state], num(s.assignments[a.id].marks)]),
-    ...data.exams.flatMap(e => [num(s.exams[e.id].score), num(s.exams[e.id].percentage), s.exams[e.id].attempts]),
-    s.materials_completed,
-  ]);
-  const date = new Date().toISOString().slice(0, 10);
-  downloadCsv(`gradebook-${data.batch.code}-${date}.csv`, [header, ...rows]);
 }
