@@ -14,9 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
-import type { RoleCode } from "@/lib/api";
+import { isHeadOffice, type AccessRole, type RoleCode } from "@/lib/api";
 import { passwordLink, ROLES, studentsApi, USER_STATUSES, usersApi, type AdminUser, type StudentProfile, type StudentProfileInput, type UpdateUserInput, type UserStatus } from "@/lib/admin-api";
-import { ErrorAlert, errorText, Field, titleCase } from "./ui";
+import { useBranchScope } from "./branch-scope";
+import { ErrorAlert, errorText, Field, Optional, titleCase } from "./ui";
 
 const STATUS_HELP: Record<UserStatus, string> = {
   ACTIVE: "Can log in normally.",
@@ -42,20 +43,47 @@ export function CopyField({ value, label }: { value: string; label: string }) {
   </div>;
 }
 
-function RolePicker({ value, onChange, lockAdmin }: { value: RoleCode[]; onChange: (roles: RoleCode[]) => void; lockAdmin?: boolean }) {
+const NO_BRANCH = "none";
+
+/** Branch admins create students and faculty only; head office any role. */
+export const BRANCH_ADMIN_ROLES: RoleCode[] = ["FACULTY", "STUDENT"];
+
+/** The stored roles of a user (the API also reports BRANCH_ADMIN, which is set on the branch, not here). */
+const storedRoles = (roles: AccessRole[]) => roles.filter((r): r is RoleCode => r !== "BRANCH_ADMIN");
+
+/** Roles that cannot be combined with running a branch (the API refuses them with adminBranchId). */
+const NOT_WITH_BRANCH_ADMIN: RoleCode[] = ["ADMIN", "STUDENT"];
+
+/**
+ * The role checkboxes. `branchAdmin` (head office creating a user) adds a "Branch admin" choice: it can go with
+ * Faculty but not with Admin or Student, so those are disabled while it is ticked and vice versa.
+ */
+function RolePicker({ value, onChange, lockAdmin, options = ROLES, branchAdmin }: {
+  value: RoleCode[];
+  onChange: (roles: RoleCode[]) => void;
+  lockAdmin?: boolean;
+  options?: RoleCode[];
+  branchAdmin?: { checked: boolean; onChange: (checked: boolean) => void };
+}) {
+  const blocksBranchAdmin = value.some(r => NOT_WITH_BRANCH_ADMIN.includes(r));
   return <fieldset className="grid gap-2">
     <legend className="mb-2 text-sm font-medium">Roles</legend>
     <div className="flex flex-wrap gap-x-6 gap-y-3">
-      {ROLES.map(role => {
-        const locked = lockAdmin && role === "ADMIN";
+      {options.map(role => {
+        const locked = (lockAdmin && role === "ADMIN") || (!!branchAdmin?.checked && NOT_WITH_BRANCH_ADMIN.includes(role));
         return <div key={role} className="flex items-center gap-2">
           <Checkbox id={`role-${role}`} checked={value.includes(role)} disabled={locked}
             onCheckedChange={checked => onChange(checked ? [...value, role] : value.filter(r => r !== role))} />
           <Label htmlFor={`role-${role}`} className="font-normal">{titleCase(role)}</Label>
         </div>;
       })}
+      {branchAdmin && <div className="flex items-center gap-2">
+        <Checkbox id="role-BRANCH_ADMIN" checked={branchAdmin.checked} disabled={blocksBranchAdmin} onCheckedChange={checked => branchAdmin.onChange(checked === true)} />
+        <Label htmlFor="role-BRANCH_ADMIN" className="font-normal">Branch admin</Label>
+      </div>}
     </div>
-    <p className="text-xs text-muted-foreground">Adding Student or Faculty creates that profile.{lockAdmin && " You cannot remove your own Admin role."}</p>
+    <p className="text-xs text-muted-foreground">Adding Student or Faculty creates that profile.{lockAdmin && " You cannot remove your own Admin role."}
+      {branchAdmin && " A branch admin runs one branch in the admin portal; they can also be Faculty, but not Admin or Student."}</p>
   </fieldset>;
 }
 
@@ -77,11 +105,23 @@ export function UserFormDialog({ open, onOpenChange, user, onSaved }: {
 function UserForm({ user, onSaved, onClose }: { user?: AdminUser; onSaved: (user: AdminUser) => void; onClose: () => void }) {
   const { withToken, user: me } = useAuth();
   const isSelf = !!user && me?.id === user.id;
+  // Branch admins create students and faculty, and cannot change roles (head office only).
+  const headOffice = isHeadOffice(me);
+  const scope = useBranchScope();
+  const branchChoices = scope.branches.filter(b => b.is_active !== false);
   const [fullName, setFullName] = useState(user?.full_name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [mobile, setMobile] = useState(user?.mobile ?? "");
   const [password, setPassword] = useState("");
-  const [roles, setRoles] = useState<RoleCode[]>(user?.roles ?? ["FACULTY"]);
+  const [roles, setRoles] = useState<RoleCode[]>(user ? storedRoles(user.roles) : ["FACULTY"]);
+  // Which branch a new faculty member joins: required for a branch admin with several branches, optional for head office.
+  const [branchId, setBranchId] = useState(() => scope.branchId && branchChoices.some(b => b.id === scope.branchId) ? String(scope.branchId) : "");
+  const askBranch = !user && roles.includes("FACULTY") && (headOffice ? branchChoices.length > 0 : branchChoices.length > 1);
+  // Head office can make a new account the admin of one branch (an office manager, or someone who also teaches).
+  const offerBranchAdmin = !user && headOffice;
+  const [makeBranchAdmin, setMakeBranchAdmin] = useState(false);
+  const [adminBranchId, setAdminBranchId] = useState("");
+  const isBranchAdmin = offerBranchAdmin && makeBranchAdmin;
   const [status, setStatus] = useState<UserStatus>(user?.status ?? "ACTIVE");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -90,13 +130,17 @@ function UserForm({ user, onSaved, onClose }: { user?: AdminUser; onSaved: (user
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!email.trim() && !mobile.trim()) return setError("Enter an email address or a mobile number.");
-    if (roles.length === 0) return setError("Choose at least one role.");
+    if (roles.length === 0 && !isBranchAdmin) return setError("Choose at least one role.");
+    if (isBranchAdmin && !adminBranchId) return setError("Choose the branch they will run.");
+    if (askBranch && !headOffice && !branchId) return setError("Choose the branch they will teach at.");
     setBusy(true);
     setError("");
     try {
       if (!user) {
         const created = await withToken(token => usersApi.create(token, {
           fullName: fullName.trim(), email: email.trim() || undefined, mobile: mobile.trim() || undefined, password: password || undefined, roles,
+          branchId: askBranch && branchId ? Number(branchId) : undefined,
+          adminBranchId: isBranchAdmin ? Number(adminBranchId) : undefined,
         }));
         onSaved(created);
         toast.success(`${created.full_name} added`);
@@ -114,7 +158,8 @@ function UserForm({ user, onSaved, onClose }: { user?: AdminUser; onSaved: (user
       if (email.trim() && email.trim() !== (user.email ?? "")) patch.email = email.trim();
       if (mobile.trim() && mobile.trim() !== (user.mobile ?? "")) patch.mobile = mobile.trim();
       if (status !== user.status) patch.status = status;
-      const rolesChanged = roles.length !== user.roles.length || roles.some(r => !user.roles.includes(r));
+      const current = storedRoles(user.roles);
+      const rolesChanged = headOffice && (roles.length !== current.length || roles.some(r => !current.includes(r)));
       let updated: AdminUser = user;
       if (Object.keys(patch).length) updated = await withToken(token => usersApi.update(token, user.id, patch));
       if (rolesChanged) updated = { ...updated, ...(await withToken(token => usersApi.setRoles(token, user.id, roles))) };
@@ -146,7 +191,9 @@ function UserForm({ user, onSaved, onClose }: { user?: AdminUser; onSaved: (user
   return <form onSubmit={submit} className="grid gap-5">
     <DialogHeader>
       <DialogTitle>{user ? "Edit user" : "Add user"}</DialogTitle>
-      <DialogDescription>{user ? "Update account details, status and roles." : "Create an account for a student, faculty member or admin."}</DialogDescription>
+      <DialogDescription>{user
+        ? headOffice ? "Update account details, status and roles." : "Update account details and status."
+        : headOffice ? "Create an account for a student, faculty member or admin." : "Create an account for a student or faculty member."}</DialogDescription>
     </DialogHeader>
     <Field id="fullName" label="Full name">
       <Input id="fullName" required minLength={2} maxLength={160} value={fullName} onChange={e => setFullName(e.target.value)} autoComplete="off" />
@@ -159,7 +206,24 @@ function UserForm({ user, onSaved, onClose }: { user?: AdminUser; onSaved: (user
         <Input id="mobile" type="tel" pattern="\+?[0-9 ]{10,20}" title="10-15 digit phone number" value={mobile} onChange={e => setMobile(e.target.value)} autoComplete="off" />
       </Field>
     </div>
-    <RolePicker value={roles} onChange={setRoles} lockAdmin={isSelf} />
+    {(headOffice || !user) && <RolePicker value={roles} onChange={setRoles} lockAdmin={isSelf} options={headOffice ? ROLES : BRANCH_ADMIN_ROLES}
+      branchAdmin={offerBranchAdmin ? { checked: makeBranchAdmin, onChange: setMakeBranchAdmin } : undefined} />}
+    {isBranchAdmin && <Field id="user-admin-branch" label="Runs branch" hint="They sign in to the admin portal and see only this branch. Add more branches later on the branch page.">
+      <Select value={adminBranchId} onValueChange={setAdminBranchId}>
+        <SelectTrigger id="user-admin-branch" className="w-full"><SelectValue placeholder={branchChoices.length ? "Choose a branch" : "No active branches"} /></SelectTrigger>
+        <SelectContent>{branchChoices.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}</SelectContent>
+      </Select>
+    </Field>}
+    {askBranch && <Field id="user-branch" label={headOffice ? <>Teaches at <Optional /></> : "Teaches at"}
+      hint={headOffice ? "Adds them to the branch staff. You can add more branches later on the branch page." : "They join this branch's staff."}>
+      <Select value={branchId || (headOffice ? NO_BRANCH : "")} onValueChange={v => setBranchId(v === NO_BRANCH ? "" : v)}>
+        <SelectTrigger id="user-branch" className="w-full"><SelectValue placeholder="Choose a branch" /></SelectTrigger>
+        <SelectContent>
+          {headOffice && <SelectItem value={NO_BRANCH}>Not now</SelectItem>}
+          {branchChoices.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </Field>}
     {user ? <Field id="status" label="Status" hint={isSelf ? "You cannot change your own status." : STATUS_HELP[status]}>
       <Select value={status} onValueChange={value => setStatus(value as UserStatus)} disabled={isSelf}>
         <SelectTrigger id="status" className="w-full"><SelectValue /></SelectTrigger>

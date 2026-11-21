@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
+import { isHeadOffice } from "@/lib/api";
 import { feeLookupsApi, feePlansApi, isMoney, MONEY_PATTERN, toPaise, fromPaise, type FeePlanListItem, type UpdateFeePlanInput } from "@/lib/admin-fees-api";
 import { useAdminData } from "../use-admin-data";
 import { ErrorAlert, errorText, Field } from "../ui";
@@ -32,9 +33,11 @@ export function FeePlanFormDialog({ open, onOpenChange, plan, onSaved }: {
 }
 
 function FeePlanForm({ plan, onSaved, onClose }: { plan?: FeePlanListItem; onSaved: () => void; onClose: () => void }) {
-  const { withToken } = useAuth();
+  const { withToken, user } = useAuth();
+  // A plan for every branch is head office only; branch admins price their own branches or batches.
+  const headOffice = isHeadOffice(user);
   const [courseId, setCourseId] = useState<number | undefined>(plan?.course_id);
-  const [scope, setScope] = useState<Scope>(plan?.batch_id ? "batch" : plan?.branch_id ? "branch" : "all");
+  const [scope, setScope] = useState<Scope>(plan?.batch_id ? "batch" : plan?.branch_id ? "branch" : headOffice ? "all" : "branch");
   const [branchId, setBranchId] = useState<number | undefined>(plan?.branch_id ?? undefined);
   const [batchId, setBatchId] = useState<number | undefined>(plan?.batch_id ?? undefined);
   const [title, setTitle] = useState(plan?.title ?? "");
@@ -85,7 +88,7 @@ function FeePlanForm({ plan, onSaved, onClose }: { plan?: FeePlanListItem; onSav
   // On edit the API can only move a plan onto a batch or off it; the course and branch stay (taking it off a batch keeps that batch's branch).
   const scopeOptions: { value: Scope; label: string }[] = plan
     ? [plan.branch_id ? { value: "branch", label: "All batches in its branch" } : { value: "all", label: "All branches" }, { value: "batch", label: "One batch" }]
-    : [{ value: "all", label: "All branches" }, { value: "branch", label: "One branch" }, { value: "batch", label: "One batch" }];
+    : [...(headOffice ? [{ value: "all" as const, label: "All branches" }] : []), { value: "branch", label: "One branch" }, { value: "batch", label: "One batch" }];
   const batchOptions = batches.data?.data ?? [];
 
   return <form onSubmit={submit} className="grid gap-5">

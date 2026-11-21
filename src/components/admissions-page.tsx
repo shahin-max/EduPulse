@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, ChevronDown, ClipboardList, FileText, GraduationCap, KeyRound, Loader2, MapPin, MessageCircle, PhoneCall, Send, Sparkles, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandSelect } from "@/components/brand-select";
-import { PHONE_PATTERN } from "@/components/enquiry-form";
+import { BranchField, PHONE_PATTERN, usePublicBranches } from "@/components/enquiry-form";
 import { publicApi, type ApiBatch, type ApiCourse } from "@/lib/api";
 import { programs } from "@/lib/site";
 import { useContactInfo, whatsappHref } from "@/lib/site-content";
@@ -54,6 +54,7 @@ function AdmissionForm({ courses, batches, course: courseSlug, program: programS
   const [courseTitle, setCourseTitle] = useState(preselected ?? options[0] ?? NOT_SURE);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
+  const branches = usePublicBranches();
 
   const course = courses.find(c => c.title === courseTitle);
   const courseBatches = useMemo(() => batches.filter(b => b.courses.id === course?.id), [batches, course]);
@@ -63,9 +64,11 @@ function AdmissionForm({ courses, batches, course: courseSlug, program: programS
     const data = new FormData(event.currentTarget);
     const get = (key: string) => String(data.get(key) ?? "").trim();
     const batch = get("batch");
+    const branchId = branches.branchIdFor(get("branch"));
     const message = [
       "Admission application (website)",
       `Course: ${get("course")}`,
+      branchId && `Preferred branch: ${get("branch")}`,
       batch && batch !== ANY_BATCH && `Preferred batch: ${batch}`,
       `Class / grade: ${get("grade")}`,
       get("school") && `School: ${get("school")}`,
@@ -82,6 +85,7 @@ function AdmissionForm({ courses, batches, course: courseSlug, program: programS
         interestedCourseId: course?.id,
         message,
         source: "WEBSITE_ADMISSION",
+        branchId,
       });
       setResult({ kind: "saved", id: enquiry.id });
     } catch (e) {
@@ -119,6 +123,7 @@ function AdmissionForm({ courses, batches, course: courseSlug, program: programS
       <label><span className="label-text">School <span>(optional)</span></span><input name="school" minLength={2} maxLength={160} placeholder="Current school" /></label>
     </div>
     <div className="enquiry-field"><span id="course-label" className="enquiry-label">Course</span><BrandSelect name="course" aria-labelledby="course-label" options={[...options, NOT_SURE]} defaultValue={courseTitle} onValueChange={setCourseTitle} /></div>
+    <BranchField branches={branches} />
     {courseBatches.length > 0 && <div className="enquiry-field"><span id="batch-label" className="enquiry-label">Preferred batch</span><BrandSelect key={course?.id} name="batch" aria-labelledby="batch-label" options={[ANY_BATCH, ...courseBatches.map(batchLabel)]} /></div>}
     <label><span className="label-text">Anything we should know? <span>(optional)</span></span><textarea name="notes" rows={3} maxLength={1000} placeholder="Preferred timings, previous coaching, questions about fees..." /></label>
     {result?.kind === "failed" && <div className="enquiry-error" role="alert">

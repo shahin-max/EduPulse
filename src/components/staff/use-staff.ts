@@ -1,6 +1,6 @@
 "use client";
 
-import { request } from "@/lib/api";
+import { isAnyAdmin, isHeadOffice, request } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { query, type Paginated } from "@/lib/admin-api";
 import { useAdminData } from "@/components/admin/use-admin-data";
@@ -11,7 +11,10 @@ import { useAdminData } from "@/components/admin/use-admin-data";
  * admins see every batch, faculty only the batches they are assigned to (batch_faculty).
  */
 
-export const useIsAdmin = () => useAuth().user?.roles.includes("ADMIN") ?? false;
+/** Head office or a branch admin (the API limits a branch admin to their branches). */
+export const useIsAdmin = () => isAnyAdmin(useAuth().user);
+/** Head office only: the catalog, question bank and other academy-wide settings. */
+export const useIsHeadOffice = () => isHeadOffice(useAuth().user);
 
 /** A batch as the teaching screens need it (GET /batches). */
 export type StaffBatch = {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarRange, Eye, Layers, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BATCH_STATUSES, batchesApi, type Batch, type BatchStatus } from "@/lib/admin-batches-api";
 import { useAdminData } from "../use-admin-data";
+import { useBranchPage, useBranchScope } from "../branch-scope";
 import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { EmptyState, ErrorAlert, LoadingRows, PageHeader, Pager, Pill, titleCase } from "../ui";
 import { BatchFormDialog, courseLabel, DeleteBatchDialog, useBatchPickers } from "./batch-dialogs";
@@ -23,12 +24,15 @@ const toId = (value: string | null) => (value && /^\d+$/.test(value) ? Number(va
 export default function BatchesList() {
   const params = useSearchParams();
   const pickers = useBatchPickers();
-  const [branchId, setBranchId] = useState(toId(params.get("branchId")));
+  // The branch comes from the header's switcher; a link with ?branchId= (e.g. from a branch page) switches to it.
+  const { branchId, setBranchId } = useBranchScope();
+  const linkedBranch = toId(params.get("branchId"));
+  useEffect(() => { if (linkedBranch) setBranchId(linkedBranch); }, [linkedBranch, setBranchId]);
   const [courseId, setCourseId] = useState(toId(params.get("courseId")));
   const [status, setStatus] = useState<BatchStatus | undefined>(BATCH_STATUSES.find(s => s === params.get("status")));
   const [searchText, setSearchText] = useState("");
   const search = useDebounced(searchText.trim());
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useBranchPage(branchId);
   const [formOpen, setFormOpen] = useState(params.get("new") === "1");
   const [editing, setEditing] = useState<Batch | undefined>();
   const [deleting, setDeleting] = useState<Batch | null>(null);
@@ -53,14 +57,7 @@ export default function BatchesList() {
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input type="search" placeholder="Search by code, name or course" value={searchText} onChange={e => { setSearchText(e.target.value); resetPage(); }} className="pl-9" aria-label="Search batches" />
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:flex xl:items-center">
-          <Select value={branchId ? String(branchId) : ALL} onValueChange={v => { setBranchId(v === ALL ? undefined : Number(v)); resetPage(); }}>
-            <SelectTrigger className="w-full xl:w-40 [&>span]:truncate" aria-label="Filter by branch"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All branches</SelectItem>
-              {pickers.data?.branches.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}{!b.is_active && " (inactive)"}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-3 xl:flex xl:items-center">
           <Select value={status ?? ALL} onValueChange={v => { setStatus(v === ALL ? undefined : v as BatchStatus); resetPage(); }}>
             <SelectTrigger className="w-full xl:w-36" aria-label="Filter by status"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -69,7 +66,7 @@ export default function BatchesList() {
             </SelectContent>
           </Select>
           <Select value={courseId ? String(courseId) : ALL} onValueChange={v => { setCourseId(v === ALL ? undefined : Number(v)); resetPage(); }}>
-            <SelectTrigger className="col-span-2 w-full sm:col-span-1 xl:w-56 [&>span]:truncate" aria-label="Filter by course"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full xl:w-56 [&>span]:truncate" aria-label="Filter by course"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All courses</SelectItem>
               {pickers.data?.courses.map(c => <SelectItem key={c.id} value={String(c.id)}>{courseLabel(c)}</SelectItem>)}

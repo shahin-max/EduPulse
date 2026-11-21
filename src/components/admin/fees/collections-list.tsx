@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { feeLookupsApi, PAYMENT_METHODS, paymentsApi, type PaymentListItem, type PaymentMethod, type PaymentsSummary } from "@/lib/admin-fees-api";
+import { PAYMENT_METHODS, paymentsApi, type PaymentListItem, type PaymentMethod, type PaymentsSummary } from "@/lib/admin-fees-api";
 import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAdminData } from "../use-admin-data";
+import { useBranchPage, useBranchScope } from "../branch-scope";
 import { EmptyState, ErrorAlert, formatDate, formatMoney, LoadingRows, Pager, Pill } from "../ui";
 import { methodLabel, PAYMENT_TONES, todayIso } from "./shared";
 
@@ -42,18 +43,18 @@ export default function CollectionsList() {
   const today = todayIso();
   const [fromDay, setFromDay] = useState(today);
   const [toDay, setToDay] = useState(today);
-  const [branchId, setBranchId] = useState<number | undefined>();
   const [method, setMethod] = useState<PaymentMethod | undefined>();
   const [searchText, setSearchText] = useState("");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  // The branch comes from the header's switcher.
+  const { branchId, branch } = useBranchScope();
+  const [page, setPage] = useBranchPage(branchId);
 
   useEffect(() => {
     const timer = setTimeout(() => { setSearch(searchText.trim()); setPage(1); }, 300);
     return () => clearTimeout(timer);
-  }, [searchText]);
+  }, [searchText, setPage]);
 
-  const branches = useAdminData(token => feeLookupsApi.branches(token), "branches");
   const validRange = !!fromDay && !!toDay && fromDay <= toDay;
   const query = {
     from: validRange ? istStart(fromDay).toISOString() : undefined,
@@ -64,7 +65,7 @@ export default function CollectionsList() {
 
   const setRange = (from: string, to: string) => { setFromDay(from); setToDay(to); setPage(1); };
   const period = fromDay === toDay ? dayLabel(fromDay) : `${dayLabel(fromDay)} – ${dayLabel(toDay)}`;
-  const branchName = branchId ? branches.data?.find(b => b.id === branchId)?.name : undefined;
+  const branchName = branch?.name;
 
   return <Card className="gap-0 py-0 print:border-0 print:shadow-none">
     <div className="grid gap-3 border-b p-4 print:hidden">
@@ -84,13 +85,6 @@ export default function CollectionsList() {
           <Label htmlFor="col-to" className="text-xs text-muted-foreground">To</Label>
           <Input id="col-to" type="date" value={toDay} min={fromDay || undefined} onChange={e => { setToDay(e.target.value); setPage(1); }} className="lg:w-40" />
         </div>
-        {(branches.data?.length ?? 0) > 1 && <Select value={branchId ? String(branchId) : ALL} onValueChange={v => { setBranchId(v === ALL ? undefined : Number(v)); setPage(1); }}>
-          <SelectTrigger className="w-full lg:w-44 [&>span]:truncate" aria-label="Filter by branch"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All branches</SelectItem>
-            {branches.data?.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}
-          </SelectContent>
-        </Select>}
         <Select value={method ?? ALL} onValueChange={v => { setMethod(v === ALL ? undefined : v as PaymentMethod); setPage(1); }}>
           <SelectTrigger className="w-full lg:w-40" aria-label="Filter by method"><SelectValue /></SelectTrigger>
           <SelectContent>

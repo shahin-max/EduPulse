@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { healthApi, query, usersApi, type Paginated } from "@/lib/admin-api";
 import { adminSummaryApi } from "@/lib/admin-ops-api";
 import { useAdminData } from "./use-admin-data";
+import { useBranchScope } from "./branch-scope";
 import { useNow } from "@/components/student/shared";
 import { AdminCharts } from "./charts/admin-charts";
 import { ErrorAlert, formatDate, PageHeader, RoleBadges, StatusBadge, UserAvatar } from "./ui";
@@ -25,17 +26,18 @@ type ClassSession = {
 const total = (token: string, path: string, params: Record<string, string | number | boolean>) =>
   request<Paginated<unknown>>(`${path}${query({ ...params, limit: 1 })}`, { token }).then(r => r.meta.total).catch(() => null);
 
-async function loadOverview(token: string) {
+/** `branchId` (the header's branch switcher) narrows the branch-aware parts; students and accounts are not per branch. */
+async function loadOverview(token: string, branchId: number | undefined) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
   // Each part fails on its own, so one broken endpoint never blanks the dashboard.
   const [students, newEnquiries, activeBatches, overdue, enquiries, today, recent, health] = await Promise.all([
     total(token, "/users", { role: "STUDENT" }),
-    total(token, "/admission-enquiries", { status: "NEW" }),
-    total(token, "/batches", { status: "ACTIVE" }),
-    total(token, "/fee-invoices", { overdue: true }),
-    request<Paginated<Enquiry>>(`/admission-enquiries${query({ limit: 5 })}`, { token }).then(r => r.data).catch(() => null),
+    total(token, "/admission-enquiries", { status: "NEW", ...(branchId ? { branchId } : {}) }),
+    total(token, "/batches", { status: "ACTIVE", ...(branchId ? { branchId } : {}) }),
+    total(token, "/fee-invoices", { overdue: true, ...(branchId ? { branchId } : {}) }),
+    request<Paginated<Enquiry>>(`/admission-enquiries${query({ limit: 5, branchId })}`, { token }).then(r => r.data).catch(() => null),
     request<ClassSession[]>(`/class-sessions/timetable${query({ from: start.toISOString(), to: end.toISOString() })}`, { token }).catch(() => null),
     usersApi.list(token, { limit: 5 }).then(r => r.data).catch(() => null),
     healthApi.check().catch(() => null),
@@ -47,10 +49,11 @@ const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: 
 
 export default function AdminOverview() {
   const { user } = useAuth();
-  const { data, error, reload } = useAdminData(loadOverview, "overview");
+  const { branchId, branch, isHeadOffice: headOffice } = useBranchScope();
+  const { data, error, reload } = useAdminData(token => loadOverview(token, branchId), `overview:${branchId ?? "all"}`);
   const now = useNow();
   // Loaded on its own so a slow summary never holds up the rest of the home page.
-  const summary = useAdminData(adminSummaryApi.get, "admin-summary");
+  const summary = useAdminData(token => adminSummaryApi.get(token, branchId), `admin-summary:${branchId ?? "all"}`);
 
   const stats = [
     { label: "Students", value: data?.students, icon: GraduationCap, href: "/admin/users?role=STUDENT" },
@@ -62,7 +65,7 @@ export default function AdminOverview() {
   return <>
     <PageHeader
       title={`Welcome back, ${user?.full_name.split(" ")[0] ?? "Admin"}`}
-      description="Here is what is happening across EduPulse Academy today."
+      description={branch ? `Here is what is happening at ${branch.name} today.` : headOffice ? "Here is what is happening across EduPulse Academy today." : "Here is what is happening at your branches today."}
       actions={<Button asChild><Link href="/admin/users?new=1"><UserPlus /> Add user</Link></Button>}
     />
     {error && <ErrorAlert message={error} onRetry={reload} />}

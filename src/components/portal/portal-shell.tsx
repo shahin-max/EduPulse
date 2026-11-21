@@ -16,13 +16,17 @@ import {
 } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { homeFor, request, type RoleCode, type User } from "@/lib/api";
+import { homeFor, isAnyAdmin, isHeadOffice, request, type AccessRole, type User } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { setDarkMode, useDarkMode } from "@/lib/theme";
 import { UserAvatar } from "@/components/admin/ui";
 import { NotificationsBell } from "./notifications";
 
-export type NavItem = { label: string; href: string; icon: LucideIcon; soon?: string };
+export type NavItem = {
+  label: string; href: string; icon: LucideIcon; soon?: string;
+  /** Hidden from branch admins (and closed to them if they open the address directly). */
+  headOfficeOnly?: boolean;
+};
 export type NavGroup = { group: string; items: NavItem[] };
 
 /** One signed-in area of the site (admin portal, faculty portal): its sidebar, home and who may enter. */
@@ -35,7 +39,7 @@ export type PortalConfig = {
   subtitle: string;
   nav: NavGroup[];
   /** Roles that may use the portal. */
-  roles: RoleCode[];
+  roles: AccessRole[];
   denied: { title: string; text: string };
   /** "My account" link in the user menu; omitted when the portal has no account page. */
   accountHref?: (user: User) => string;
@@ -44,6 +48,8 @@ export type PortalConfig = {
    * sign in but see "opening soon" instead of the portal.
    */
   staged?: boolean;
+  /** Extra controls in the top bar, before the notifications bell (e.g. the admin branch switcher). */
+  toolbar?: React.ComponentType;
 };
 
 /** Which portals the API has open; null while loading. Fails open: the API enforces it anyway. */
@@ -76,7 +82,9 @@ function FullScreen({ children }: { children: React.ReactNode }) {
 export default function PortalShell({ config, children }: { config: PortalConfig; children: React.ReactNode }) {
   const { user, status, logout } = useAuth();
   const router = useRouter();
-  const gated = !!config.staged && !!user && !user.roles.includes("ADMIN");
+  const pathname = usePathname();
+  // Head office and branch admins alike may use the admin portal before the others open.
+  const gated = !!config.staged && !!user && !isAnyAdmin(user);
   const portalsOpen = usePortalsOpen(gated);
 
   useEffect(() => { if (status === "anonymous") router.replace("/login"); }, [status, router]);
@@ -119,13 +127,26 @@ export default function PortalShell({ config, children }: { config: PortalConfig
     </Card>
   </FullScreen>;
 
+  const headOfficeArea = config.nav.flatMap(section => section.items)
+    .find(item => item.headOfficeOnly && (pathname === item.href || pathname.startsWith(`${item.href}/`)));
+  const blocked = !!headOfficeArea && !isHeadOffice(user);
+
   return <PortalContext.Provider value={config}>
     <TooltipProvider delayDuration={200}>
       <SidebarProvider>
         <PortalSidebar config={config} />
         <SidebarInset className="min-w-0">
           <PortalTopbar config={config} />
-          <main id="main" className="@container/main mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8 print:max-w-none print:p-0">{children}</main>
+          <main id="main" className="@container/main mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8 print:max-w-none print:p-0">
+            {blocked ? <Card className="mx-auto mt-8 w-full max-w-sm text-center">
+              <CardHeader className="items-center">
+                <ShieldAlert className="mx-auto size-10 text-primary" />
+                <CardTitle>Head office only</CardTitle>
+                <CardDescription>{headOfficeArea.label} is managed by head office. Ask them if something here needs changing.</CardDescription>
+              </CardHeader>
+              <CardFooter className="justify-center"><Button asChild><Link href={config.base}>Back to overview</Link></Button></CardFooter>
+            </Card> : children}
+          </main>
         </SidebarInset>
       </SidebarProvider>
       <Toaster richColors position="top-right" />
@@ -140,6 +161,11 @@ function useIsActive(base: string) {
 
 function PortalSidebar({ config }: { config: PortalConfig }) {
   const isActive = useIsActive(config.base);
+  const { user } = useAuth();
+  const headOffice = isHeadOffice(user);
+  const nav = config.nav
+    .map(section => ({ ...section, items: section.items.filter(item => headOffice || !item.headOfficeOnly) }))
+    .filter(section => section.items.length > 0);
   const { isMobile, setOpenMobile } = useSidebar();
   const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
 
@@ -163,7 +189,7 @@ function PortalSidebar({ config }: { config: PortalConfig }) {
     </SidebarHeader>
 
     <SidebarContent>
-      {config.nav.map(section => <SidebarGroup key={section.group}>
+      {nav.map(section => <SidebarGroup key={section.group}>
         <SidebarGroupLabel>{section.group}</SidebarGroupLabel>
         <SidebarMenu>
           {section.items.map(({ label, href, icon: Icon, soon }) => <SidebarMenuItem key={href}>
@@ -201,10 +227,10 @@ function UserMenu({ config }: { config: PortalConfig }) {
   if (!user) return null;
   // People with more than one role (e.g. an admin who also teaches) can switch portals here.
   const switches = [
-    { roles: ["ADMIN"], base: "/admin", label: "Admin portal" },
+    { roles: ["ADMIN", "BRANCH_ADMIN"], base: "/admin", label: "Admin portal" },
     { roles: ["FACULTY"], base: "/teach", label: "Faculty portal" },
     { roles: ["STUDENT"], base: "/student", label: "Student portal" },
-  ].filter(s => s.base !== config.base && s.roles.some(r => user.roles.includes(r as RoleCode)));
+  ].filter(s => s.base !== config.base && s.roles.some(r => user.roles.includes(r as AccessRole)));
   return <DropdownMenu>
     <DropdownMenuTrigger asChild>
       <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
@@ -254,6 +280,7 @@ function PortalTopbar({ config }: { config: PortalConfig }) {
         {atHome && <><BreadcrumbSeparator className="hidden sm:inline-flex" /><BreadcrumbItem><BreadcrumbPage>{items.find(item => item.href === config.base)?.label ?? "Overview"}</BreadcrumbPage></BreadcrumbItem></>}
       </BreadcrumbList>
     </Breadcrumb>
+    {config.toolbar && <config.toolbar />}
     <NotificationsBell />
     <Button variant="ghost" size="icon" onClick={() => setDarkMode(!dark)} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}>
       {dark ? <Sun /> : <Moon />}

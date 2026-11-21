@@ -14,12 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import type { RoleCode } from "@/lib/api";
+import { isHeadOffice, type RoleCode } from "@/lib/api";
 import { ROLES, USER_STATUSES, usersApi, type AdminUser, type ListUsersQuery, type UserStatus } from "@/lib/admin-api";
 import { downloadCsv } from "@/lib/teaching-api";
 import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAdminData } from "./use-admin-data";
-import { DeleteUserDialog, UserFormDialog } from "./user-dialogs";
+import { BRANCH_ADMIN_ROLES, DeleteUserDialog, UserFormDialog } from "./user-dialogs";
 import { ErrorAlert, formatDate, PageHeader, Pager, RoleBadges, StatusBadge, titleCase, UserAvatar } from "./ui";
 
 const ALL = "all";
@@ -29,7 +29,10 @@ export default function UsersList() {
   const params = useSearchParams();
   const { user: me, withToken } = useAuth();
   const [exporting, setExporting] = useState<string | null>(null);
-  const [role, setRole] = useState<RoleCode | undefined>(pick(params.get("role"), ROLES));
+  // Branch admins see their branches' students and faculty (and students not admitted anywhere yet).
+  const headOffice = isHeadOffice(me);
+  const roleOptions = headOffice ? ROLES : BRANCH_ADMIN_ROLES;
+  const [role, setRole] = useState<RoleCode | undefined>(pick(params.get("role"), roleOptions));
   const [status, setStatus] = useState<UserStatus | undefined>(pick(params.get("status"), USER_STATUSES));
   const [searchText, setSearchText] = useState("");
   const [search, setSearch] = useState("");
@@ -77,10 +80,11 @@ export default function UsersList() {
     edit: (u: AdminUser) => { setEditing(u); setFormOpen(true); },
     remove: (u: AdminUser) => setDeleting(u),
     isSelf: (u: AdminUser) => me?.id === u.id,
+    canDelete: headOffice,
   };
 
   return <>
-    <PageHeader title="Users" description="Manage students, faculty and admins." actions={<>
+    <PageHeader title="Users" description={headOffice ? "Manage students, faculty and admins." : "Students and faculty at your branches."} actions={<>
       <Button variant="outline" disabled={exporting !== null || !data?.meta.total} onClick={() => void exportUsers({ role, status, search, includeDeleted })}>
         {exporting !== null ? <Loader2 className="animate-spin" /> : <Download />}{exporting ?? "Export CSV"}
       </Button>
@@ -98,7 +102,7 @@ export default function UsersList() {
             <SelectTrigger className="w-full sm:w-36" aria-label="Filter by role"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All roles</SelectItem>
-              {ROLES.map(r => <SelectItem key={r} value={r}>{titleCase(r)}</SelectItem>)}
+              {roleOptions.map(r => <SelectItem key={r} value={r}>{titleCase(r)}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={status ?? ALL} onValueChange={v => { setStatus(v === ALL ? undefined : v as UserStatus); setPage(1); }}>
@@ -133,7 +137,7 @@ export default function UsersList() {
   </>;
 }
 
-type RowHandlers = { edit: (u: AdminUser) => void; remove: (u: AdminUser) => void; isSelf: (u: AdminUser) => boolean };
+type RowHandlers = { edit: (u: AdminUser) => void; remove: (u: AdminUser) => void; isSelf: (u: AdminUser) => boolean; canDelete: boolean };
 
 /** The ⋮ menu of a user row: view, edit, delete (disabled for yourself and deleted accounts). */
 function UserActions({ user, actions }: { user: AdminUser; actions: RowHandlers }) {
@@ -141,7 +145,7 @@ function UserActions({ user, actions }: { user: AdminUser; actions: RowHandlers 
   return <RowActions label={user.full_name} items={[
     { label: "View", icon: Eye, href: `/admin/users/${user.id}` },
     { label: "Edit", icon: Pencil, onSelect: () => actions.edit(user), disabled: deleted, hint: deleted ? "Deleted accounts cannot be edited" : undefined },
-    { label: "Delete", icon: Trash2, onSelect: () => actions.remove(user), destructive: true, disabled: deleted || actions.isSelf(user),
+    actions.canDelete && { label: "Delete", icon: Trash2, onSelect: () => actions.remove(user), destructive: true, disabled: deleted || actions.isSelf(user),
       hint: actions.isSelf(user) ? "You cannot delete your own account" : deleted ? "Already deleted" : undefined },
   ]} />;
 }

@@ -10,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import {
-  announcementsApi, AUDIENCES,
+  announcementsApi, AUDIENCES, BRANCH_ADMIN_AUDIENCES,
   type Announcement, type AnnouncementAudience, type UpdateAnnouncementInput,
 } from "@/lib/admin-ops-api";
+import { useBranchScope } from "../branch-scope";
 import { batchLabel, useIsAdmin, useStaffBatches } from "@/components/staff/use-staff";
 import { ErrorAlert, errorText, Field, formatDate, Optional } from "../ui";
 import { AUDIENCE_HELP, audienceLabel, StatusPill } from "./announcement-bits";
@@ -57,12 +58,19 @@ function ArchivedView({ announcement: a, onClose }: { announcement: Announcement
 
 function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: Announcement; onSaved: (a: Announcement) => void; onClose: () => void }) {
   const { withToken } = useAuth();
-  // Admins post to anyone; faculty only to batches they teach (the API enforces this too).
+  // Head office posts to anyone; branch admins to one of their branches or a batch; faculty only to
+  // batches they teach (the API enforces all of this too).
   const admin = useIsAdmin();
+  const scope = useBranchScope();
+  const audiences = scope.isHeadOffice ? AUDIENCES : BRANCH_ADMIN_AUDIENCES;
+  const branchOptions = scope.branches.filter(b => b.is_active !== false);
   const [title, setTitle] = useState(announcement?.title ?? "");
   const [body, setBody] = useState(announcement?.body ?? "");
-  const [audience, setAudience] = useState<AnnouncementAudience>(announcement?.audience ?? (admin ? "ALL" : "BATCH"));
+  const [audience, setAudience] = useState<AnnouncementAudience>(announcement?.audience ?? (!admin ? "BATCH" : scope.isHeadOffice ? "ALL" : "BRANCH"));
   const [batchId, setBatchId] = useState(announcement?.batch_id ? String(announcement.batch_id) : "");
+  // New branch notices start at the branch picked in the header, or the only branch a branch admin runs.
+  const [branchId, setBranchId] = useState(() => announcement?.branch_id ? String(announcement.branch_id)
+    : scope.branchId ? String(scope.branchId) : branchOptions.length === 1 ? String(branchOptions[0].id) : "");
   const [publishAt, setPublishAt] = useState(toLocalInput(announcement?.publish_at ?? null));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<"draft" | "publish" | "save" | null>(null);
@@ -75,6 +83,7 @@ function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: A
     if (title.trim().length < 2) return setError("Enter a title of at least 2 characters.");
     if (!body.trim()) return setError("Write the announcement text.");
     if (audience === "BATCH" && !batchId) return setError("Choose the batch this announcement is for.");
+    if (audience === "BRANCH" && !branchId) return setError("Choose the branch this announcement is for.");
     setBusy(mode);
     setError("");
     try {
@@ -83,6 +92,7 @@ function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: A
         saved = await withToken(token => announcementsApi.create(token, {
           title: title.trim(), body, audience,
           batchId: audience === "BATCH" ? Number(batchId) : undefined,
+          branchId: audience === "BRANCH" ? Number(branchId) : undefined,
           publishAt: fromLocalInput(publishAt) ?? undefined,
           publish: mode === "publish" || undefined,
         }));
@@ -95,6 +105,8 @@ function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: A
         if (audience !== announcement.audience) patch.audience = audience;
         const nextBatch = audience === "BATCH" ? Number(batchId) : null;
         if (nextBatch !== announcement.batch_id) patch.batchId = nextBatch;
+        const nextBranch = audience === "BRANCH" ? Number(branchId) : null;
+        if (nextBranch !== announcement.branch_id) patch.branchId = nextBranch;
         const nextPublishAt = fromLocalInput(publishAt);
         if (toLocalInput(nextPublishAt) !== toLocalInput(announcement.publish_at)) patch.publishAt = nextPublishAt;
         saved = Object.keys(patch).length ? await withToken(token => announcementsApi.update(token, announcement.id, patch)) : announcement;
@@ -122,7 +134,7 @@ function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: A
       <DialogTitle>{announcement ? "Edit announcement" : "New announcement"}</DialogTitle>
       <DialogDescription>{announcement
         ? published ? "This announcement is live; changes show immediately." : "Edit the draft, then publish it when ready."
-        : admin ? "Save as a draft, or publish now to notify the audience." : "Post to one of your batches. Save as a draft, or publish now to notify its students."}</DialogDescription>
+        : admin ? scope.isHeadOffice ? "Save as a draft, or publish now to notify the audience." : "Post to one of your branches or a batch. Save as a draft, or publish now to notify them." : "Post to one of your batches. Save as a draft, or publish now to notify its students."}</DialogDescription>
     </DialogHeader>
     <Field id="an-title" label="Title">
       <Input id="an-title" required minLength={2} maxLength={200} value={title} onChange={e => setTitle(e.target.value)} placeholder="Holiday on Friday" />
@@ -134,7 +146,19 @@ function AnnouncementForm({ announcement, onSaved, onClose }: { announcement?: A
       {admin && <Field id="an-audience" label="Audience" hint={AUDIENCE_HELP[audience]}>
         <Select value={audience} onValueChange={v => setAudience(v as AnnouncementAudience)}>
           <SelectTrigger id="an-audience" className="w-full"><SelectValue /></SelectTrigger>
-          <SelectContent>{AUDIENCES.map(a => <SelectItem key={a} value={a}>{audienceLabel({ audience: a, batches: null })}</SelectItem>)}</SelectContent>
+          <SelectContent>
+            {announcement && !audiences.includes(announcement.audience) && <SelectItem value={announcement.audience}>{audienceLabel({ audience: announcement.audience, batches: null })}</SelectItem>}
+            {audiences.map(a => <SelectItem key={a} value={a}>{audienceLabel({ audience: a, batches: null })}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </Field>}
+      {audience === "BRANCH" && <Field id="an-branch" label="Branch">
+        <Select value={branchId} onValueChange={setBranchId}>
+          <SelectTrigger id="an-branch" className="w-full"><SelectValue placeholder="Choose a branch" /></SelectTrigger>
+          <SelectContent>
+            {announcement?.branches && !branchOptions.some(b => b.id === announcement.branches!.id) && <SelectItem value={String(announcement.branches.id)}>{announcement.branches.name}</SelectItem>}
+            {branchOptions.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}
+          </SelectContent>
         </Select>
       </Field>}
       {audience === "BATCH" && <Field id="an-batch" label="Batch" hint={batchHint}>

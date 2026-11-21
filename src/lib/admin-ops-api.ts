@@ -1,4 +1,4 @@
-import { request } from "@/lib/api";
+import { request, type BranchRef } from "@/lib/api";
 import { json, query, type Paginated } from "@/lib/admin-api";
 
 /**
@@ -35,6 +35,8 @@ export type Enquiry = {
   created_at: string;
   updated_at: string;
   courses: { id: number; code: string; title: string } | null;
+  /** The branch the enquiry is routed to; null until head office routes it. */
+  branches: BranchRef | null;
   users: Ref | null;
   _count?: { enquiry_notes: number };
 };
@@ -42,8 +44,10 @@ export type Enquiry = {
 /** A call note on an enquiry (oldest first). */
 export type EnquiryNote = { id: number; body: string; created_at: string; users: Ref | null };
 
-export type ListEnquiriesQuery = { page?: number; limit?: number; status?: EnquiryStatus; courseId?: number; assignedTo?: number; search?: string };
-export type UpdateEnquiryInput = { status?: EnquiryStatus; assignedTo?: number | null };
+/** `branchId`: one branch (branch admins: one of theirs). `unrouted`: head office, enquiries without a branch. */
+export type ListEnquiriesQuery = { page?: number; limit?: number; status?: EnquiryStatus; courseId?: number; assignedTo?: number; search?: string; branchId?: number; unrouted?: boolean };
+/** `branchId` routes the enquiry to a branch (admins; a branch admin only to one of theirs). */
+export type UpdateEnquiryInput = { status?: EnquiryStatus; assignedTo?: number | null; branchId?: number };
 
 export const enquiriesApi = {
   list: (token: string, params: ListEnquiriesQuery = {}) => request<Paginated<Enquiry>>(`/admission-enquiries${query(params)}`, { token }),
@@ -69,7 +73,8 @@ export type AdminSummary = {
 };
 
 export const adminSummaryApi = {
-  get: (token: string) => request<AdminSummary>("/reports/admin-summary", { token }),
+  /** `branchId` narrows to one branch; omitted: every branch the admin can see. */
+  get: (token: string, branchId?: number) => request<AdminSummary>(`/reports/admin-summary${query({ branchId })}`, { token }),
 };
 
 /** Courses for the enquiry filter (staff see drafts and archived ones too with includeAll). */
@@ -88,9 +93,11 @@ export const waDigits = (mobile: string) => mobile.replace(/\D/g, "");
 export type AnnouncementStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export const ANNOUNCEMENT_STATUSES: AnnouncementStatus[] = ["DRAFT", "PUBLISHED", "ARCHIVED"];
 
-/** BRANCH exists in the schema but the API refuses it until branch membership exists, so it is not offered. */
+/** BRANCH: everyone studying, teaching or working at one branch (head office or that branch's admins). */
 export type AnnouncementAudience = "ALL" | "ADMINS" | "FACULTY" | "STUDENTS" | "BATCH" | "BRANCH";
-export const AUDIENCES: Exclude<AnnouncementAudience, "BRANCH">[] = ["ALL", "STUDENTS", "FACULTY", "ADMINS", "BATCH"];
+export const AUDIENCES: AnnouncementAudience[] = ["ALL", "STUDENTS", "FACULTY", "ADMINS", "BRANCH", "BATCH"];
+/** What a branch admin may post to. */
+export const BRANCH_ADMIN_AUDIENCES: AnnouncementAudience[] = ["BRANCH", "BATCH"];
 
 export type Announcement = {
   id: number;
@@ -104,6 +111,7 @@ export type Announcement = {
   created_by: number | null;
   created_at: string;
   batches: BatchOption | null;
+  branches?: BranchRef | null;
   users: Ref | null;
 };
 
@@ -115,6 +123,8 @@ export type CreateAnnouncementInput = {
   audience: AnnouncementAudience;
   /** Required when audience is BATCH, and only then. */
   batchId?: number;
+  /** Required when audience is BRANCH, and only then. */
+  branchId?: number;
   /** ISO date-time; schedules visibility and notifications. */
   publishAt?: string;
   publish?: boolean;
@@ -125,6 +135,8 @@ export type UpdateAnnouncementInput = {
   body?: string;
   audience?: AnnouncementAudience;
   batchId?: number | null;
+  /** null clears it (when moving away from BRANCH). */
+  branchId?: number | null;
   publishAt?: string | null;
 };
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, MessageCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandSelect } from "@/components/brand-select";
-import { publicApi, request, type ApiCourse } from "@/lib/api";
+import { publicApi, request, type ApiCourse, type PublicBranch } from "@/lib/api";
 import { programs } from "@/lib/site";
 import { useContactInfo, whatsappHref } from "@/lib/site-content";
 
@@ -13,6 +13,42 @@ const programOptions = [...programs.map(p => p.title), NOT_SURE];
 
 /** Same rule as MOBILE_REGEX in the API once spaces and dashes are removed: 10-15 digits, optional +. */
 export const PHONE_PATTERN = "\\+?[0-9 \\-]{10,20}";
+
+/** First option of the branch picker: no preference, so no branchId is sent. */
+export const ANY_BRANCH = "Any branch / not sure";
+
+/** "Civil Lines" or, when two branches share a name, "Civil Lines (ALG)". */
+const branchLabel = (branch: PublicBranch, all: PublicBranch[]) =>
+  all.filter(b => b.name === branch.name).length > 1 ? `${branch.name} (${branch.code})` : branch.name;
+
+/**
+ * Active branches for the optional "Preferred branch" picker on public enquiry forms. The picker is
+ * shown only when there are two or more; if the call fails it stays hidden and the form still works.
+ * `branchIdFor` turns the chosen option back into an id (undefined for "Any branch").
+ */
+export function usePublicBranches() {
+  const [branches, setBranches] = useState<PublicBranch[]>([]);
+  useEffect(() => {
+    let live = true;
+    publicApi.branches().then(list => { if (live) setBranches(list); }).catch(() => {});
+    return () => { live = false; };
+  }, []);
+  const options = branches.map(b => branchLabel(b, branches));
+  return {
+    show: branches.length > 1,
+    options: [ANY_BRANCH, ...options],
+    branchIdFor: (label: string) => branches.find((b, i) => options[i] === label)?.id,
+  };
+}
+
+/** The "Preferred branch" field, or nothing when there is only one branch (or none could be loaded). */
+export function BranchField({ branches }: { branches: ReturnType<typeof usePublicBranches> }) {
+  if (!branches.show) return null;
+  return <div className="enquiry-field">
+    <span id="branch-label" className="enquiry-label label-text">Preferred branch <span>(optional)</span></span>
+    <BrandSelect name="branch" aria-labelledby="branch-label" options={branches.options} />
+  </div>;
+}
 
 type Sent = { kind: "saved"; id: number; whatsapp: string } | { kind: "failed"; message: string; whatsapp: string };
 
@@ -25,6 +61,7 @@ export default function EnquiryForm({ defaultProgram }: { defaultProgram?: strin
   const contact = useContactInfo();
   const preselected = programs.find(p => p.slug === defaultProgram)?.title;
   const [courses, setCourses] = useState<ApiCourse[]>([]);
+  const branches = usePublicBranches();
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<Sent | null>(null);
 
@@ -40,11 +77,13 @@ export default function EnquiryForm({ defaultProgram }: { defaultProgram?: strin
     const programTitle = get("program");
     const program = programs.find(p => p.title === programTitle);
     const course = courses.find(c => program?.courseSlugs.includes(c.slug));
+    const branchId = branches.branchIdFor(get("branch"));
     const whatsapp = whatsappHref(contact, [
       "Hello EduPulse Academy, I would like to know more.",
       `Name: ${get("name")}`,
       `Phone: ${get("phone")}`,
       `Interested in: ${programTitle}`,
+      branchId && `Branch: ${get("branch")}`,
       get("message") && `Message: ${get("message")}`,
     ].filter(Boolean).join("\n"));
 
@@ -57,6 +96,7 @@ export default function EnquiryForm({ defaultProgram }: { defaultProgram?: strin
         interestedCourseId: course?.id,
         message: [`Program: ${programTitle}`, get("message")].filter(Boolean).join("\n"),
         source: "WEBSITE",
+        branchId,
       });
       setSent({ kind: "saved", id: enquiry.id, whatsapp });
     } catch (e) {
@@ -83,6 +123,7 @@ export default function EnquiryForm({ defaultProgram }: { defaultProgram?: strin
     </div>
     <label><span className="label-text">Email <span>(optional)</span></span><input name="email" type="email" autoComplete="email" maxLength={254} placeholder="you@example.com" /></label>
     <div className="enquiry-field"><span id="program-label" className="enquiry-label">Program of interest</span><BrandSelect key={preselected ?? "default"} name="program" aria-labelledby="program-label" options={programOptions} defaultValue={preselected} /></div>
+    <BranchField branches={branches} />
     <label><span className="label-text">Message <span>(optional)</span></span><textarea name="message" rows={3} maxLength={1000} placeholder="Class, preferred timing, or any question" /></label>
     {sent?.kind === "failed" && <div className="enquiry-error" role="alert">
       <AlertCircle size={16} aria-hidden="true" />

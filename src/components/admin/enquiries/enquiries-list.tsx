@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Inbox, Loader2, MessageSquareText, PanelRightOpen, RefreshCw, Search } from "lucide-react";
+import { Building2, Download, Inbox, Loader2, MessageSquareText, PanelRightOpen, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { downloadCsv } from "@/lib/teaching-api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,32 +16,45 @@ import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { cn } from "@/lib/utils";
 import { ENQUIRY_STATUSES, enquiriesApi, listCourses, type Enquiry, type EnquiryStatus, type ListEnquiriesQuery } from "@/lib/admin-ops-api";
 import { useAdminData } from "../use-admin-data";
+import { useBranchPage, useBranchScope, type ScopeBranch } from "../branch-scope";
 import { useIsAdmin } from "@/components/staff/use-staff";
-import { EmptyState, ErrorAlert, formatDate, LoadingRows, PageHeader, Pager, titleCase } from "../ui";
+import { EmptyState, ErrorAlert, errorText, Field, formatDate, LoadingRows, PageHeader, Pager, Pill, titleCase } from "../ui";
 import { contactActions, loadStaff, SourcePill, StatusPill } from "./enquiry-bits";
 import { EnquirySheet } from "./enquiry-sheet";
 
 const ALL = "all";
 
-/** Admins see every enquiry; faculty (in the faculty portal) only the ones assigned to them, which the API enforces. */
+/**
+ * Admins see every enquiry (branch admins: their branches'); faculty (in the faculty portal) only the ones
+ * assigned to them, which the API enforces. The admin header's branch switcher narrows the list; head office
+ * can also list the enquiries not routed to a branch yet and move them to one.
+ */
 export default function EnquiriesList() {
   const admin = useIsAdmin();
+  const scope = useBranchScope();
+  const [unrouted, setUnrouted] = useState(false);
+  // Routing needs a branch to route to: head office, or a branch admin with several branches.
+  const moveTargets = scope.branches.filter(b => b.is_active !== false);
+  const canMove = admin && (scope.isHeadOffice ? moveTargets.length > 0 : moveTargets.length > 1);
+  const showBranch = admin && (scope.isHeadOffice || scope.branches.length > 1);
+  const [moving, setMoving] = useState<Enquiry | null>(null);
   const [status, setStatus] = useState<EnquiryStatus | undefined>();
   const [courseId, setCourseId] = useState<number | undefined>();
   const [assignedTo, setAssignedTo] = useState<number | undefined>();
   const [searchText, setSearchText] = useState("");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const where = unrouted && scope.isHeadOffice ? { unrouted: true } : { branchId: scope.branchId };
+  const [page, setPage] = useBranchPage(scope.branchId);
   const [selected, setSelected] = useState<Enquiry | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => { setSearch(searchText.trim()); setPage(1); }, 300);
     return () => clearTimeout(timer);
-  }, [searchText]);
+  }, [searchText, setPage]);
 
-  const query = { status, courseId, assignedTo, search, page, limit: 20 };
+  const query = { status, courseId, assignedTo, search, ...where, page, limit: 20 };
   const { data, error, loading, reload } = useAdminData(token => enquiriesApi.list(token, query), JSON.stringify(query));
-  const newCount = useAdminData(token => enquiriesApi.list(token, { status: "NEW", limit: 1 }), "new");
+  const newCount = useAdminData(token => enquiriesApi.list(token, { status: "NEW", ...where, limit: 1 }), `new:${JSON.stringify(where)}`);
   // Faculty cannot list users, and cannot reassign anyway.
   const staff = useAdminData(token => admin ? loadStaff(token) : Promise.resolve([]), `staff:${admin}`);
   const courses = useAdminData(listCourses, "courses");
@@ -48,7 +62,7 @@ export default function EnquiriesList() {
   const refresh = () => { reload(); newCount.reload(); };
   const onChanged = (updated: Enquiry) => { setSelected(updated); refresh(); };
   const filterStatus = (value: EnquiryStatus | undefined) => { setStatus(value); setPage(1); };
-  const filtered = !!(status || courseId || assignedTo || search);
+  const filtered = !!(status || courseId || assignedTo || search || "unrouted" in where);
   const newTotal = newCount.data?.meta.total;
 
   return <>
@@ -56,7 +70,7 @@ export default function EnquiriesList() {
       ? "Admission enquiries and callback requests from the website."
       : "Enquiries the office assigned to you. Call them back and keep the status up to date."}
       actions={<>
-        {admin && <ExportEnquiries filters={{ status, courseId, assignedTo, search }} disabled={!data?.meta.total} />}
+        {admin && <ExportEnquiries filters={{ status, courseId, assignedTo, search, ...where }} disabled={!data?.meta.total} />}
         <Button variant="outline" onClick={refresh} disabled={loading}><RefreshCw className={cn(loading && "animate-spin")} /> Refresh</Button>
       </>} />
 
@@ -100,6 +114,10 @@ export default function EnquiriesList() {
               {staff.data?.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.full_name}</SelectItem>)}
             </SelectContent>
           </Select>}
+          {admin && scope.isHeadOffice && <Button variant={unrouted ? "secondary" : "outline"} aria-pressed={unrouted} onClick={() => { setUnrouted(u => !u); setPage(1); }}
+            title="Enquiries not routed to a branch yet">
+            <Building2 />{unrouted ? "Unassigned only" : "Unassigned"}
+          </Button>}
         </div>
       </div>
 
@@ -110,15 +128,17 @@ export default function EnquiriesList() {
           title={filtered ? "No enquiries match these filters" : admin ? "No enquiries yet" : "No enquiries assigned to you"}
           description={filtered ? "Try a different search or clear the filters." : admin ? "Requests from the website's callback and admission forms appear here." : "When the office assigns you an enquiry to follow up, it appears here."} />}
         {data && data.data.length > 0 && <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
-          <EnquiriesTable rows={data.data} onOpen={setSelected} showAssignee={admin} />
-          <EnquiriesCards rows={data.data} onOpen={setSelected} />
+          <EnquiriesTable rows={data.data} onOpen={setSelected} showAssignee={admin} showBranch={showBranch} onMove={canMove ? setMoving : undefined} />
+          <EnquiriesCards rows={data.data} onOpen={setSelected} showBranch={showBranch} onMove={canMove ? setMoving : undefined} />
         </div>}
       </CardContent>
 
       {data && data.meta.total > 0 && <CardFooter className="border-t p-4 [.border-t]:pt-4"><div className="w-full"><Pager meta={data.meta} onPage={setPage} /></div></CardFooter>}
     </Card>
 
-    <EnquirySheet enquiry={selected} staff={staff.data ?? []} onOpenChange={open => { if (!open) setSelected(null); }} onChanged={onChanged} />
+    <EnquirySheet enquiry={selected} staff={staff.data ?? []} onOpenChange={open => { if (!open) setSelected(null); }} onChanged={onChanged}
+      branches={canMove ? moveTargets : []} />
+    <MoveEnquiryDialog enquiry={moving} branches={moveTargets} onOpenChange={open => { if (!open) setMoving(null); }} onMoved={refresh} />
   </>;
 }
 
@@ -132,13 +152,21 @@ const preview = (message: string | null) => {
   return (useful.length ? useful : lines).slice(0, 2).join(" · ");
 };
 
-function EnquiriesTable({ rows, onOpen, showAssignee }: { rows: Enquiry[]; onOpen: (e: Enquiry) => void; showAssignee: boolean }) {
+/** The enquiry's branch, or an "Unassigned" marker while head office has not routed it. */
+function BranchCell({ enquiry }: { enquiry: Enquiry }) {
+  return enquiry.branches ? <span className="truncate">{enquiry.branches.name}</span> : <Pill value="UNROUTED" tones={{ UNROUTED: "amber" }} label="Unassigned" />;
+}
+
+type RowProps = { rows: Enquiry[]; onOpen: (e: Enquiry) => void; showBranch: boolean; onMove?: (e: Enquiry) => void };
+
+function EnquiriesTable({ rows, onOpen, showAssignee, showBranch, onMove }: RowProps & { showAssignee: boolean }) {
   return <Table className="hidden @2xl/main:table">
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="pl-4">Enquiry</TableHead>
         <TableHead>Mobile</TableHead>
         <TableHead className="hidden @3xl/main:table-cell">Course</TableHead>
+        {showBranch && <TableHead className="hidden @3xl/main:table-cell">Branch</TableHead>}
         <TableHead>Status</TableHead>
         {showAssignee && <TableHead className="hidden @4xl/main:table-cell">Assigned to</TableHead>}
         <TableHead className="hidden @3xl/main:table-cell">Received</TableHead>
@@ -157,16 +185,17 @@ function EnquiriesTable({ rows, onOpen, showAssignee }: { rows: Enquiry[]; onOpe
         </TableCell>
         <TableCell className="tabular-nums text-muted-foreground">{e.mobile}</TableCell>
         <TableCell className="hidden max-w-[12rem] truncate text-muted-foreground @3xl/main:table-cell">{e.courses?.title ?? "—"}</TableCell>
+        {showBranch && <TableCell className="hidden max-w-[10rem] text-muted-foreground @3xl/main:table-cell"><BranchCell enquiry={e} /></TableCell>}
         <TableCell><StatusPill status={e.status} /></TableCell>
         {showAssignee && <TableCell className="hidden text-muted-foreground @4xl/main:table-cell">{e.users?.full_name ?? "Unassigned"}</TableCell>}
         <TableCell className="hidden text-muted-foreground @3xl/main:table-cell">{formatDate(e.created_at, true)}</TableCell>
-        <TableCell className="pr-4 text-right" onClick={ev => ev.stopPropagation()}><EnquiryActions enquiry={e} onOpen={onOpen} /></TableCell>
+        <TableCell className="pr-4 text-right" onClick={ev => ev.stopPropagation()}><EnquiryActions enquiry={e} onOpen={onOpen} onMove={onMove} /></TableCell>
       </TableRow>)}
     </TableBody>
   </Table>;
 }
 
-function EnquiriesCards({ rows, onOpen }: { rows: Enquiry[]; onOpen: (e: Enquiry) => void }) {
+function EnquiriesCards({ rows, onOpen, showBranch, onMove }: RowProps) {
   return <ul className="divide-y @2xl/main:hidden">
     {rows.map(e => <li key={e.id} className={cn("flex items-start gap-2 p-4", e.status === "NEW" && "bg-sky-500/5")}>
       <button type="button" className="grid min-w-0 flex-1 gap-1 text-left" onClick={() => onOpen(e)}>
@@ -182,19 +211,69 @@ function EnquiriesCards({ rows, onOpen }: { rows: Enquiry[]; onOpen: (e: Enquiry
           <NotesCount enquiry={e} />
           <span>{formatDate(e.created_at, true)}</span>
           {e.users && <span>· {e.users.full_name}</span>}
+          {showBranch && <BranchCell enquiry={e} />}
         </span>
       </button>
-      <EnquiryActions enquiry={e} onOpen={onOpen} />
+      <EnquiryActions enquiry={e} onOpen={onOpen} onMove={onMove} />
     </li>)}
   </ul>;
 }
 
-/** The ⋮ menu of an enquiry: open the follow-up sheet, call, WhatsApp. */
-function EnquiryActions({ enquiry, onOpen }: { enquiry: Enquiry; onOpen: (e: Enquiry) => void }) {
+/** The ⋮ menu of an enquiry: open the follow-up sheet, move it to a branch (admins), call, WhatsApp. */
+function EnquiryActions({ enquiry, onOpen, onMove }: { enquiry: Enquiry; onOpen: (e: Enquiry) => void; onMove?: (e: Enquiry) => void }) {
   return <RowActions label={enquiry.student_name} items={[
     { label: "Open", icon: PanelRightOpen, onSelect: () => onOpen(enquiry), hint: "Status, notes and assignee" },
+    onMove && { label: "Move to branch", icon: Building2, onSelect: () => onMove(enquiry), hint: enquiry.branches ? `Now: ${enquiry.branches.name}` : "Not routed yet" },
     ...contactActions(enquiry.mobile),
   ]} />;
+}
+
+/** Route an enquiry to a branch (PATCH branchId); that branch's admins then follow it up. */
+function MoveEnquiryDialog({ enquiry, branches, onOpenChange, onMoved }: {
+  enquiry: Enquiry | null;
+  branches: ScopeBranch[];
+  onOpenChange: (open: boolean) => void;
+  onMoved: () => void;
+}) {
+  const { withToken } = useAuth();
+  const [branchId, setBranchId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const close = () => { onOpenChange(false); setBranchId(""); };
+  const options = branches.filter(b => b.id !== enquiry?.branches?.id);
+
+  async function move() {
+    if (!enquiry || !branchId) return;
+    setBusy(true);
+    try {
+      await withToken(token => enquiriesApi.update(token, enquiry.id, { branchId: Number(branchId) }));
+      toast.success(`Moved to ${branches.find(b => String(b.id) === branchId)?.name ?? "the branch"}`);
+      onMoved();
+      close();
+    } catch (e) {
+      toast.error(errorText(e, "Could not move the enquiry."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <Dialog open={!!enquiry} onOpenChange={open => { if (!open) close(); }}>
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>Move {enquiry?.student_name} to a branch</DialogTitle>
+        <DialogDescription>{enquiry?.branches ? `Currently at ${enquiry.branches.name}.` : "This enquiry is not routed to a branch yet."} The branch&apos;s admins see it and follow it up.</DialogDescription>
+      </DialogHeader>
+      <Field id="move-branch" label="Branch">
+        <Select value={branchId} onValueChange={setBranchId}>
+          <SelectTrigger id="move-branch" className="w-full"><SelectValue placeholder="Choose a branch" /></SelectTrigger>
+          <SelectContent>{options.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}</SelectContent>
+        </Select>
+      </Field>
+      <DialogFooter>
+        <Button variant="outline" onClick={close}>Cancel</Button>
+        <Button disabled={!branchId || busy} onClick={() => void move()}>{busy ? <Loader2 className="animate-spin" /> : <Building2 />}Move</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>;
 }
 
 /** Admin-only CSV of every enquiry matching the current filters, fetched 100 at a time. */
@@ -213,9 +292,9 @@ function ExportEnquiries({ filters, disabled }: { filters: ListEnquiriesQuery; d
         if (p >= result.meta.totalPages) break;
       }
       downloadCsv(`enquiries-${(filters.status ?? "all").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`, [
-        ["Received", "Name", "Mobile", "Email", "Course", "Source", "Status", "Assigned to", "Notes", "Message"],
+        ["Received", "Name", "Mobile", "Email", "Course", "Branch", "Source", "Status", "Assigned to", "Notes", "Message"],
         ...rows.map(e => [
-          e.created_at.slice(0, 16).replace("T", " "), e.student_name, e.mobile, e.email, e.courses?.title, e.source,
+          e.created_at.slice(0, 16).replace("T", " "), e.student_name, e.mobile, e.email, e.courses?.title, e.branches?.name, e.source,
           e.status, e.users?.full_name, e._count?.enquiry_notes ?? 0, e.message,
         ]),
       ]);

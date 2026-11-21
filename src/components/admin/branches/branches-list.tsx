@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Building2, Mail, Pencil, Phone, Plus, Power, PowerOff, Search } from "lucide-react";
+import { Building2, Eye, Mail, Pencil, Phone, Plus, Power, PowerOff, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAuth } from "@/lib/auth";
+import { isHeadOffice } from "@/lib/api";
 import { branchesApi, type Branch } from "@/lib/admin-catalog-api";
 import { cn } from "@/lib/utils";
 import { useAdminData } from "../use-admin-data";
@@ -22,7 +24,9 @@ const place = (b: Branch) => [b.city, b.state].filter(Boolean).join(", ");
 const plural = (n: number, word: string, many = `${word}s`) => `${n} ${n === 1 ? word : many}`;
 
 export default function BranchesList() {
-  const { withToken } = useAuth();
+  const { withToken, user } = useAuth();
+  // Branch admins see their own branches (to manage staff); creating and editing branches is head office's.
+  const headOffice = isHeadOffice(user);
   const { data, error, loading, reload, setData } = useAdminData(token => branchesApi.list(token, true), "branches");
   const [show, setShow] = useState<Show>("all");
   const [search, setSearch] = useState("");
@@ -64,13 +68,16 @@ export default function BranchesList() {
   const openCreate = () => { setEditing(undefined); setFormOpen(true); };
   const actions: RowHandlers = {
     pending,
+    headOffice,
     edit: b => { setEditing(b); setFormOpen(true); },
     toggle: b => b.is_active ? setDeactivating(b) : setActive(b, true),
   };
 
   return <>
-    <PageHeader title="Branches" description="Centres where batches run and fees are collected. Each has its own invoice and receipt numbering."
-      actions={<Button onClick={openCreate}><Plus /> Add branch</Button>} />
+    <PageHeader title={headOffice ? "Branches" : "My branches"} description={headOffice
+      ? "Centres where batches run and fees are collected. Open one to manage its staff and courses."
+      : "The branches you run. Open one to see its staff and the courses it offers."}
+      actions={headOffice && <Button onClick={openCreate}><Plus /> Add branch</Button>} />
 
     <Card className="gap-0 py-0">
       <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-center">
@@ -92,7 +99,7 @@ export default function BranchesList() {
         {error && <div className="p-4"><ErrorAlert message={error} onRetry={reload} /></div>}
         {!data && loading && <LoadingRows />}
         {data && rows.length === 0 && (data.length === 0
-          ? <EmptyState icon={Building2} title="No branches yet" description="Add your first centre to start creating batches and collecting fees." action={<Button onClick={openCreate}><Plus /> Add branch</Button>} />
+          ? <EmptyState icon={Building2} title="No branches yet" description={headOffice ? "Add your first centre to start creating batches and collecting fees." : "You are not an admin of any active branch."} action={headOffice && <Button onClick={openCreate}><Plus /> Add branch</Button>} />
           : <EmptyState icon={Search} title="No branches match" description="Try a different search or filter." />)}
         {rows.length > 0 && <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <BranchesTable branches={rows} actions={actions} />
@@ -107,18 +114,19 @@ export default function BranchesList() {
   </>;
 }
 
-type RowHandlers = { pending: number | null; edit: (b: Branch) => void; toggle: (b: Branch) => void };
+type RowHandlers = { pending: number | null; headOffice: boolean; edit: (b: Branch) => void; toggle: (b: Branch) => void };
 
 const StatusPill = ({ branch }: { branch: Branch }) =>
   <Pill value={branch.is_active ? "ACTIVE" : "INACTIVE"} tones={{ ACTIVE: "green", INACTIVE: "gray" }} />;
 
-/** The ⋮ menu of a branch: edit, and activate / deactivate (deactivating asks first). */
+/** The ⋮ menu of a branch: open, and for head office edit and activate / deactivate (deactivating asks first). */
 function BranchActions({ branch, actions }: { branch: Branch; actions: RowHandlers }) {
   return <RowActions label={branch.name} busy={actions.pending === branch.id} items={[
-    { label: "Edit", icon: Pencil, onSelect: () => actions.edit(branch) },
-    branch.is_active
+    { label: "Open", icon: Eye, href: `/admin/branches/${branch.id}`, hint: "Staff and courses" },
+    actions.headOffice && { label: "Edit", icon: Pencil, onSelect: () => actions.edit(branch) },
+    actions.headOffice && (branch.is_active
       ? { label: "Deactivate", icon: PowerOff, onSelect: () => actions.toggle(branch), destructive: true, hint: "Hidden from new batches and staff" }
-      : { label: "Activate", icon: Power, onSelect: () => actions.toggle(branch) },
+      : { label: "Activate", icon: Power, onSelect: () => actions.toggle(branch) }),
   ]} />;
 }
 
@@ -139,7 +147,7 @@ function BranchesTable({ branches, actions }: { branches: Branch[]; actions: Row
     <TableBody>
       {branches.map(b => <TableRow key={b.id} className={cn(!b.is_active && "text-muted-foreground")}>
         <TableCell className="pl-4">
-          <p className="max-w-[16rem] truncate font-medium">{b.name}</p>
+          <Link href={`/admin/branches/${b.id}`} className="block max-w-[16rem] truncate font-medium hover:underline">{b.name}</Link>
           <p className="font-mono text-xs text-muted-foreground">{b.code}<span className="@3xl/main:hidden">{place(b) && ` · ${place(b)}`}</span></p>
         </TableCell>
         <TableCell className="hidden max-w-[12rem] truncate text-muted-foreground @3xl/main:table-cell">
@@ -166,7 +174,7 @@ function BranchesCards({ branches, actions }: { branches: Branch[]; actions: Row
     {branches.map(b => <li key={b.id} className="grid gap-3 p-4">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">{b.name}</p>
+          <Link href={`/admin/branches/${b.id}`} className="block truncate font-medium hover:underline">{b.name}</Link>
           <p className="truncate text-xs text-muted-foreground"><span className="font-mono">{b.code}</span>{place(b) && ` · ${place(b)}`}{b.pincode && ` ${b.pincode}`}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">

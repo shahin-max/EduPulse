@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { feeLookupsApi, INVOICE_STATUSES, invoicesApi, toPaise, type Invoice, type InvoiceStatus, type InvoiceSummary } from "@/lib/admin-fees-api";
 import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAdminData } from "../use-admin-data";
+import { useBranchPage, useBranchScope } from "../branch-scope";
 import { EmptyState, ErrorAlert, formatDate, formatMoney, LoadingRows, Pager, Pill, titleCase } from "../ui";
 import { INVOICE_TONES, isOverdue } from "./shared";
 
@@ -24,19 +25,19 @@ export default function InvoicesList({ onCreate }: { onCreate: () => void }) {
   const [batchId, setBatchId] = useState<number | undefined>();
   const [studentUserId, setStudentUserId] = useState<number | undefined>();
   const [overdue, setOverdue] = useState(false);
-  const [branchId, setBranchId] = useState<number | undefined>();
   const [searchText, setSearchText] = useState("");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  // The branch comes from the header's switcher.
+  const { branchId } = useBranchScope();
+  const [page, setPage] = useBranchPage(branchId);
 
   // Search after a short pause in typing.
   useEffect(() => {
     const timer = setTimeout(() => { setSearch(searchText.trim()); setPage(1); }, 300);
     return () => clearTimeout(timer);
-  }, [searchText]);
+  }, [searchText, setPage]);
 
-  const batches = useAdminData(token => feeLookupsApi.batches(token), "batches");
-  const branches = useAdminData(token => feeLookupsApi.branches(token), "branches");
+  const batches = useAdminData(token => feeLookupsApi.batches(token, { branchId }), `batches:${branchId ?? "all"}`);
   const roster = useAdminData(token => batchId ? feeLookupsApi.roster(token, batchId) : Promise.resolve([]), `roster:${batchId ?? ""}`);
 
   const query = { status, batchId, studentUserId, branchId, search: search || undefined, overdue: overdue || undefined, page, limit: 20 };
@@ -51,13 +52,6 @@ export default function InvoicesList({ onCreate }: { onCreate: () => void }) {
       </div>
     </div>
     <div className="grid grid-cols-2 gap-3 border-b p-4 sm:flex sm:flex-wrap sm:items-center">
-      {(branches.data?.length ?? 0) > 1 && <Select value={branchId ? String(branchId) : ALL} onValueChange={v => { setBranchId(v === ALL ? undefined : Number(v)); setPage(1); }}>
-        <SelectTrigger className="w-full sm:w-44 [&>span]:truncate" aria-label="Filter by branch"><SelectValue /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL}>All branches</SelectItem>
-          {branches.data?.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}
-        </SelectContent>
-      </Select>}
       <Select value={status ?? ALL} onValueChange={v => { setStatus(v === ALL ? undefined : v as InvoiceStatus); setPage(1); }}>
         <SelectTrigger className="w-full sm:w-40" aria-label="Filter by status"><SelectValue /></SelectTrigger>
         <SelectContent>

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/lib/auth";
 import { EmptyState, ErrorAlert, errorText, LoadingRows, PageHeader, Pill } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
-import { useIsAdmin, useStaffBatches } from "@/components/staff/use-staff";
+import { useIsHeadOffice, useStaffBatches } from "@/components/staff/use-staff";
 import { coursesApi, type Chapter } from "@/lib/admin-catalog-api";
 import { MATERIAL_KIND_LABEL, materialsApi, type MaterialKind, type StudyMaterial } from "@/lib/staff-learning-api";
 import { AddChapterDialog, DeleteMaterialDialog, MaterialFormDialog } from "./material-dialogs";
@@ -27,7 +27,7 @@ const KIND_TONES: Partial<Record<MaterialKind, "blue" | "violet" | "amber" | "re
 
 /** Study material library: course -> subject -> chapter -> materials. Used in the admin and faculty portals. */
 export default function MaterialsLibrary() {
-  const admin = useIsAdmin();
+  const admin = useIsHeadOffice();
   const staff = useStaffBatches();
   // Admins can work on any course; faculty on the courses of the batches they teach.
   const allCourses = useAdminData(token => admin ? coursesApi.list(token) : Promise.resolve([]), `materials-courses:${admin}`);

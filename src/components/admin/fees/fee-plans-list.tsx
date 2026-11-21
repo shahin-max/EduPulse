@@ -11,6 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { feeLookupsApi, feePlansApi, type FeeBranch, type FeePlanListItem } from "@/lib/admin-fees-api";
 import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { useAdminData } from "../use-admin-data";
+import { useAuth } from "@/lib/auth";
+import { isHeadOffice } from "@/lib/api";
 import { EmptyState, ErrorAlert, formatMoney, LoadingRows, Pill } from "../ui";
 import { FeePlanFormDialog } from "./fee-plan-dialogs";
 
@@ -28,6 +30,11 @@ export default function FeePlansList({ onCreate }: { onCreate: () => void }) {
   const [courseId, setCourseId] = useState<number | undefined>();
   const [activeOnly, setActiveOnly] = useState(false);
   const [editing, setEditing] = useState<FeePlanListItem | null>(null);
+  // Plans for every branch are set by head office; branch admins see them read-only.
+  const headOffice = isHeadOffice(useAuth().user);
+  const planActions = (p: FeePlanListItem) => [headOffice || p.branch_id !== null || p.batch_id !== null
+    ? { label: "Edit plan", icon: Pencil, onSelect: () => setEditing(p) }
+    : { label: "Edit plan", icon: Pencil, disabled: true, hint: "Plans for every branch are set by head office" }];
 
   const courses = useAdminData(token => feeLookupsApi.courses(token), "courses");
   const branches = useAdminData(token => feeLookupsApi.branches(token), "branches");
@@ -76,7 +83,7 @@ export default function FeePlansList({ onCreate }: { onCreate: () => void }) {
               <TableCell className="text-muted-foreground">{planScope(p, branches.data)}</TableCell>
               <TableCell className="text-right font-medium tabular-nums">{formatMoney(p.amount, p.currency)}</TableCell>
               <TableCell><Pill value={p.is_active ? "ACTIVE" : "INACTIVE"} tones={ACTIVE_TONES} /></TableCell>
-              <TableCell className="pr-4 text-right"><RowActions label={p.title} items={[{ label: "Edit plan", icon: Pencil, onSelect: () => setEditing(p) }]} /></TableCell>
+              <TableCell className="pr-4 text-right"><RowActions label={p.title} items={planActions(p)} /></TableCell>
             </TableRow>)}
           </TableBody>
         </Table>
@@ -89,7 +96,7 @@ export default function FeePlansList({ onCreate }: { onCreate: () => void }) {
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <Pill value={p.is_active ? "ACTIVE" : "INACTIVE"} tones={ACTIVE_TONES} />
-                <RowActions label={p.title} items={[{ label: "Edit plan", icon: Pencil, onSelect: () => setEditing(p) }]} />
+                <RowActions label={p.title} items={planActions(p)} />
               </div>
             </div>
             <span className="font-semibold tabular-nums">{formatMoney(p.amount, p.currency)}</span>

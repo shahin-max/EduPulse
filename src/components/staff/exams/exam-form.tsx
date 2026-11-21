@@ -17,7 +17,7 @@ import {
 } from "@/lib/staff-exams-api";
 import { ErrorAlert, errorText, Field, Optional } from "@/components/admin/ui";
 import { usePortal } from "@/components/portal/portal-shell";
-import { useIsAdmin, useStaffBatches } from "@/components/staff/use-staff";
+import { useIsHeadOffice, useStaffBatches } from "@/components/staff/use-staff";
 import { fromLocalInput, KIND_LABEL, MARKS_PATTERN, POLICY_HELP, toLocalInput, useCourses } from "./exam-shared";
 
 const NONE = "none";
@@ -108,7 +108,7 @@ export function ExamFormFields({ form, setForm, courseLocked, courseLabel }: {
   courseLocked?: boolean;
   courseLabel?: string;
 }) {
-  const admin = useIsAdmin();
+  const admin = useIsHeadOffice();
   const { courses } = useCourses();
   const { batches } = useStaffBatches();
   // Faculty can only attach batches they teach, so offer the courses of those batches.

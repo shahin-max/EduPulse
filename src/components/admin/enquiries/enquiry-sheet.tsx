@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import type { AdminUser } from "@/lib/admin-api";
+import type { BranchRef } from "@/lib/api";
 import { ENQUIRY_STATUSES, enquiriesApi, type Enquiry, type EnquiryNote, type EnquiryStatus, type UpdateEnquiryInput } from "@/lib/admin-ops-api";
 import { errorText, formatDate, titleCase } from "../ui";
 import { useAdminData } from "../use-admin-data";
@@ -21,20 +22,22 @@ import { ContactButtons, SourcePill, STATUS_HELP, StatusPill } from "./enquiry-b
 
 const UNASSIGNED = "none";
 
-export function EnquirySheet({ enquiry, staff, onOpenChange, onChanged }: {
+/** `branches`: where the enquiry can be moved (empty when the viewer cannot route enquiries). */
+export function EnquirySheet({ enquiry, staff, onOpenChange, onChanged, branches = [] }: {
   enquiry: Enquiry | null;
   staff: AdminUser[];
   onOpenChange: (open: boolean) => void;
   onChanged: (enquiry: Enquiry) => void;
+  branches?: BranchRef[];
 }) {
   return <Sheet open={!!enquiry} onOpenChange={onOpenChange}>
     <SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-md">
-      {enquiry && <EnquiryDetail key={enquiry.id} enquiry={enquiry} staff={staff} onChanged={onChanged} />}
+      {enquiry && <EnquiryDetail key={enquiry.id} enquiry={enquiry} staff={staff} onChanged={onChanged} branches={branches} />}
     </SheetContent>
   </Sheet>;
 }
 
-function EnquiryDetail({ enquiry, staff, onChanged }: { enquiry: Enquiry; staff: AdminUser[]; onChanged: (enquiry: Enquiry) => void }) {
+function EnquiryDetail({ enquiry, staff, onChanged, branches }: { enquiry: Enquiry; staff: AdminUser[]; onChanged: (enquiry: Enquiry) => void; branches: BranchRef[] }) {
   const { withToken } = useAuth();
   // Faculty may only change the status of enquiries assigned to them; reassigning and converting are for admins.
   const admin = useIsAdmin();
@@ -62,6 +65,11 @@ function EnquiryDetail({ enquiry, staff, onChanged }: { enquiry: Enquiry; staff:
     if (assignedTo === enquiry.assigned_to) return;
     const name = staff.find(s => s.id === assignedTo)?.full_name;
     void save({ assignedTo }, "assign", assignedTo === null ? "Unassigned" : `Assigned to ${name ?? "staff member"}`);
+  };
+  const route = (value: string) => {
+    const branchId = Number(value);
+    if (branchId === enquiry.branch_id) return;
+    void save({ branchId }, "branch", `Moved to ${branches.find(b => b.id === branchId)?.name ?? "the branch"}`);
   };
   // The current assignee may be missing from the active staff list (e.g. since suspended).
   const assigneeMissing = enquiry.users && !staff.some(s => s.id === enquiry.users!.id);
@@ -106,11 +114,25 @@ function EnquiryDetail({ enquiry, staff, onChanged }: { enquiry: Enquiry; staff:
         </Select>
       </section>}
 
+      {admin && branches.length > 0 && <section className="grid gap-2">
+        <h3 className="text-sm font-medium" id="branch-label">Branch</h3>
+        <Select value={enquiry.branch_id === null ? undefined : String(enquiry.branch_id)} onValueChange={route} disabled={saving === "branch"}>
+          <SelectTrigger className="w-full" aria-labelledby="branch-label"><SelectValue placeholder="Not routed yet: choose a branch" /></SelectTrigger>
+          <SelectContent>
+            {enquiry.branches && !branches.some(b => b.id === enquiry.branches!.id) && <SelectItem value={String(enquiry.branches.id)}>{enquiry.branches.name}</SelectItem>}
+            {branches.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">The branch&apos;s admins see the enquiry and follow it up.</p>
+      </section>}
+
       <Separator />
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
         <dt className="text-muted-foreground">Course</dt>
         <dd className="min-w-0 break-words">{enquiry.courses ? `${enquiry.courses.title} (${enquiry.courses.code})` : "Not chosen"}</dd>
+        <dt className="text-muted-foreground">Branch</dt>
+        <dd className="min-w-0 break-words">{enquiry.branches ? enquiry.branches.name : "Not routed yet"}</dd>
         <dt className="text-muted-foreground">Source</dt>
         <dd>{enquiry.source ? titleCase(enquiry.source) : "—"}</dd>
       </dl>

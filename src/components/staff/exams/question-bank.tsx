@@ -19,7 +19,7 @@ import { MathText } from "@/components/portal/math-text";
 import { AssetImage } from "@/components/portal/asset-image";
 import { EmptyState, ErrorAlert, errorText, LoadingRows, Pager, titleCase } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
-import { useIsAdmin } from "@/components/staff/use-staff";
+import { useIsHeadOffice } from "@/components/staff/use-staff";
 import { ALL, DifficultyPill, formatMarks, useCourses, useCurriculum } from "./exam-shared";
 import { QuestionDialog, type QuestionDefaults } from "./question-dialog";
 import { QuestionImportDialog } from "./question-import";
@@ -28,7 +28,7 @@ type ActiveFilter = "active" | "inactive" | typeof ALL;
 
 export function QuestionBank() {
   const { withToken, user } = useAuth();
-  const admin = useIsAdmin();
+  const admin = useIsHeadOffice();
   const { courses } = useCourses();
   const [courseId, setCourseId] = useState<number | undefined>();
   const [courseSubjectId, setCourseSubjectId] = useState<number | undefined>();

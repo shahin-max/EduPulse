@@ -33,7 +33,12 @@ export type AdminUserDetail = AdminUser & { student_profiles: StudentProfile | n
 
 export type ListUsersQuery = { page?: number; limit?: number; role?: RoleCode; status?: UserStatus; search?: string; includeDeleted?: boolean };
 
-export type CreateUserInput = { fullName: string; email?: string; mobile?: string; password?: string; roles: RoleCode[] };
+/**
+ * `branchId`: the branch a new FACULTY member joins (required for a branch admin who runs several branches).
+ * `adminBranchId` (head office only): makes them an admin of that branch. `roles` may then be empty (an office
+ * manager) or FACULTY, but not ADMIN or STUDENT.
+ */
+export type CreateUserInput = { fullName: string; email?: string; mobile?: string; password?: string; roles: RoleCode[]; branchId?: number; adminBranchId?: number };
 export type UpdateUserInput = { fullName?: string; email?: string; mobile?: string; status?: UserStatus };
 
 /** `?a=1&b=2` from the defined, non-empty params (shared by every admin API module). */

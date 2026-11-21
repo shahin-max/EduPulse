@@ -153,4 +153,34 @@ export const branchesApi = {
   create: (token: string, input: BranchInput) => request<Branch>("/branches", { token, ...json("POST", input) }),
   /** Branches are never deleted; set isActive to false instead. */
   update: (token: string, id: number, input: Partial<BranchInput>) => request<Branch>(`/branches/${id}`, { token, ...json("PATCH", input) }),
+  /** The branch's admins and faculty. */
+  staff: (token: string, id: number) => request<BranchStaff[]>(`/branches/${id}/staff`, { token }),
+  /** ADMIN: head office only. FACULTY: the user needs the FACULTY role. Returns the new staff list. */
+  addStaff: (token: string, id: number, userId: number, role: BranchStaffRole) =>
+    request<BranchStaff[]>(`/branches/${id}/staff`, { token, ...json("POST", { userId, role }) }),
+  /** Removing a branch admin ends their access at once (ADMIN: head office only). */
+  removeStaff: (token: string, id: number, userId: number, role: BranchStaffRole) =>
+    request<void>(`/branches/${id}/staff/${userId}/${role}`, { token, method: "DELETE" }),
+  /** Courses offered at the branch (withdrawn ones stay listed with is_active false). */
+  courses: (token: string, id: number) => request<BranchCourse[]>(`/branches/${id}/courses`, { token }),
+  /** Head office: offer a course (or offer it again). Returns the new list. */
+  offerCourse: (token: string, id: number, courseId: number) => request<BranchCourse[]>(`/branches/${id}/courses/${courseId}`, { token, method: "PUT" }),
+  /** Head office: stop offering a course; running batches carry on. */
+  withdrawCourse: (token: string, id: number, courseId: number) => request<void>(`/branches/${id}/courses/${courseId}`, { token, method: "DELETE" }),
+};
+
+/** ADMIN runs the branch (admin portal, that branch only); FACULTY teaches there. */
+export type BranchStaffRole = "ADMIN" | "FACULTY";
+export const BRANCH_STAFF_ROLES: BranchStaffRole[] = ["ADMIN", "FACULTY"];
+
+export type BranchStaff = {
+  role: BranchStaffRole;
+  assigned_at: string;
+  user: { id: number; full_name: string; email: string | null; mobile: string | null; status: string; photo_url: string | null };
+};
+
+export type BranchCourse = {
+  is_active: boolean;
+  added_at: string;
+  course: { id: number; code: string; slug: string; title: string; status: CourseStatus };
 };

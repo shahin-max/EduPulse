@@ -5,6 +5,14 @@
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:34567/api/v1").replace(/\/+$/, "");
 
 export type RoleCode = "ADMIN" | "FACULTY" | "STUDENT";
+/**
+ * Roles as the API reports them. BRANCH_ADMIN is not a stored role: the API adds it for someone who
+ * runs one or more branches without the global ADMIN role (head office). Both use the admin portal.
+ */
+export type AccessRole = RoleCode | "BRANCH_ADMIN";
+
+/** A branch as GET /auth/me (admin_branches) and list responses name it. */
+export type BranchRef = { id: number; code: string; name: string };
 
 /** Mirrors SafeUser in the API (field names are snake_case, ids are numbers). */
 export type User = {
@@ -20,7 +28,11 @@ export type User = {
   /** Public Cloudinary URL of the profile photo. */
   photo_url?: string | null;
   created_at: string;
-  roles: RoleCode[];
+  roles: AccessRole[];
+  /** GET /auth/me only: true for head office (the global ADMIN role). */
+  is_head_office?: boolean;
+  /** GET /auth/me only: the branches a branch admin runs (empty for head office). */
+  admin_branches?: BranchRef[];
 };
 
 export type AuthTokens = {
@@ -129,10 +141,15 @@ export type ApiContent = { content_key: string; title: string | null; body: stri
 
 export type Paginated<T> = { data: T[]; meta: { page: number; limit: number; total: number; totalPages: number } };
 
-export type EnquiryInput = { studentName: string; mobile: string; email?: string; interestedCourseId?: number; message?: string; source?: string };
+/** `branchId`: the visitor's preferred branch; omitted, the API picks the only active branch or head office routes it. */
+export type EnquiryInput = { studentName: string; mobile: string; email?: string; interestedCourseId?: number; message?: string; source?: string; branchId?: number };
+
+/** An active branch as visitors see it (GET /branches/public, sorted by name). */
+export type PublicBranch = { id: number; code: string; name: string; address: string | null; city: string | null; phone: string | null; email: string | null };
 
 export const publicApi = {
   enquire: (input: EnquiryInput) => request<{ id: number; status: string }>("/admission-enquiries", { method: "POST", body: JSON.stringify(input) }),
+  branches: () => request<PublicBranch[]>("/branches/public"),
 };
 
 /**
@@ -157,6 +174,14 @@ export const publicData = {
   content: (prefix: string) => cachedGet<ApiContent[]>(`/website-content?prefix=${encodeURIComponent(prefix)}`, []),
 };
 
-/** Where a user lands after logging in: admins to the admin portal, faculty to the faculty portal, students to their dashboard. */
+/** Head office: the global ADMIN role (every branch, the catalog, website and settings). */
+export const isHeadOffice = (user: Pick<User, "roles" | "is_head_office"> | null | undefined) =>
+  !!user && (user.is_head_office ?? user.roles.includes("ADMIN"));
+
+/** Head office or a branch admin: someone who uses the admin portal. */
+export const isAnyAdmin = (user: Pick<User, "roles"> | null | undefined) =>
+  !!user && (user.roles.includes("ADMIN") || user.roles.includes("BRANCH_ADMIN"));
+
+/** Where a user lands after logging in: admins (head office and branch admins) to the admin portal, faculty to the faculty portal, students to their dashboard. */
 export const homeFor = (user: Pick<User, "roles"> | null) =>
-  user?.roles.includes("ADMIN") ? "/admin" : user?.roles.includes("FACULTY") ? "/teach" : "/student";
+  isAnyAdmin(user) ? "/admin" : user?.roles.includes("FACULTY") ? "/teach" : "/student";

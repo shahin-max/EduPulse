@@ -54,11 +54,12 @@ export function ContactButtons({ mobile, name, labels = false }: { mobile: strin
   </>;
 }
 
-/** Active admins and faculty who can be assigned enquiries, sorted by name. */
+/** Active admins and faculty who can be assigned enquiries, sorted by name (branch admins see their branches' people). */
 export async function loadStaff(token: string): Promise<AdminUser[]> {
+  const none = { data: [] as AdminUser[] };
   const [faculty, admins] = await Promise.all([
     usersApi.list(token, { role: "FACULTY", status: "ACTIVE", limit: 100 }),
-    usersApi.list(token, { role: "ADMIN", status: "ACTIVE", limit: 100 }),
+    usersApi.list(token, { role: "ADMIN", status: "ACTIVE", limit: 100 }).catch(() => none),
   ]);
   const byId = new Map<number, AdminUser>();
   for (const u of [...admins.data, ...faculty.data]) byId.set(u.id, u);

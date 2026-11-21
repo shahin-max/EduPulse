@@ -48,8 +48,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const apply = useCallback((tokens: AuthTokens | null) => {
     session.current = tokens ? { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken } : null;
     writeSession(session.current);
-    setUser(tokens?.user ?? null);
+    // Token responses lack the GET /auth/me extras (is_head_office, admin_branches): keep them on refresh.
+    setUser(current => tokens ? (current && current.id === tokens.user.id ? { ...current, ...tokens.user } : tokens.user) : null);
     setStatus(tokens ? "authenticated" : "anonymous");
+  }, []);
+
+  /** Adds the GET /auth/me extras after signing in; best effort (roles alone still route correctly). */
+  const loadMe = useCallback((accessToken: string) => {
+    authApi.me(accessToken)
+      .then(me => setUser(current => current && current.id === me.id ? { ...current, ...me } : current))
+      .catch(() => {});
   }, []);
 
   const refresh = useCallback(async (): Promise<Session> => {
@@ -87,14 +95,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     status,
     withToken,
     setCurrentUser: next => setUser(current => current && current.id === next.id ? { ...current, ...next } : current),
-    login: async input => { const tokens = await authApi.login(input); apply(tokens); return tokens.user; },
-    register: async input => { const tokens = await authApi.register(input); apply(tokens); return tokens.user; },
+    login: async input => { const tokens = await authApi.login(input); apply(tokens); loadMe(tokens.accessToken); return tokens.user; },
+    register: async input => { const tokens = await authApi.register(input); apply(tokens); loadMe(tokens.accessToken); return tokens.user; },
     logout: async () => {
       const token = session.current?.accessToken;
       apply(null);
       if (token) await authApi.logout(token).catch(() => {});
     },
-  }), [user, status, withToken, apply]);
+  }), [user, status, withToken, apply, loadMe]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -9,6 +9,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
+import { isHeadOffice } from "@/lib/api";
 import { usersApi } from "@/lib/admin-api";
 import { useAdminData } from "./use-admin-data";
 import { DeleteUserDialog, PasswordLinkDialog, StudentProfileDialog, UserFormDialog } from "./user-dialogs";
@@ -37,6 +38,8 @@ export default function UserDetail({ id }: { id: number }) {
 
   const isSelf = me?.id === user.id;
   const deleted = !!user.deleted_at;
+  // Deleting accounts is for head office.
+  const headOffice = isHeadOffice(me);
 
   return <>
     {back}
@@ -61,7 +64,7 @@ export default function UserDetail({ id }: { id: number }) {
           <Button onClick={() => setEditing(true)} disabled={deleted}><Pencil /> Edit</Button>
           <RowActions label={user.full_name} className="size-9 border" items={[
             { label: "Password link", icon: KeyRound, onSelect: () => setLinking(true), disabled: deleted, hint: "Set-password or reset link" },
-            { label: "Delete user", icon: Trash2, onSelect: () => setDeleting(true), destructive: true, disabled: deleted || isSelf,
+            headOffice && { label: "Delete user", icon: Trash2, onSelect: () => setDeleting(true), destructive: true, disabled: deleted || isSelf,
               hint: isSelf ? "You cannot delete your own account" : deleted ? "Already deleted" : undefined },
           ]} />
         </div>

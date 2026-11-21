@@ -9,15 +9,16 @@ export const AUDIENCE_HELP: Record<AnnouncementAudience, string> = {
   FACULTY: "All faculty members.",
   ADMINS: "Admins only.",
   BATCH: "Students enrolled in one batch and its faculty.",
-  BRANCH: "Not available yet.",
+  BRANCH: "Everyone studying, teaching or working at one branch.",
 };
 
 const AUDIENCE_LABEL: Record<AnnouncementAudience, string> = {
   ALL: "Everyone", STUDENTS: "Students", FACULTY: "Faculty", ADMINS: "Admins", BATCH: "One batch", BRANCH: "Branch",
 };
 
-export function audienceLabel(a: Pick<Announcement, "audience" | "batches">) {
+export function audienceLabel(a: Pick<Announcement, "audience" | "batches"> & { branches?: Announcement["branches"] }) {
   if (a.audience === "BATCH" && a.batches) return `Batch: ${a.batches.name}`;
+  if (a.audience === "BRANCH" && a.branches) return `Branch: ${a.branches.name}`;
   return AUDIENCE_LABEL[a.audience];
 }
 

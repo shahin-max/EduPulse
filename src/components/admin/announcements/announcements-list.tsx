@@ -12,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
 import {
-  ANNOUNCEMENT_STATUSES, announcementsApi, AUDIENCES,
+  ANNOUNCEMENT_STATUSES, announcementsApi, AUDIENCES, BRANCH_ADMIN_AUDIENCES,
   type Announcement, type AnnouncementAudience, type AnnouncementStatus,
 } from "@/lib/admin-ops-api";
 import { useAdminData } from "../use-admin-data";
+import { useBranchScope } from "../branch-scope";
 import { ActionsHead, RowActions } from "@/components/portal/row-actions";
 import { batchLabel, useIsAdmin, useStaffBatches } from "@/components/staff/use-staff";
 import { EmptyState, ErrorAlert, errorText, formatDate, LoadingRows, PageHeader, Pager, titleCase } from "../ui";
@@ -32,6 +33,8 @@ export default function AnnouncementsList() {
   const [batchId, setBatchId] = useState<number | undefined>();
   // Used in both portals. The API shows faculty only the announcements they wrote, all for a batch they teach.
   const admin = useIsAdmin();
+  const { isHeadOffice: headOffice } = useBranchScope();
+  const audiences = headOffice ? AUDIENCES : BRANCH_ADMIN_AUDIENCES;
   const staffBatches = useStaffBatches();
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
@@ -73,7 +76,7 @@ export default function AnnouncementsList() {
 
   return <>
     <PageHeader title="Announcements" description={admin
-      ? "Notices for students, faculty and batches. Publishing notifies the audience."
+      ? headOffice ? "Notices for students, faculty, branches and batches. Publishing notifies the audience." : "Notices for your branches and their batches. Publishing notifies the audience."
       : "Notices for the batches you teach. Publishing notifies the batch's students."}
       actions={<Button onClick={openCreate}><Plus /> New announcement</Button>} />
 
@@ -91,7 +94,7 @@ export default function AnnouncementsList() {
             <SelectTrigger className="w-full sm:w-40" aria-label="Filter by audience"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All audiences</SelectItem>
-              {AUDIENCES.map(a => <SelectItem key={a} value={a}>{audienceLabel({ audience: a, batches: null })}</SelectItem>)}
+              {audiences.map(a => <SelectItem key={a} value={a}>{audienceLabel({ audience: a, batches: null })}</SelectItem>)}
             </SelectContent>
           </Select>
           : <Select value={batchId ? String(batchId) : ALL} onValueChange={v => { setBatchId(v === ALL ? undefined : Number(v)); setPage(1); }}>

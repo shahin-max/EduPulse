@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import type { RoleCode } from "@/lib/api";
+import type { AccessRole } from "@/lib/api";
 import type { Paginated, UserStatus } from "@/lib/admin-api";
 
 /** "PARTIALLY_PAID" -> "Partially paid". */
@@ -112,13 +112,14 @@ export function StatusBadge({ status, deleted }: { status: UserStatus; deleted?:
   return <Badge variant="outline" className={STATUS_STYLE[status]}>{titleCase(status)}</Badge>;
 }
 
-const ROLE_STYLE: Record<RoleCode, string> = {
+const ROLE_STYLE: Record<AccessRole, string> = {
   ADMIN: "border-violet-500/30 text-violet-700 dark:text-violet-300",
+  BRANCH_ADMIN: "border-indigo-500/30 text-indigo-700 dark:text-indigo-300",
   FACULTY: "border-sky-500/30 text-sky-700 dark:text-sky-300",
   STUDENT: "border-primary/30 text-primary",
 };
 
-export function RoleBadges({ roles, className }: { roles: RoleCode[]; className?: string }) {
+export function RoleBadges({ roles, className }: { roles: AccessRole[]; className?: string }) {
   return <div className={cn("flex flex-wrap gap-1", className)}>
     {roles.map(role => <Badge key={role} variant="outline" className={ROLE_STYLE[role]}>{titleCase(role)}</Badge>)}
   </div>;
