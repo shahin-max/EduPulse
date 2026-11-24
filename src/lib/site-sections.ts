@@ -51,6 +51,8 @@ export type UpdateItem = {
   imageAlt: string;
   linkLabel: string;
   linkHref: string;
+  /** Icon shown when there is no picture (default: a megaphone). */
+  icon?: SiteIconName;
 };
 export type UpdatesSection = { kicker: string; title: string; titleAccent: string; intro: string; homeCount: number; items: UpdateItem[] };
 

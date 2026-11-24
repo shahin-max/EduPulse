@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import DownloadControls from "./download-controls";
+import PamphletCarousel from "./pamphlet-carousel";
 import logo from "../../../public/edupulse-logo.jpeg";
 import mark from "../../../public/logo-mark.png";
 import { publicData } from "@/lib/api";
@@ -33,8 +33,8 @@ export default async function PamphletPage() {
   const { p, contact } = await load();
   return (
     <div className="pamphlet-page">
-    <main className="page-shell">
-      <Link href="/" className="pamphlet-back"><span aria-hidden="true">←</span> Back to EduPulse website</Link>
+    <main>
+      <PamphletCarousel sainik={<>
       <article id="edupulse-brochure" className="brochure">
         <header className="brand-header">
           <div className="brand-logo"><Image src={logo} alt="Edupulse Academy" loading="eager" unoptimized /></div>
@@ -69,6 +69,7 @@ export default async function PamphletPage() {
         <footer className="brochure-footer"><span>{p.footerLead} {p.footerAccent && <strong>{p.footerAccent}</strong>}</span>{p.portalUrl && <a href={p.portalUrl} target="_blank" rel="noopener noreferrer"><span className="portal-label">Official portal</span> {p.portalLabel || p.portalUrl} <span aria-hidden="true">↗</span></a>}</footer>
       </article>
       <DownloadControls />
+      </>} />
     </main>
     </div>
   );

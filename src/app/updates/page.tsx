@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Megaphone } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { withPamphletUpdates } from "@/lib/pamphlets";
 import AcademySite from "@/components/academy-site";
 import { UpdateCard } from "@/components/home-sections";
 import { publicData } from "@/lib/api";
@@ -20,9 +21,7 @@ export default async function UpdatesPage() {
       {updates.kicker && <p className="section-kicker">{updates.kicker}</p>}
       <h1 id="updates-page-title">{updates.title}{updates.titleAccent && <> <span>{updates.titleAccent}</span></>}</h1>
       {updates.intro && <p className="section-intro">{updates.intro}</p>}
-      {updates.items.length
-        ? <ul className="updates-grid">{updates.items.map(item => <UpdateCard key={item.id} item={item} headingLevel={2} />)}</ul>
-        : <p className="updates-empty"><Megaphone size={20} aria-hidden="true" /> No updates right now. Please check back soon.</p>}
+      <ul className="updates-grid">{withPamphletUpdates(updates.items).map(item => <UpdateCard key={item.id} item={item} headingLevel={2} />)}</ul>
       <p className="home-section-link"><Link className="text-link" href="/"><ArrowLeft size={17} /> Back to the home page</Link></p>
     </section>
   </AcademySite>;

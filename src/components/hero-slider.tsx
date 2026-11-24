@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { courseHref } from "@/lib/site";
 import { usePrograms } from "@/lib/site-content";
 import { DEFAULT_HERO, type HeroSection } from "@/lib/site-sections";
+import { WatchVideoButton, WatchVideoDialog } from "@/components/watch-video";
 
 const HeroScene3D = dynamic(() => import("@/components/hero-scene-3d"), { ssr: false });
 
@@ -118,6 +119,7 @@ export default function HeroSlider({ hero = DEFAULT_HERO }: { hero?: HeroSection
       >
         <div className="hero-backdrop" aria-hidden="true"><span className="hero-blob hero-blob-a" /><span className="hero-blob hero-blob-b" /><span className="hero-grid" /></div>
         <HeroScene3D slide={index} />
+        <WatchVideoDialog />
 
         <div className="page-container hero-inner">
           <div
@@ -155,6 +157,7 @@ export default function HeroSlider({ hero = DEFAULT_HERO }: { hero?: HeroSection
                       {s.ctaLabel && <Button asChild size="lg" className="hero-primary">
                         {/^(#|https?:|mailto:|tel:)/.test(s.ctaHref) ? <a href={s.ctaHref} {...(/^https?:/.test(s.ctaHref) ? { target: "_blank", rel: "noopener noreferrer" } : {})}>{s.ctaLabel} <ArrowRight size={17} /></a> : <Link href={s.ctaHref}>{s.ctaLabel} <ArrowRight size={17} /></Link>}
                       </Button>}
+                      <WatchVideoButton className="hero-watch" />
                       <Link href="/contact" className="hero-secondary">Talk to our team <ArrowRight size={16} /></Link>
                     </motion.div>
                   </motion.div>

@@ -1,7 +1,11 @@
+import { createElement } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, GraduationCap, Megaphone, Trophy, UserRound } from "lucide-react";
+import CardCarousel from "@/components/card-carousel";
 import { pickedTeachers, type ApiFaculty } from "@/lib/api";
+import { withPamphletUpdates } from "@/lib/pamphlets";
+import { siteIcon } from "@/lib/site-icons";
 import type { HomeResults } from "@/lib/home-content";
 import { departmentId, faculty as departments } from "@/lib/team";
 import { DEFAULT_FACULTY, DEFAULT_RESULTS_HEADER, formatUpdateDate, type FacultySectionText, type ResultsHeader, type UpdateItem, type UpdatesSection } from "@/lib/site-sections";
@@ -91,7 +95,7 @@ export function UpdateCard({ item, headingLevel = 3 }: { item: UpdateItem; headi
   return <li className="update-card" id={item.id}>
     {item.image
       ? <span className="update-image"><Image src={item.image} alt={item.imageAlt} fill sizes="(max-width: 700px) 92vw, (max-width: 1100px) 45vw, 360px" /></span>
-      : <span className="update-icon" aria-hidden="true"><Megaphone size={22} /></span>}
+      : <span className="update-icon" aria-hidden="true">{createElement(siteIcon(item.icon, Megaphone), { size: 24 })}</span>}
     <span className="update-body">
       <span className="update-meta">
         {item.badge && <span className="update-badge">{item.badge}</span>}
@@ -104,15 +108,15 @@ export function UpdateCard({ item, headingLevel = 3 }: { item: UpdateItem; headi
   </li>;
 }
 
-/** "Latest updates": hidden when the academy has no updates. */
+/** "Latest updates": the academy's newest updates, then the course pamphlets, in one sideways carousel. */
 export function UpdatesSection({ updates }: { updates: UpdatesSection }) {
-  if (!updates.items.length) return null;
-  const shown = updates.items.slice(0, updates.homeCount);
+  const own = updates.items.slice(0, updates.homeCount);
+  const shown = withPamphletUpdates(own);
   return <section id="updates" className="home-section page-container" aria-labelledby="updates-title">
     {updates.kicker && <p className="section-kicker">{updates.kicker}</p>}
     <h2 id="updates-title">{updates.title}{updates.titleAccent && <> <span>{updates.titleAccent}</span></>}</h2>
     {updates.intro && <p className="section-intro">{updates.intro}</p>}
-    <ul className="updates-grid">{shown.map(item => <UpdateCard key={item.id} item={item} />)}</ul>
-    {updates.items.length > shown.length && <p className="home-section-link"><Link className="text-link" href="/updates">See all {updates.items.length} updates <ArrowRight size={17} /></Link></p>}
+    <CardCarousel label="Latest updates">{shown.map(item => <UpdateCard key={item.id} item={item} />)}</CardCarousel>
+    {updates.items.length > own.length && <p className="home-section-link"><Link className="text-link" href="/updates">See all updates <ArrowRight size={17} /></Link></p>}
   </section>;
 }
