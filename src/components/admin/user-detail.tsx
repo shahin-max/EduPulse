@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, BadgeCheck, CalendarClock, Clock, KeyRound, Mail, Pencil, Phone, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { ArrowLeft, BadgeCheck, CalendarClock, Clock, GraduationCap, KeyRound, Loader2, Mail, Pencil, Phone, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
-import { isHeadOffice } from "@/lib/api";
+import { isHeadOffice, type RoleCode } from "@/lib/api";
 import { usersApi } from "@/lib/admin-api";
 import { useAdminData } from "./use-admin-data";
 import { DeleteUserDialog, PasswordLinkDialog, StudentProfileDialog, UserFormDialog } from "./user-dialogs";
-import { ErrorAlert, formatDate, RoleBadges, StatusBadge, UserAvatar } from "./ui";
+import { ErrorAlert, errorText, formatDate, RoleBadges, StatusBadge, UserAvatar } from "./ui";
 import { FacultyProfileDialog } from "./faculty-profile-dialog";
 import { PhotoField } from "@/components/portal/photo-field";
 import { RowActions } from "@/components/portal/row-actions";
@@ -21,13 +22,14 @@ import { photoApi } from "@/lib/account-api";
 
 export default function UserDetail({ id }: { id: number }) {
   const router = useRouter();
-  const { user: me, setCurrentUser } = useAuth();
+  const { user: me, setCurrentUser, withToken } = useAuth();
   const { data: user, error, loading, reload, setData } = useAdminData(token => usersApi.get(token, id), String(id));
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [linking, setLinking] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState(false);
+  const [addingFaculty, setAddingFaculty] = useState(false);
 
   const back = <Button variant="ghost" size="sm" asChild className="-ml-2 w-fit text-muted-foreground"><Link href="/admin/users"><ArrowLeft /> All users</Link></Button>;
 
@@ -40,6 +42,26 @@ export default function UserDetail({ id }: { id: number }) {
   const deleted = !!user.deleted_at;
   // Deleting accounts is for head office.
   const headOffice = isHeadOffice(me);
+
+  /**
+   * Gives the account the Faculty role (keeping its other roles), which creates its faculty profile,
+   * then opens the faculty details. Lets an admin also appear as a teacher, e.g. on the website.
+   */
+  async function addAsFaculty() {
+    if (!user) return;
+    setAddingFaculty(true);
+    try {
+      const roles = user.roles.filter((r): r is RoleCode => r !== "BRANCH_ADMIN");
+      await withToken(token => usersApi.setRoles(token, user.id, [...roles, "FACULTY"]));
+      toast.success(`${user.full_name} is now also faculty`);
+      reload();
+      setEditingFaculty(true);
+    } catch (e) {
+      toast.error(errorText(e, "Could not add the Faculty role."));
+    } finally {
+      setAddingFaculty(false);
+    }
+  }
 
   return <>
     {back}
@@ -95,7 +117,13 @@ export default function UserDetail({ id }: { id: number }) {
           </CardAction>}
         </CardHeader>
         <CardContent className="grid gap-6">
-          {!user.student_profiles && !user.faculty_profiles && <p className="text-sm text-muted-foreground">No student or faculty profile. Admin-only accounts do not have one.</p>}
+          {!user.student_profiles && !user.faculty_profiles && <div className="grid gap-3">
+            <p className="text-sm text-muted-foreground">No student or faculty profile. Admin-only accounts do not have one.
+              {headOffice && !deleted && " To show this person as a teacher (on the website, in batches), add them as faculty: their Admin role stays."}</p>
+            {headOffice && !deleted && <div><Button variant="outline" size="sm" onClick={() => void addAsFaculty()} disabled={addingFaculty}>
+              {addingFaculty ? <Loader2 className="animate-spin" /> : <GraduationCap />} Add as faculty
+            </Button></div>}
+          </div>}
           {user.student_profiles && <ProfileGrid title="Student" rows={[
             ["Admission no.", user.student_profiles.admission_number],
             ["Class / grade", user.student_profiles.grade],
