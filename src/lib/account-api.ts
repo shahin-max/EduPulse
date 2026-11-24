@@ -15,7 +15,7 @@ export type MyFacultyProfile = FacultyProfile & {
 };
 
 /** Fields faculty may change themselves (employee code and joining date are set by admins). */
-export type FacultySelfInput = { qualification?: string; specialization?: string; biography?: string };
+export type FacultySelfInput = { qualification?: string; specialization?: string; biography?: string; subjects?: string[] };
 
 /** Same limits as the API: JPEG, PNG, WebP or GIF up to 5 MB. */
 export const PHOTO_TYPES = "image/jpeg,image/png,image/webp,image/gif";

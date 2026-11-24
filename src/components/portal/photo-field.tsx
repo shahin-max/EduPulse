@@ -8,18 +8,21 @@ import type { User } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { MAX_PHOTO_BYTES, PHOTO_TYPES } from "@/lib/account-api";
 import { errorText, UserAvatar } from "@/components/admin/ui";
+import { refreshPublicSite } from "@/lib/admin-ops-api";
 import { cn } from "@/lib/utils";
 
 /**
  * A profile photo with "Change" and "Remove" buttons. `upload`/`remove` call the API (own photo or,
- * for admins, someone else's) and return the updated user.
+ * for admins, someone else's) and return the updated user. With `refreshSite` (a teacher's photo, shown
+ * on the public faculty pages) the website's cache is emptied so the new photo shows straight away.
  */
-export function PhotoField({ name, photoUrl, upload, remove, onChanged, className }: {
+export function PhotoField({ name, photoUrl, upload, remove, onChanged, refreshSite = false, className }: {
   name: string;
   photoUrl: string | null | undefined;
   upload: (token: string, file: File) => Promise<User>;
   remove: (token: string) => Promise<User>;
   onChanged: (user: User) => void;
+  refreshSite?: boolean;
   className?: string;
 }) {
   const { withToken } = useAuth();
@@ -34,6 +37,7 @@ export function PhotoField({ name, photoUrl, upload, remove, onChanged, classNam
     setBusy("upload");
     try {
       onChanged(await withToken(token => upload(token, file)));
+      if (refreshSite) void withToken(refreshPublicSite);
       toast.success("Photo updated");
     } catch (e) {
       toast.error(errorText(e, "Could not upload the photo."));
@@ -46,6 +50,7 @@ export function PhotoField({ name, photoUrl, upload, remove, onChanged, classNam
     setBusy("remove");
     try {
       onChanged(await withToken(remove));
+      if (refreshSite) void withToken(refreshPublicSite);
       toast.success("Photo removed");
     } catch (e) {
       toast.error(errorText(e, "Could not remove the photo."));

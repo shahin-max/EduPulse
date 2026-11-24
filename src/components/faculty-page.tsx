@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { EASE, Reveal, TiltCard, Words, rise, stagger } from "@/components/motion-kit";
 import { courseHref, programs } from "@/lib/site";
 import { departmentId, faculty, leaders, type FacultyMember } from "@/lib/team";
-import type { ApiFaculty } from "@/lib/api";
+import { teacherSubjects, type ApiFaculty } from "@/lib/api";
 
 const HeroScene3D = dynamic(() => import("@/components/hero-scene-3d"), { ssr: false });
 
@@ -58,7 +58,7 @@ function FacultyCard({ member }: { member: FacultyMember }) {
 
 /** A teacher's own profile from the LMS: photo, qualification, introduction and the subjects they teach. */
 function TeacherCard({ teacher }: { teacher: ApiFaculty }) {
-  const subjects = [...new Set(teacher.batch_faculty.map(b => b.subjects.name))];
+  const subjects = teacherSubjects(teacher);
   const name = teacher.users.full_name;
   return (
     <article className="faculty-card">
@@ -193,7 +193,7 @@ export default function FacultyPage({ teachers = [] }: { teachers?: ApiFaculty[]
           </Reveal>
           <ul className="faculty-grid">
             {teachers.map((teacher, i) => (
-              <motion.li key={teacher.user_id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }}
+              <motion.li key={teacher.user_id} id={`teacher-${teacher.user_id}`} className="faculty-teacher-anchor" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.55, ease: EASE, delay: Math.min(i, 5) * 0.06 }} whileHover={{ y: -8 }}>
                 <TeacherCard teacher={teacher} />
               </motion.li>

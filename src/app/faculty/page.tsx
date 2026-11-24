@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import AcademySite from "@/components/academy-site";
-import { publicData } from "@/lib/api";
+import { pickedTeachers, publicData } from "@/lib/api";
+import { parseHomeSections } from "@/lib/site-sections";
 import FacultyPage from "@/components/faculty-page";
 import "../courses/course.css";
 import "./faculty.css";
@@ -11,6 +12,8 @@ export const metadata: Metadata = {
 };
 
 export default async function Faculty() {
-  const teachers = await publicData.faculty();
-  return <AcademySite><FacultyPage teachers={teachers} /></AcademySite>;
+  const [teachers, content] = await Promise.all([publicData.faculty(), publicData.content("home.")]);
+  // The same teachers as the home page (picked in Admin → Website → Faculty), all of them here.
+  const picked = pickedTeachers(teachers, parseHomeSections(content).faculty.userIds);
+  return <AcademySite><FacultyPage teachers={picked} /></AcademySite>;
 }

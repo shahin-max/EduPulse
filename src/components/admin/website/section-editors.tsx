@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Eye, EyeOff, UserRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { ArrowDown, ArrowUp, Camera, Eye, EyeOff, Loader2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { request, type ApiFaculty } from "@/lib/api";
+import { MAX_PHOTO_BYTES, PHOTO_TYPES, photoApi } from "@/lib/account-api";
+import { useAuth } from "@/lib/auth";
+import { errorText } from "@/components/admin/ui";
+import { refreshPublicSite } from "@/lib/admin-ops-api";
 import { programs } from "@/lib/site";
 import { SITE_ICON_NAMES, SITE_ICONS, type SiteIconName } from "@/lib/site-icons";
 import type {
@@ -257,6 +262,8 @@ export function FacultyEditor({ value, onChange }: EditorProps<FacultySectionTex
     onChange({ ...value, userIds: ids });
   };
   const name = (id: number) => teachers?.find(t => t.user_id === id)?.users.full_name ?? `Teacher #${id} (no longer listed)`;
+  const photoChanged = (id: number, photo_url: string | null) =>
+    setTeachers(list => list?.map(t => t.user_id === id ? { ...t, users: { ...t.users, photo_url } } : t) ?? null);
 
   return <div className="grid gap-6">
     <HeadingFields value={value} onChange={onChange} />
@@ -269,16 +276,13 @@ export function FacultyEditor({ value, onChange }: EditorProps<FacultySectionTex
     </div>
     <div className="grid gap-2">
       <p className="text-sm font-medium">Teachers on the home page</p>
-      <p className="text-sm text-muted-foreground">Tick teachers to choose who is shown, in the order below. With none ticked, the website shows teachers automatically. Photos, qualification and specialisation come from each teacher&apos;s profile: Users → open the teacher → photo and Faculty profile. Only teachers who have filled in their profile appear here.</p>
+      <p className="text-sm text-muted-foreground">Only the teachers you tick are shown on the website, in the order below: the first ones (up to the number above) on the home page and all of them on the Faculty page. With none ticked, the home page shows the subject departments instead. Click a photo to change it. It is the teacher&apos;s own profile photo, so the new one also shows in the portals, and a photo the teacher sets themselves shows here and on the website straight away. Qualification, specialisation, introduction and subject chips come from the teacher&apos;s Faculty details: Users → open the teacher → Edit faculty details.</p>
       {teachers === null ? <p className="text-sm text-muted-foreground">Loading teachers…</p>
-        : teachers.length === 0 ? <p className="text-sm text-muted-foreground">No teacher has a public profile yet.</p>
-        : <ul className="grid gap-2 sm:grid-cols-2">{teachers.map(t => <li key={t.user_id}>
-          <label className="flex items-center gap-3 rounded-lg border p-2.5 text-sm">
-            <Checkbox checked={picked.includes(t.user_id)} onCheckedChange={() => toggle(t.user_id)} />
-            {/* eslint-disable-next-line @next/next/no-img-element -- small admin thumbnail */}
-            {t.users.photo_url ? <img src={t.users.photo_url} alt="" className="size-8 rounded-full object-cover" /> : <span className="flex size-8 items-center justify-center rounded-full bg-muted"><UserRound className="size-4" /></span>}
-            <span className="min-w-0"><span className="block truncate font-medium">{t.users.full_name}</span>{t.qualification && <span className="block truncate text-xs text-muted-foreground">{t.qualification}</span>}</span>
-          </label>
+        : teachers.length === 0 ? <p className="text-sm text-muted-foreground">There are no active teachers yet. Add one under Users with the Faculty role.</p>
+        : <ul className="grid gap-2 sm:grid-cols-2">{teachers.map(t => <li key={t.user_id} className="flex items-center gap-3 rounded-lg border p-2.5 text-sm">
+          <Checkbox id={`faculty-pick-${t.user_id}`} checked={picked.includes(t.user_id)} onCheckedChange={() => toggle(t.user_id)} />
+          <TeacherPhoto teacher={t} onChanged={url => photoChanged(t.user_id, url)} />
+          <label htmlFor={`faculty-pick-${t.user_id}`} className="min-w-0 flex-1 cursor-pointer"><span className="block truncate font-medium">{t.users.full_name}</span>{t.qualification && <span className="block truncate text-xs text-muted-foreground">{t.qualification}</span>}</label>
         </li>)}</ul>}
       {picked.length > 0 && <ol className="grid gap-1">{picked.map((id, i) => <li key={id} className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-1.5 text-sm">
         <span>{i + 1}. {name(id)}</span>
@@ -289,6 +293,48 @@ export function FacultyEditor({ value, onChange }: EditorProps<FacultySectionTex
       </li>)}</ol>}
     </div>
   </div>;
+}
+
+/**
+ * A teacher's thumbnail that uploads a new photo when clicked. It sets the teacher's profile photo
+ * (users.photo_url), the one photo used by the website, the portals and the admin screens.
+ */
+function TeacherPhoto({ teacher, onChanged }: { teacher: ApiFaculty; onChanged: (photoUrl: string | null) => void }) {
+  const { withToken } = useAuth();
+  const input = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const name = teacher.users.full_name;
+
+  async function pick(file: File | undefined) {
+    if (input.current) input.current.value = "";
+    if (!file) return;
+    if (!PHOTO_TYPES.split(",").includes(file.type)) return void toast.error("Choose a JPEG, PNG, WebP or GIF image.");
+    if (file.size > MAX_PHOTO_BYTES) return void toast.error("Photos may be at most 5 MB.");
+    setBusy(true);
+    try {
+      const user = await withToken(token => photoApi.setFor(token, teacher.user_id, file));
+      onChanged(user.photo_url ?? null);
+      void withToken(refreshPublicSite);
+      toast.success(`Photo updated for ${name}`);
+    } catch (e) {
+      toast.error(errorText(e, "Could not upload the photo."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <>
+    <button type="button" onClick={() => input.current?.click()} disabled={busy}
+      aria-label={teacher.users.photo_url ? `Change photo of ${name}` : `Add a photo of ${name}`} title={teacher.users.photo_url ? "Change photo" : "Add photo"}
+      className="group relative size-10 shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+      {/* eslint-disable-next-line @next/next/no-img-element -- small admin thumbnail */}
+      {teacher.users.photo_url ? <img src={teacher.users.photo_url} alt="" className="size-10 rounded-full object-cover" /> : <span className="flex size-10 items-center justify-center rounded-full bg-muted"><UserRound className="size-4" /></span>}
+      <span className={`absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white transition-opacity ${busy ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"}`}>
+        {busy ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
+      </span>
+    </button>
+    <input ref={input} type="file" accept={PHOTO_TYPES} className="sr-only" tabIndex={-1} onChange={e => void pick(e.target.files?.[0])} />
+  </>;
 }
 
 export function GalleryEditor({ value, onChange }: EditorProps<GalleryCard>) {

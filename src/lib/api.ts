@@ -168,9 +168,25 @@ export type ApiFaculty = {
   qualification: string | null;
   specialization: string | null;
   biography: string | null;
+  /** Subject chips an admin set for the website; null to use the batch subjects. */
+  display_subjects: string[] | null;
   users: { full_name: string; photo_url: string | null };
   batch_faculty: { subjects: { name: string } }[];
 };
+
+/** The subject chips on a teacher's website card: the ones an admin set, otherwise the subjects they teach in batches. */
+export function teacherSubjects(teacher: ApiFaculty): string[] {
+  if (Array.isArray(teacher.display_subjects) && teacher.display_subjects.length) return teacher.display_subjects;
+  return [...new Set(teacher.batch_faculty.map(b => b.subjects.name))];
+}
+
+/**
+ * The teachers an admin picked in Admin → Website → Faculty, in that order. Only these are shown on
+ * the website; a picked teacher who is no longer active is skipped.
+ */
+export function pickedTeachers(teachers: ApiFaculty[], userIds: number[]): ApiFaculty[] {
+  return userIds.map(id => teachers.find(t => t.user_id === id)).filter((t): t is ApiFaculty => !!t);
+}
 
 export type ApiContent = { content_key: string; title: string | null; body: string | null; sort_order: number };
 
@@ -203,9 +219,8 @@ async function cachedGet<T>(path: string, fallback: T): Promise<T> {
 export const publicData = {
   courses: () => cachedGet<ApiCourse[]>("/courses", []),
   openBatches: () => cachedGet<Paginated<ApiBatch> | null>("/batches?limit=100", null).then(r => r?.data ?? []),
-  /** Active faculty who have filled in their profile (qualification, specialization, introduction or photo). */
-  faculty: () => cachedGet<ApiFaculty[]>("/faculty", []).then(list =>
-    list.filter(f => f.qualification || f.specialization || f.biography || f.users.photo_url)),
+  /** Active faculty. The website shows only the ones picked in Admin → Website (see pickedTeachers). */
+  faculty: () => cachedGet<ApiFaculty[]>("/faculty", []),
   content: (prefix: string) => cachedGet<ApiContent[]>(`/website-content?prefix=${encodeURIComponent(prefix)}`, []),
 };
 

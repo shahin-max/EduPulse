@@ -215,7 +215,7 @@ export const websiteMediaApi = {
 
 /**
  * Asks the website to rebuild its cached pages so a saved change shows on the next visit
- * (POST /api/revalidate on this Next.js app, admins only). Best effort: the cache also expires
+ * (POST /api/revalidate on this Next.js app, admins and faculty only). Best effort: the cache also expires
  * on its own within 5 minutes.
  */
 export async function refreshPublicSite(token: string): Promise<boolean> {

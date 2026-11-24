@@ -10,10 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { request } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { json, type FacultyProfile } from "@/lib/admin-api";
+import { refreshPublicSite } from "@/lib/admin-ops-api";
 import { ErrorAlert, errorText, Field, Optional } from "./ui";
+import { chipsChanged, chipsError, parseChips, savedChips, SubjectChipsField } from "@/components/portal/subject-chips-field";
 
 /** Fields an admin can set on a faculty profile (PATCH /faculty/:userId). Send only what changes. */
-type FacultyProfileInput = { qualification?: string; specialization?: string; biography?: string; employeeCode?: string; joinedOn?: string };
+type FacultyProfileInput = { qualification?: string; specialization?: string; biography?: string; employeeCode?: string; joinedOn?: string; subjects?: string[] };
 
 const FIELDS = [
   { key: "employeeCode", column: "employee_code", label: "Employee code", maxLength: 40 },
@@ -38,9 +40,10 @@ export function FacultyProfileDialog({ userId, profile, open, onOpenChange, onSa
 
 function FacultyProfileForm({ userId, profile, onSaved, onClose }: { userId: number; profile: FacultyProfile; onSaved: () => void; onClose: () => void }) {
   const { withToken } = useAuth();
-  const initial = (column: keyof FacultyProfile) => (column === "joined_on" ? profile.joined_on?.slice(0, 10) : profile[column]) ?? "";
+  const initial = (column: (typeof FIELDS)[number]["column"]) => (column === "joined_on" ? profile.joined_on?.slice(0, 10) : profile[column]) ?? "";
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(FIELDS.map(f => [f.key, initial(f.column)])));
   const [biography, setBiography] = useState(profile.biography ?? "");
+  const [chipsText, setChipsText] = useState(savedChips(profile).join(", "));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -54,11 +57,16 @@ function FacultyProfileForm({ userId, profile, onSaved, onClose }: { userId: num
       patch[f.key] = value;
     }
     if (biography !== (profile.biography ?? "")) patch.biography = biography;
+    const chips = parseChips(chipsText);
+    if (chipsError(chips)) return setError(chipsError(chips));
+    if (chipsChanged(chips, savedChips(profile))) patch.subjects = chips;
     if (!Object.keys(patch).length) return onClose();
     setBusy(true);
     setError("");
     try {
       await withToken(token => request(`/faculty/${userId}`, { token, ...json("PATCH", patch) }));
+      // Qualification, specialisation and introduction show on the public faculty pages.
+      void withToken(refreshPublicSite);
       toast.success("Faculty details saved");
       onSaved();
       onClose();
@@ -72,7 +80,7 @@ function FacultyProfileForm({ userId, profile, onSaved, onClose }: { userId: num
   return <form onSubmit={submit} className="grid gap-5">
     <DialogHeader>
       <DialogTitle>Faculty details</DialogTitle>
-      <DialogDescription>Teachers can edit their qualification, specialization and introduction themselves. Filled-in profiles appear on the website&apos;s Faculty page.</DialogDescription>
+      <DialogDescription>Teachers can edit their qualification, specialization, introduction and subject chips themselves. These details, the photo and the subject chips show on the teacher&apos;s website card once they are picked in Website content → Faculty.</DialogDescription>
     </DialogHeader>
     <div className="grid gap-4 sm:grid-cols-2">
       {FIELDS.map(f => <Field key={f.key} id={`fp-${f.key}`} label={<>{f.label} <Optional /></>}>
@@ -83,6 +91,7 @@ function FacultyProfileForm({ userId, profile, onSaved, onClose }: { userId: num
       <Field id="fp-bio" label={<>Introduction <Optional /></>} className="sm:col-span-2" hint={`${biography.length.toLocaleString("en-IN")} / 5,000 characters`}>
         <Textarea id="fp-bio" maxLength={5000} rows={5} value={biography} onChange={e => setBiography(e.target.value)} />
       </Field>
+      <SubjectChipsField id="fp-chips" value={chipsText} onChange={setChipsText} className="sm:col-span-2" />
     </div>
     {error && <ErrorAlert title="Could not save" message={error} />}
     <DialogFooter className="gap-2">

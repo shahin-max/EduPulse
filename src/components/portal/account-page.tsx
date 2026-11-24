@@ -17,6 +17,8 @@ import { accountApi, photoApi, PASSWORD_HINT, PASSWORD_RULE, type FacultySelfInp
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { ErrorAlert, errorText, Field, formatDate, Optional, RoleBadges } from "@/components/admin/ui";
 import { PhotoField } from "./photo-field";
+import { chipsChanged, chipsError, parseChips, savedChips, SubjectChipsField } from "./subject-chips-field";
+import { refreshPublicSite } from "@/lib/admin-ops-api";
 import { StudentProfileCard } from "@/components/student/student-profile-card";
 import { usePortal } from "./portal-shell";
 
@@ -31,7 +33,7 @@ export default function AccountPage() {
   return <>
     <Card>
       <CardContent className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center">
-        <PhotoField name={user.full_name} photoUrl={user.photo_url} upload={photoApi.setMine} remove={photoApi.removeMine} onChanged={setCurrentUser} />
+        <PhotoField name={user.full_name} photoUrl={user.photo_url} upload={photoApi.setMine} remove={photoApi.removeMine} onChanged={setCurrentUser} refreshSite={isFaculty} />
         <div className="min-w-0 flex-1 space-y-2">
           <h1 className="truncate text-2xl font-semibold tracking-tight">{user.full_name}</h1>
           <RoleBadges roles={user.roles} />
@@ -104,6 +106,12 @@ function ProfileView({ profile, onEdit }: { profile: MyFacultyProfile; onEdit: (
         : <p className="text-sm text-muted-foreground">No introduction yet. Add a few lines about your teaching experience.</p>}
     </section>
     <section className="grid gap-2">
+      <h3 className="text-sm font-medium">Subjects on the website</h3>
+      {savedChips(profile).length
+        ? <ul className="flex flex-wrap gap-1.5">{savedChips(profile).map(c => <li key={c} className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">{c}</li>)}</ul>
+        : <p className="text-sm text-muted-foreground">Not set: the website shows the subjects you teach in batches.</p>}
+    </section>
+    <section className="grid gap-2">
       <h3 className="text-sm font-medium">Batches I teach</h3>
       {batches.size === 0
         ? <p className="text-sm text-muted-foreground">You are not assigned to any batch yet.</p>
@@ -127,6 +135,7 @@ function ProfileForm({ profile, onSaved, onCancel }: { profile: MyFacultyProfile
   const [qualification, setQualification] = useState(profile.qualification ?? "");
   const [specialization, setSpecialization] = useState(profile.specialization ?? "");
   const [biography, setBiography] = useState(profile.biography ?? "");
+  const [chipsText, setChipsText] = useState(savedChips(profile).join(", "));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -137,11 +146,16 @@ function ProfileForm({ profile, onSaved, onCancel }: { profile: MyFacultyProfile
     if (qualification.trim() !== (profile.qualification ?? "")) patch.qualification = qualification.trim();
     if (specialization.trim() !== (profile.specialization ?? "")) patch.specialization = specialization.trim();
     if (biography !== (profile.biography ?? "")) patch.biography = biography;
+    const chips = parseChips(chipsText);
+    if (chipsError(chips)) return setError(chipsError(chips));
+    if (chipsChanged(chips, savedChips(profile))) patch.subjects = chips;
     if (!Object.keys(patch).length) return onCancel();
     setSaving(true);
     setError("");
     try {
       onSaved(await withToken(token => accountApi.updateMyFacultyProfile(token, patch)));
+      // The teaching profile shows on the public faculty pages.
+      void withToken(refreshPublicSite);
       toast.success("Profile saved");
     } catch (e) {
       setError(errorText(e, "Could not save your profile."));
@@ -161,6 +175,7 @@ function ProfileForm({ profile, onSaved, onCancel }: { profile: MyFacultyProfile
       <Textarea id="fp-bio" maxLength={5000} rows={6} value={biography} onChange={e => setBiography(e.target.value)} className="max-h-[50svh]"
         placeholder="12 years teaching physics for JEE and NEET. I focus on problem solving and clear concepts." />
     </Field>
+    <SubjectChipsField id="fp-chips" value={chipsText} onChange={setChipsText} />
     {error && <ErrorAlert title="Could not save" message={error} />}
     <div className="flex flex-wrap gap-2">
       <Button type="submit" disabled={saving}>{saving && <Loader2 className="animate-spin" />}Save profile</Button>

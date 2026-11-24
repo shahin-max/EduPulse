@@ -26,6 +26,8 @@ export type FacultyProfile = {
   qualification: string | null;
   specialization: string | null;
   biography: string | null;
+  /** Subject chips for the website card; null to use the batch subjects. */
+  display_subjects: string[] | null;
   joined_on: string | null;
 };
 

@@ -50,6 +50,7 @@ export default function UserDetail({ id }: { id: number }) {
           ? <UserAvatar name={user.full_name} src={user.photo_url} className="size-16 text-lg" />
           : <PhotoField name={user.full_name} photoUrl={user.photo_url}
             upload={(token, file) => photoApi.setFor(token, user.id, file)} remove={token => photoApi.removeFor(token, user.id)}
+            refreshSite={user.roles.includes("FACULTY")}
             onChanged={updated => { setData({ ...user, photo_url: updated.photo_url }); if (isSelf) setCurrentUser(updated); }} />}
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">

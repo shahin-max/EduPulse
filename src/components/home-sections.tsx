@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, GraduationCap, Megaphone, Trophy, UserRound } from "lucide-react";
-import type { ApiFaculty } from "@/lib/api";
+import { pickedTeachers, type ApiFaculty } from "@/lib/api";
 import type { HomeResults } from "@/lib/home-content";
 import { departmentId, faculty as departments } from "@/lib/team";
 import { DEFAULT_FACULTY, DEFAULT_RESULTS_HEADER, formatUpdateDate, type FacultySectionText, type ResultsHeader, type UpdateItem, type UpdatesSection } from "@/lib/site-sections";
@@ -31,13 +31,16 @@ export function ResultsSection({ results, header = DEFAULT_RESULTS_HEADER }: { r
   </section>;
 }
 
+/** "Ayesha Khan" → "AK", for a teacher without a photo. */
+const initials = (name: string) => name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]!.toUpperCase()).join("");
+
 /**
- * Teachers from their LMS profiles: the ones the academy picked in Admin → Website (in that order),
+ * A short preview of the teachers (photo, name, specialisation), each linking to their full card
+ * on /faculty, where the qualification, introduction and subjects are. Teachers from their LMS profiles: the ones the academy picked in Admin → Website (in that order),
  * otherwise the first few. The subject departments until profiles are filled in.
  */
 export function FacultySection({ teachers, text = DEFAULT_FACULTY }: { teachers: ApiFaculty[]; text?: FacultySectionText }) {
-  const picked = text.userIds.map(id => teachers.find(t => t.user_id === id)).filter((t): t is ApiFaculty => !!t);
-  const shown = (picked.length ? picked : teachers).slice(0, text.count);
+  const shown = pickedTeachers(teachers, text.userIds).slice(0, text.count);
   return <section id="faculty" className="home-section page-container" aria-labelledby="home-faculty-title">
     {text.kicker && <p className="section-kicker">{text.kicker}</p>}
     <h2 id="home-faculty-title">{text.title}{text.titleAccent && <> <span>{text.titleAccent}</span></>}</h2>
@@ -46,16 +49,19 @@ export function FacultySection({ teachers, text = DEFAULT_FACULTY }: { teachers:
     {shown.length > 0
       ? <ul className="home-faculty-grid">
         {shown.map(t => {
-          const subjects = [...new Set(t.batch_faculty.map(b => b.subjects.name))];
-          return <li key={t.user_id} className="home-teacher">
-            <span className="home-teacher-photo">
-              {t.users.photo_url
-                ? <Image src={t.users.photo_url} alt={`Portrait of ${t.users.full_name}`} fill sizes="88px" />
-                : <UserRound size={34} strokeWidth={1.4} aria-hidden="true" />}
-            </span>
-            <strong>{t.users.full_name}</strong>
-            {t.qualification && <small>{t.qualification}</small>}
-            {(t.specialization || subjects.length > 0) && <span className="home-teacher-subjects">{t.specialization ?? subjects.join(", ")}</span>}
+          const name = t.users.full_name;
+          return <li key={t.user_id}>
+            <Link href={`/faculty#teacher-${t.user_id}`} className="home-teacher">
+              <span className="home-teacher-photo">
+                {t.users.photo_url
+                  ? <Image src={t.users.photo_url} alt={`Portrait of ${name}`} fill sizes="(max-width: 640px) 50vw, 220px" />
+                  : <span className="home-teacher-initials" aria-hidden="true">{initials(name) || <UserRound size={40} strokeWidth={1.4} />}</span>}
+              </span>
+              <span className="home-teacher-body">
+                <strong>{name}</strong>
+                {t.specialization && <small>{t.specialization}</small>}
+              </span>
+            </Link>
           </li>;
         })}
       </ul>
