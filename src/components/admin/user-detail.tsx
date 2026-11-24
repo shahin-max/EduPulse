@@ -51,8 +51,11 @@ export default function UserDetail({ id }: { id: number }) {
     if (!user) return;
     setAddingFaculty(true);
     try {
-      const roles = user.roles.filter((r): r is RoleCode => r !== "BRANCH_ADMIN");
-      await withToken(token => usersApi.setRoles(token, user.id, [...roles, "FACULTY"]));
+      // A Set: the account may already have the Faculty role without its profile (e.g. a role added
+      // outside the app). Saving the roles again still creates the missing profile.
+      const roles = new Set(user.roles.filter((r): r is RoleCode => r !== "BRANCH_ADMIN"));
+      roles.add("FACULTY");
+      await withToken(token => usersApi.setRoles(token, user.id, [...roles]));
       toast.success(`${user.full_name} is now also faculty`);
       reload();
       setEditingFaculty(true);
