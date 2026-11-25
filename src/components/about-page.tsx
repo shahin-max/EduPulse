@@ -12,6 +12,7 @@ import { useContactInfo } from "@/lib/site-content";
 import { departmentId, faculty } from "@/lib/team";
 import { siteIcon } from "@/lib/site-icons";
 import { DEFAULT_ABOUT, splitStat, type AboutLeader, type AboutPageContent } from "@/lib/site-pages";
+import { MAP_EMBED_URL, MAPS_URL } from "@/lib/site";
 
 const HeroScene3D = dynamic(() => import("@/components/hero-scene-3d"), { ssr: false });
 
@@ -55,7 +56,6 @@ export default function AboutPage({ content = DEFAULT_ABOUT }: { content?: About
   const { hero, leadership, faculty: facultyText, values, recognition, learning, visit } = content;
   const shown = (id: AboutPageContent["hidden"][number]) => !content.hidden.includes(id);
   const contact = useContactInfo();
-  const mapsQuery = encodeURIComponent(contact.address);
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 30 });
   const heroRef = useRef<HTMLElement>(null);
@@ -193,12 +193,12 @@ export default function AboutPage({ content = DEFAULT_ABOUT }: { content?: About
             <motion.p variants={rise} className="about-visit-address"><MapPin size={16} aria-hidden="true" />{contact.address}</motion.p>
           </Reveal>
           <motion.div className="about-map" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.8, ease: EASE }}>
-            <iframe title="Map showing the EduPulse Academy address in Aligarh" src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
+            <iframe title="Map showing the EduPulse Academy address in Aligarh" src={MAP_EMBED_URL} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
           </motion.div>
           <div className="about-visit-actions">
             {visit.closing && <p>{visit.closing}</p>}
             <div>
-              <Button asChild variant="outline"><a href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`} target="_blank" rel="noopener noreferrer">Open in Google Maps <ArrowRight size={16} /></a></Button>
+              <Button asChild variant="outline"><a href={MAPS_URL} target="_blank" rel="noopener noreferrer">Open in Google Maps <ArrowRight size={16} /></a></Button>
               <Button asChild><Link href="/contact">Contact us <ArrowRight size={16} /></Link></Button>
             </div>
           </div>

@@ -8,10 +8,26 @@ export const contact = {
   ],
   whatsapp: "917015628794",
   email: "edupulsea@gmail.com",
-  address: "Lal Diggi, Civil Lines, Grand Bazar, Aligarh",
+  address: "2nd Floor, Shop No S2 04, Grand Bazar, Lal Diggi, Civil Lines, Aligarh, Uttar Pradesh 202001",
 };
 
-export const mapsQuery = encodeURIComponent(contact.address);
+/** The same address in parts, for search engines (schema.org PostalAddress). */
+export const postalAddress = {
+  streetAddress: "2nd Floor, Shop No S2 04, Grand Bazar, Lal Diggi, Civil Lines",
+  addressLocality: "Aligarh",
+  addressRegion: "Uttar Pradesh",
+  postalCode: "202001",
+  addressCountry: "IN",
+};
+
+/** The academy's Google Maps listing (Google Business Profile), and its pin. */
+export const MAPS_URL = "https://maps.app.goo.gl/fK7jHrQTNx4X6B8Y8";
+export const GEO = { latitude: 27.9029538, longitude: 78.0773167 };
+/** Embedded map centred on the academy's pin. */
+export const MAP_EMBED_URL = `https://maps.google.com/maps?q=${GEO.latitude},${GEO.longitude}&z=17&output=embed`;
+
+/** Opening hours: every day, 7 AM to 9 PM. */
+export const OPENING_HOURS = { label: "Mon–Sun, 7:00 AM – 9:00 PM", opens: "07:00", closes: "21:00" };
 
 export const socials = {
   instagram: "https://www.instagram.com/edupulsealigarh",

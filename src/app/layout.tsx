@@ -2,21 +2,21 @@ import type { Metadata, Viewport } from "next";
 import { publicData } from "@/lib/api";
 import { AuthProvider } from "@/lib/auth";
 import { Analytics } from "@/components/analytics";
-import { INDEXABLE, SITE_URL } from "@/lib/seo";
+import { HOME_TITLE, INDEXABLE, SITE_URL } from "@/lib/seo";
 import { SiteContentProvider, type SiteContent } from "@/lib/site-content";
 import { parseContactInfo, parsePrograms, readJson, SECTION_KEYS } from "@/lib/site-sections";
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: "EduPulse Academy | Learn Today, Lead Tomorrow", template: "%s | EduPulse Academy" },
+  title: { default: HOME_TITLE, template: "%s | EduPulse Academy" },
   description: "Build your future with EduPulse Academy, Aligarh. Foundation classes (6-10), JEE, NEET, Sainik School, CUET, AMU & JMI entrance preparation, and Spoken English.",
   keywords: ["EduPulse Academy", "coaching in Aligarh", "foundation classes", "JEE coaching", "NEET coaching", "Sainik School entrance", "AMU entrance", "JMI entrance", "CUET", "Spoken English"],
   applicationName: "EduPulse Academy",
   openGraph: {
     type: "website",
     siteName: "EduPulse Academy",
-    title: "EduPulse Academy | Learn Today, Lead Tomorrow",
+    title: HOME_TITLE,
     description: "Foundation classes, entrance preparation, and English learning programs in Aligarh.",
     locale: "en_IN",
     url: "/",

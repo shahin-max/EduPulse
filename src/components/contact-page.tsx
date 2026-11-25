@@ -11,16 +11,16 @@ import EnquiryForm from "@/components/enquiry-form";
 import { EASE, Reveal, TiltCard, Words, rise, stagger } from "@/components/motion-kit";
 import { useContactInfo, whatsappHref } from "@/lib/site-content";
 import type { ContactInfo } from "@/lib/site-sections";
+import { MAP_EMBED_URL, MAPS_URL } from "@/lib/site";
 
 const HeroScene3D = dynamic(() => import("@/components/hero-scene-3d"), { ssr: false });
 
 const quickLinks = (contact: ContactInfo) => {
-  const mapsQuery = encodeURIComponent(contact.address);
   return [
     { title: "Call us", icon: Phone, lines: contact.phones.map(p => ({ label: p.display, href: `tel:${p.tel}` })) },
     { title: "WhatsApp", icon: MessageCircle, lines: [{ label: "Chat with our team", href: whatsappHref(contact, "Hello EduPulse Academy, I would like to know more about your programs."), external: true }] },
     { title: "Email", icon: Mail, lines: [{ label: contact.email, href: `mailto:${contact.email}` }] },
-    { title: "Visit", icon: MapPin, lines: [{ label: contact.address, href: `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`, external: true }] },
+    { title: "Visit", icon: MapPin, lines: [{ label: contact.address, href: MAPS_URL, external: true }] },
   ];
 };
 
@@ -39,7 +39,6 @@ function FormWithProgram() {
 export default function ContactPage() {
   const contact = useContactInfo();
   const quick = quickLinks(contact);
-  const mapsQuery = encodeURIComponent(contact.address);
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 30 });
 
@@ -90,7 +89,7 @@ export default function ContactPage() {
 
           <motion.aside className="contact-visit" aria-labelledby="visit-title" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.8, ease: EASE, delay: 0.12 }}>
             <div className="contact-map">
-              <iframe title="Map showing the EduPulse Academy address in Aligarh" src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
+              <iframe title="Map showing the EduPulse Academy address in Aligarh" src={MAP_EMBED_URL} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
             </div>
             <div className="contact-visit-body">
               <p className="section-kicker">VISIT THE ACADEMY</p>
@@ -99,7 +98,7 @@ export default function ContactPage() {
                 <li><MapPin size={17} /><span>{contact.address}</span></li>
                 {contact.hours && <li><Clock size={17} /><span>{contact.hours}</span></li>}
               </ul>
-              <Button asChild variant="outline" className="contact-directions"><a href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`} target="_blank" rel="noopener noreferrer"><Navigation size={16} /> Get directions</a></Button>
+              <Button asChild variant="outline" className="contact-directions"><a href={MAPS_URL} target="_blank" rel="noopener noreferrer"><Navigation size={16} /> Get directions</a></Button>
               <div className="contact-socials">
                 <span>Follow us</span>
                 {contact.instagram && <a href={contact.instagram} target="_blank" rel="noopener noreferrer" aria-label="EduPulse on Instagram (opens in a new tab)"><Instagram size={18} /></a>}

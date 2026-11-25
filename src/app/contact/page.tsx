@@ -7,7 +7,7 @@ import "./contact.css";
 
 export const metadata: Metadata = pageMetadata({
   title: "Contact Us",
-  description: "Contact EduPulse Academy in Aligarh. Call, WhatsApp, email or visit us at Lal Diggi, Civil Lines, or send an enquiry about any program.",
+  description: "Contact EduPulse Academy in Aligarh. Call, WhatsApp, email or visit us at Grand Bazar, Lal Diggi, Civil Lines (open daily, 7 AM to 9 PM), or send an enquiry about any program.",
   path: "/contact",
 });
 
