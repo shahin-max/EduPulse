@@ -5,6 +5,7 @@ import PamphletCarousel from "./pamphlet-carousel";
 import logo from "../../../public/edupulse-logo.jpeg";
 import mark from "../../../public/logo-mark.png";
 import { publicData } from "@/lib/api";
+import { pageMetadata } from "@/lib/seo";
 import { PAGE_KEYS, parsePamphlet, type PamphletContent } from "@/lib/site-pages";
 import { parseContactInfo, readJson, SECTION_KEYS, type ContactInfo } from "@/lib/site-sections";
 import "./pamphlet.css";
@@ -17,7 +18,7 @@ async function load(): Promise<{ p: PamphletContent; contact: ContactInfo }> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const { p } = await load();
-  return { title: p.pageTitle, description: p.pageDescription || undefined };
+  return pageMetadata({ title: p.pageTitle, description: p.pageDescription || undefined, path: "/pamphlet" });
 }
 
 /** "+917015628794" → "7015628794", as the printed pamphlet shows numbers. */

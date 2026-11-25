@@ -10,6 +10,7 @@ import { BranchField, PHONE_PATTERN, usePublicBranches } from "@/components/enqu
 import { publicApi, type ApiBatch, type ApiCourse } from "@/lib/api";
 import { programs } from "@/lib/site";
 import { useContactInfo, whatsappHref } from "@/lib/site-content";
+import { trackEvent } from "@/components/analytics";
 
 const NOT_SURE = "Not sure yet - need guidance";
 const ANY_BATCH = "Any batch / help me choose";
@@ -87,6 +88,7 @@ function AdmissionForm({ courses, batches, course: courseSlug, program: programS
         source: "WEBSITE_ADMISSION",
         branchId,
       });
+      trackEvent("generate_lead", { form: "admission", program: course?.title });
       setResult({ kind: "saved", id: enquiry.id });
     } catch (e) {
       setResult({

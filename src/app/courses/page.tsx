@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import AcademySite from "@/components/academy-site";
 import CoursesIndex from "@/components/courses-index";
 import { publicData } from "@/lib/api";
 import { unlinkedCourses } from "@/lib/site";
 import "./course.css";
 
-export const metadata: Metadata = {
-  title: "Courses",
+export const metadata: Metadata = pageMetadata({
+  title: "Coaching Courses in Aligarh",
   description: "Explore every EduPulse Academy program in Aligarh: Foundation classes (6-10), RMS & Sainik School, JEE, NEET, CUET, CLAT, GATE, AMU & JMI entrance, and Spoken English & IELTS.",
-};
+  path: "/courses",
+});
 
 // The "more programs" list comes from the LMS catalogue; refreshed every 5 minutes.
 export const revalidate = 300;

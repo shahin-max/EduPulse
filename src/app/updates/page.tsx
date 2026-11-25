@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { withPamphletUpdates } from "@/lib/pamphlets";
@@ -7,11 +8,11 @@ import { UpdateCard } from "@/components/home-sections";
 import { publicData } from "@/lib/api";
 import { parseUpdates, readJson, SECTION_KEYS } from "@/lib/site-sections";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Latest updates",
   description: "News and announcements from EduPulse Academy, Aligarh: admissions, exam dates, new batches and results.",
-  alternates: { canonical: "/updates" },
-};
+  path: "/updates",
+});
 
 /** Every update the academy has published in Admin → Website → Latest updates. */
 export default async function UpdatesPage() {

@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { publicData } from "@/lib/api";
 import { AuthProvider } from "@/lib/auth";
-import { SITE_URL } from "@/lib/seo";
+import { Analytics } from "@/components/analytics";
+import { INDEXABLE, SITE_URL } from "@/lib/seo";
 import { SiteContentProvider, type SiteContent } from "@/lib/site-content";
 import { parseContactInfo, parsePrograms, readJson, SECTION_KEYS } from "@/lib/site-sections";
 import "./globals.css";
@@ -18,7 +19,13 @@ export const metadata: Metadata = {
     title: "EduPulse Academy | Learn Today, Lead Tomorrow",
     description: "Foundation classes, entrance preparation, and English learning programs in Aligarh.",
     locale: "en_IN",
+    url: "/",
   },
+  twitter: { card: "summary_large_image" },
+  // Only the live site is listed by search engines; staging and local copies ask not to be indexed.
+  robots: INDEXABLE ? { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } } : { index: false, follow: false },
+  // Google Search Console's HTML-tag check (only needed if the domain is not verified through DNS).
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } : undefined,
 };
 
 export const viewport: Viewport = {
@@ -52,6 +59,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
     <body className="min-h-screen bg-background font-sans text-foreground antialiased">
       <SiteContentProvider value={content}><AuthProvider>{children}</AuthProvider></SiteContentProvider>
+      <Analytics enabled={INDEXABLE} />
     </body>
   </html>;
 }

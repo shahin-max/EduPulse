@@ -12,6 +12,7 @@ import { useContactInfo, whatsappHref } from "@/lib/site-content";
 import {
   istDateTime, SCHOLARSHIP_GRADES, scholarshipsApi, slabRows, testWindow, type OpenScholarshipTest,
 } from "@/lib/scholarships-api";
+import { trackEvent } from "@/components/analytics";
 
 /** Same rule as the register page and the API: 8-72 characters with a letter and a number. */
 const PASSWORD_PATTERN = "(?=.*[A-Za-z])(?=.*\\d).{8,72}";
@@ -181,6 +182,7 @@ export default function ScholarshipForm() {
         message: `Scholarship Test registration\nClass: ${get("grade")}`,
         source: "SCHOLARSHIP_TEST",
       });
+      trackEvent("generate_lead", { form: "scholarship_test" });
       setSent({ kind: "saved", id: enquiry.id, whatsapp });
     } catch (e) {
       setSent({ kind: "failed", message: e instanceof Error ? e.message : "Could not send the registration.", whatsapp });

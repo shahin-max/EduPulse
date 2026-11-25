@@ -7,6 +7,7 @@ import { BrandSelect } from "@/components/brand-select";
 import { publicApi, request, type ApiCourse, type PublicBranch } from "@/lib/api";
 import { programs } from "@/lib/site";
 import { useContactInfo, whatsappHref } from "@/lib/site-content";
+import { trackEvent } from "@/components/analytics";
 
 const NOT_SURE = "Not sure yet - need guidance";
 const programOptions = [...programs.map(p => p.title), NOT_SURE];
@@ -98,6 +99,7 @@ export default function EnquiryForm({ defaultProgram }: { defaultProgram?: strin
         source: "WEBSITE",
         branchId,
       });
+      trackEvent("generate_lead", { form: "enquiry", program: programTitle });
       setSent({ kind: "saved", id: enquiry.id, whatsapp });
     } catch (e) {
       setSent({ kind: "failed", message: e instanceof Error ? e.message : "Could not send the enquiry.", whatsapp });
