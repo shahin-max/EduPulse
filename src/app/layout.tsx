@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { publicData } from "@/lib/api";
 import { AuthProvider } from "@/lib/auth";
 import { Analytics } from "@/components/analytics";
-import { HOME_TITLE, INDEXABLE, SITE_URL } from "@/lib/seo";
+import { HOME_TITLE, INDEXABLE, jsonLd, organizationJsonLd, SITE_URL } from "@/lib/seo";
 import { SiteContentProvider, type SiteContent } from "@/lib/site-content";
 import { parseContactInfo, parsePrograms, readJson, SECTION_KEYS } from "@/lib/site-sections";
 import "./globals.css";
@@ -58,6 +58,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
     <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
     <body className="min-h-screen bg-background font-sans text-foreground antialiased">
+      {/* The academy's details for search engines, server-rendered on every page. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(organizationJsonLd)} />
       <SiteContentProvider value={content}><AuthProvider>{children}</AuthProvider></SiteContentProvider>
       <Analytics enabled={INDEXABLE} />
     </body>

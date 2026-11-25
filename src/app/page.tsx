@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import AcademySite from "@/components/academy-site";
 import { publicData } from "@/lib/api";
 import { parseHomeResults } from "@/lib/home-content";
-import { jsonLd, organizationJsonLd, pageMetadata, websiteJsonLd } from "@/lib/seo";
+import { jsonLd, pageMetadata, websiteJsonLd } from "@/lib/seo";
 import { parseHomeSections } from "@/lib/site-sections";
 
 export const metadata: Metadata = pageMetadata({
@@ -14,7 +14,6 @@ export default async function Home() {
   // Both are cached (refreshed when an admin saves, or every 5 minutes) and fall back to empty when the API is unreachable.
   const [content, teachers] = await Promise.all([publicData.content("home."), publicData.faculty()]);
   return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(organizationJsonLd)} />
     <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(websiteJsonLd)} />
     <AcademySite home={{ results: parseHomeResults(content), teachers, sections: parseHomeSections(content) }} />
   </>;

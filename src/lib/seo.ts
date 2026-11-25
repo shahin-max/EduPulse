@@ -50,7 +50,7 @@ export const organizationJsonLd = {
   description: "Coaching institute in Aligarh for school tuition (Classes 6-10), AISSEE Sainik School & RMS, JEE, NEET, AMU & JMI entrance, CUET, NDA/CDS, IMU-CET and Spoken English.",
   url: SITE_URL,
   logo: `${SITE_URL}/edupulse-logo.jpeg`,
-  image: `${SITE_URL}${SHARE_IMAGE}`,
+  image: [`${SITE_URL}/edupulse-logo.jpeg`, `${SITE_URL}${SHARE_IMAGE}`],
   email: contact.email,
   telephone: contact.phones[0]?.tel,
   address: { "@type": "PostalAddress", ...postalAddress },
